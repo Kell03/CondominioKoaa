@@ -1,0 +1,152 @@
+﻿@page "/users"
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@inject IGenericRepository<Users> UserRepository
+@using Radzen.Blazor
+@rendermode InteractiveServer
+
+<RadzenTabs @bind-SelectedIndex=@selectedIndex>
+    <Tabs>
+        <RadzenTabsItem Text="Lista">
+
+
+            <RadzenButton Text="Agregar"
+                          Icon="add_circle"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Style="margin-bottom: 0.5rem;"
+                          Click="@(() => AddUser())" />
+
+            @if (users == null)
+            {
+                <p>Cargando usuarios...</p>
+            }
+            else if (!users.Any())
+            {
+                <p>No hay usuarios registrados.</p>
+            }
+            else
+            {
+                
+                <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                Data="@users" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
+                                RowSelect="@((Users user) => EditUser(user))">
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(Users.Id)" Filterable="false" Title="ID" Width="80px" TextAlign="TextAlign.Center" />
+
+                        <RadzenDataGridColumn Property="@nameof(Users.Name)" Title="First Name" Width="160px" />
+                        <RadzenDataGridColumn Property="@nameof(Users.Email)" Title="Last Name" Width="160px" />
+                        <RadzenDataGridColumn Property="@nameof(Users.Role)" Title="Job Title" Width="200px" />
+                        <RadzenDataGridColumn TItem="Users" Property="IsActive" Title="Estado" Width="120px">
+                            <Template Context="user">
+                                @if (user.IsActive)
+                                {
+                                    <RadzenBadge Style="background: green; color: white; padding: 4px 8px; border-radius: 4px;">
+                                        Activo
+                                    </RadzenBadge>
+                                }
+                                else
+                                {
+                                    <RadzenBadge Style="background: red; color: white; padding: 4px 8px; border-radius: 4px;">
+                                        Inactivo
+                                    </RadzenBadge>
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="Users" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                            <Template Context="user">
+                                <RadzenButton Icon="delete"
+                                              ButtonStyle="ButtonStyle.Danger"
+                                              Size="ButtonSize.Small"
+                                              Tooltip="Eliminar usuario"
+                                              Confirm="@($"¿Eliminar a {user.Name}?")"
+                                              Click="@(() => DeleteUser(user))" 
+                                              @onclick:stopPropagation="true" />
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                    </Columns>
+                </RadzenDataGrid>
+
+
+            }
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Formulario">
+
+
+
+
+
+            <RadzenTemplateForm Data=@selectedUser class="rz-p-0 rz-p-md-12" @onsubmit="SaveItem">
+                <RadzenStack Gap="1.5rem">
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="NameRequiredInput">
+                            Full Name <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Required" Variant="Variant.Outlined" IsPill="true" class="rz-ml-1" />
+                        </RadzenLabel>
+                        <RadzenTextBox Name="NameRequiredInput" @bind-Value=@selectedUser.Name Style="width: 100%; max-width: 400px;" />
+                        <RadzenRequiredValidator Component="NameRequiredInput" Text="Full Name is required" />
+                    </RadzenStack>
+
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="EmailRequiredInput">
+                            Email <span style="color: var(--rz-danger);">*</span>
+                        </RadzenLabel>
+                        <RadzenTextBox Name="EmailRequiredInput" @bind-Value=@selectedUser.Email Style="width: 100%; max-width: 400px;" />
+                        <RadzenRequiredValidator Component="EmailRequiredInput" Text="Email is required" />
+                    </RadzenStack>
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="RoleRequiredInput">
+                            Rol <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Requerido" Variant="Variant.Outlined" IsPill="true" class="rz-ml-1" />
+                        </RadzenLabel>
+            
+                        <RadzenDropDown @bind-Value="@selectedUser.Role"
+                                        Data="@roles"
+                                        Style="width: 100%; max-width: 400px;"
+                                        Name="RoleRequiredInput" />
+            
+                        <RadzenRequiredValidator Component="RoleRequiredInput" Text="El rol es requerido" />
+                    </RadzenStack>
+ 
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="EstadoInput">
+                            Estado
+                        </RadzenLabel>
+    
+                        <RadzenDropDown @bind-Value="@selectedUser.IsActive"
+                                        Data="@estados"
+                                        TextProperty="Value"
+                                        ValueProperty="Key"
+                                        Style="width: 100%; max-width: 400px;"
+                                        Name="EstadoInput" />
+                    </RadzenStack>
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="PasswordRequiredInput">
+                            Password <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Required" Variant="Variant.Outlined" IsPill="true" class="rz-ml-1" />
+                        </RadzenLabel>
+                        <RadzenPassword Name="PasswordRequiredInput" @bind-Value=@selectedUser.PasswordHash aria-label="enter password" Style="width: 100%; max-width: 400px;" />
+                        <RadzenRequiredValidator Component="PasswordRequiredInput" Text="Password is required" />
+                    </RadzenStack>
+
+
+
+
+
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Form" Style="width: 100%; max-width: 400px;" />
+                </RadzenStack>
+            </RadzenTemplateForm>
+
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    int selectedIndex = 0;
+}

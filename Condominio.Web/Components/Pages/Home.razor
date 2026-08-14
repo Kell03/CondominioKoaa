@@ -1,0 +1,89 @@
+﻿@page "/"
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@inject IGenericRepository<Users> UserRepository
+@using Radzen.Blazor
+@rendermode InteractiveServer
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+<p>Welcome to your new app.</p>
+
+@if (users == null)
+{
+    <p>Cargando usuarios...</p>
+}
+else if (!users.Any())
+{
+    <p>No hay usuarios registrados.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in users)
+                {
+                    <tr>
+                        <td>@user.Id</td>
+                        <td>@user.Name</td>
+                        <td>@user.Email</td>
+                        <td>@user.Role</td>
+                        <td>@(user.IsActive ? "Activo" : "Inactivo")</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" @onclick="() => ToggleStatus(user.Id)">
+                                @(user.IsActive ? "Desactivar" : "Activar")
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+
+
+@code {
+    string mensaje = "Esperando...";
+
+
+
+    private List<Users> users = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        // Usas el método específico si existe
+        var userList = await UserRepository.GetAllAsync();
+        users = userList.ToList();
+    }
+
+    private async Task ToggleStatus(int userId)
+    {
+        var user = await UserRepository.GetByIdAsync(userId);
+        if (user != null)
+        {
+            user.IsActive = !user.IsActive;
+            UserRepository.Update(user);
+            // Si tienes SaveChanges en el repositorio
+            await UserRepository.AddAsync(user);
+            await LoadUsers(); // Recargar la lista
+            StateHasChanged();
+        }
+    }
+}

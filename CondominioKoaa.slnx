@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Src/">
+    <Project Path="Condominio.Application/Condominio.Application.csproj" />
+    <Project Path="Condominio.Domain/Condominio.Domain.csproj" />
+    <Project Path="Condominio.Infrastructure/Condominio.Infrastructure.csproj" />
+    <Project Path="Condominio.Web/Condominio.Web.csproj" />
+  </Folder>
+</Solution>

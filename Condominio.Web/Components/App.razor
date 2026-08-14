@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/standard.css">
+
+    <ImportMap />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet />
+
+
+</head>
+
+<body>
+    <Routes />
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+    <script src="_framework/blazor.server.js"></script>
+
+    <script>
+        (function() {
+        console.log('🔄 Verificando Radzen 11...');
+        
+        // ✅ SIMPLEMENTE VERIFICAMOS QUE EXISTE, SIN LLAMAR A init()
+        function checkRadzen() {
+        if (typeof Radzen !== 'undefined') {
+        console.log('✅ Radzen 11 cargado correctamente');
+        console.log('📋 Propiedades:', Object.keys(Radzen).length);
+        return true;
+        }
+        return false;
+        }
+
+        // Intentar verificar inmediatamente
+        if (!checkRadzen()) {
+        // Reintentar cada 300ms hasta 10 veces
+        let attempts = 0;
+        const maxAttempts = 10;
+        const interval = setInterval(function() {
+        attempts++;
+        if (checkRadzen()) {
+        clearInterval(interval);
+        } else if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        console.error('❌ Radzen 11 no disponible después de ' + maxAttempts + ' intentos');
+        }
+        }, 300);
+        }
+        })();
+    </script>
+</body>
+
+</html>

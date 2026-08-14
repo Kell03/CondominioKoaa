@@ -1,0 +1,15 @@
+D:\Proyectos\CondominioKoaa\Condominio.Application\bin\Debug\net10.0\Condominio.Application.deps.json
+D:\Proyectos\CondominioKoaa\Condominio.Application\bin\Debug\net10.0\Condominio.Application.dll
+D:\Proyectos\CondominioKoaa\Condominio.Application\bin\Debug\net10.0\Condominio.Application.pdb
+D:\Proyectos\CondominioKoaa\Condominio.Application\bin\Debug\net10.0\Condominio.Domain.dll
+D:\Proyectos\CondominioKoaa\Condominio.Application\bin\Debug\net10.0\Condominio.Domain.pdb
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\Condominio.Application.csproj.AssemblyReference.cache
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\Condominio.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\Condominio.Application.AssemblyInfoInputs.cache
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\Condominio.Application.AssemblyInfo.cs
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\Condominio.Application.csproj.CoreCompileInputs.cache
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\Condomin.76E80167.Up2Date
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\Condominio.Application.dll
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\refint\Condominio.Application.dll
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\Condominio.Application.pdb
+D:\Proyectos\CondominioKoaa\Condominio.Application\obj\Debug\net10.0\ref\Condominio.Application.dll
