@@ -64,3 +64,21 @@ node_modules/
 
 ## Azure Functions
 local.settings.json
+
+
+# Archivos de compilación
+bin/
+obj/
+*.dll
+*.pdb
+*.exe
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln.docstates
+
+# Archivos de paquetes
+packages/
+*.nupkg
