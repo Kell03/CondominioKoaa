@@ -1,6 +1,8 @@
 ﻿using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Radzen;
+using Radzen.Blazor;
 
 namespace Condominio.Web.Components.Pages
 {
@@ -26,11 +28,18 @@ namespace Condominio.Web.Components.Pages
     };
 
 
+
+
+        IEnumerable<Houses> House;
+
         private IQueryable<Users> users;
 
         protected override async Task OnInitializedAsync()
         {
             await LoadUsers();
+
+            House = await HouseRepository.GetAllAsync();
+
         }
 
         private async Task LoadUsers()

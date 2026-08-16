@@ -2,6 +2,7 @@
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @inject IGenericRepository<Users> UserRepository
+@inject IGenericRepository<Houses> HouseRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @rendermode InteractiveServer
@@ -107,6 +108,7 @@
                     </RadzenStack>
 
 
+
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
                         <RadzenLabel Component="RoleRequiredInput">
                             Rol <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Requerido" Variant="Variant.Outlined" IsPill="true" class="rz-ml-1" />
@@ -120,6 +122,13 @@
                         <RadzenRequiredValidator Component="RoleRequiredInput" Text="El rol es requerido" />
                     </RadzenStack>
  
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Select Value" Component="DropDownFiltering" />
+                        <RadzenDropDown TValue="int?" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith" AllowFiltering="true"
+                                        Data=@House TextProperty="@nameof(Houses.Number)" ValueProperty="@nameof(Houses.Id)" AllowClear="true" @bind-Value=selectedUser.HouseId Style="width: 100%; max-width: 400px;" Name="DropDownFiltering" />
+                    </RadzenStack>
+
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
                         <RadzenLabel Component="EstadoInput">
                             Estado
