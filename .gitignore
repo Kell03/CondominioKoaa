@@ -1,0 +1,66 @@
+# ============================================
+# .NET CORE / .NET 5+ / .NET 8+
+# ============================================
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww]in32/
+[Oo]bj/
+[Bb]in/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Visual Studio Code
+.vscode/
+
+## Rider
+.idea/
+*.sln.iml
+
+## NuGet packages
+packages/
+*.nupkg
+*.snupkg
+
+## Node modules (si usas npm)
+node_modules/
+
+## Archivos de entorno
+.env
+.env.*
+!.env.example
+
+## Archivos de base de datos
+*.mdf
+*.ldf
+*.sdf
+*.db
+*.sqlite
+
+## Archivos de logs
+*.log
+*.logs
+
+## Archivos de respaldo
+*~
+*.swp
+*.bak
+
+## Publicación
+*.pubxml
+*.publishproj
+
+## Azure Functions
+local.settings.json

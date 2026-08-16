@@ -88,16 +88,30 @@ namespace Condominio.Web.Components.Pages
             }
         }
 
+      
+
+
+        private async Task ConfirmDelete(Users user)
+        {
+            var result = await DialogService.Confirm(
+                $"¿Estás seguro de eliminar al usuario {user.Name}?",
+                "Confirmar eliminación",
+                new ConfirmOptions() { OkButtonText = "Sí", CancelButtonText = "No" }
+            );
+
+            if (result == true)
+            {
+                await DeleteUser(user);
+            }
+        }
 
         private async Task DeleteUser(Users user)
         {
-
-                UserRepository.Delete(user);
+             UserRepository.Delete(user);
                 await UserRepository.SaveChangesAsync();
                 // Si tienes SaveChanges en el repositorio
                 await LoadUsers(); // Recargar la lista
                 StateHasChanged();
-
 
         }
 
@@ -119,6 +133,9 @@ namespace Condominio.Web.Components.Pages
             StateHasChanged();
             await Task.CompletedTask;
         }
+
+
+
 
     }
 }

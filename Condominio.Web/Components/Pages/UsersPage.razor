@@ -3,6 +3,7 @@
 @using Condominio.Domain.Interfaces.Repositories
 @inject IGenericRepository<Users> UserRepository
 @using Radzen.Blazor
+@inject Radzen.DialogService DialogService
 @rendermode InteractiveServer
 
 <RadzenTabs @bind-SelectedIndex=@selectedIndex>
@@ -34,7 +35,11 @@
                         <RadzenDataGridColumn Property="@nameof(Users.Id)" Filterable="false" Title="ID" Width="80px" TextAlign="TextAlign.Center" />
 
                         <RadzenDataGridColumn Property="@nameof(Users.Name)" Title="First Name" Width="160px" />
-                        <RadzenDataGridColumn Property="@nameof(Users.Email)" Title="Last Name" Width="160px" />
+                        <RadzenDataGridColumn TItem="Users" Title="Nro Casa" Width="160px">
+                            <Template Context="user">
+                                @user.House?.Number
+                            </Template>
+                        </RadzenDataGridColumn>                        <RadzenDataGridColumn Property="@nameof(Users.Email)" Title="Last Name" Width="160px" />
                         <RadzenDataGridColumn Property="@nameof(Users.Role)" Title="Job Title" Width="200px" />
                         <RadzenDataGridColumn TItem="Users" Property="IsActive" Title="Estado" Width="120px">
                             <Template Context="user">
@@ -55,13 +60,15 @@
 
                         <RadzenDataGridColumn TItem="Users" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
                             <Template Context="user">
+
                                 <RadzenButton Icon="delete"
                                               ButtonStyle="ButtonStyle.Danger"
                                               Size="ButtonSize.Small"
                                               Tooltip="Eliminar usuario"
-                                              Confirm="@($"¿Eliminar a {user.Name}?")"
-                                              Click="@(() => DeleteUser(user))" 
+                                              Click="@(() => ConfirmDelete(user))"
                                               @onclick:stopPropagation="true" />
+
+
                             </Template>
                         </RadzenDataGridColumn>
 
@@ -149,4 +156,7 @@
 
 @code {
     int selectedIndex = 0;
+
+    
+    
 }
