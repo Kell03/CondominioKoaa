@@ -51,20 +51,6 @@ namespace Condominio.Web.Components.Pages
             users = userList.AsQueryable();
         }
 
-        private async Task ToggleStatus(int userId)
-        {
-            var user = await UserRepository.GetByIdAsync(userId);
-            if (user != null)
-            {
-                user.IsActive = !user.IsActive;
-                UserRepository.Update(user);
-                // Si tienes SaveChanges en el repositorio
-                await UserRepository.AddAsync(user);
-                await LoadUsers(); // Recargar la lista
-                StateHasChanged();
-            }
-        }
-
 
         private async Task SaveItem()
         {
