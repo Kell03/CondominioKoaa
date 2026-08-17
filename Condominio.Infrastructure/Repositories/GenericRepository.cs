@@ -1,4 +1,5 @@
-﻿using Condominio.Domain.Interfaces.Repositories;
+﻿using Condominio.Domain.DB;
+using Condominio.Domain.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -11,14 +12,17 @@ namespace Condominio.Infrastructure.Repositories
     where TEntity : class
 
     {
-        protected readonly DbContext _context;
+        protected readonly AppDbContext _context;
         protected readonly DbSet<TEntity> _dbSet;
 
-        public GenericRepository(DbContext context)
+        public GenericRepository(AppDbContext context)
         {
             _context = context;
             _dbSet = context.Set<TEntity>();
         }
+
+
+
 
         // VIRTUAL → permite sobrescritura
         public virtual async Task<TEntity> GetByIdAsync(int id)

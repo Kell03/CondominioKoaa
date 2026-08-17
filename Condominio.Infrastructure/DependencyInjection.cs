@@ -17,6 +17,8 @@ namespace Condominio.Infrastructure
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IGenericRepository<Users>, UserRepository>();
             services.AddScoped<IGenericRepository<Houses>, HouseRepository>();
+            services.AddScoped<IGenericRepository<FacturaMes>, FacturaMesRepository>();
+            services.AddScoped<IGenericRepository<FacturaMesHijo>, FacturaMesHijoRepository>();
 
             // Register application services here
             return services;

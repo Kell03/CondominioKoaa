@@ -7,9 +7,9 @@ namespace Condominio.Domain.Entities
     public class FacturaMes:BaseEntity
     {
 
-        int Mes {  get; set; }
-        int Year {  get; set; }
-        bool IsActive { get; set; } = true;
-        double MontoTotal { get; set; } = 0;
+       public int Mes {  get; set; }
+       public int Year {  get; set; }
+       public bool IsActive { get; set; } = true;
+       public double MontoTotal { get; set; } = 0;
     }
 }
