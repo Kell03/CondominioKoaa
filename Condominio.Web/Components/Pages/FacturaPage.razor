@@ -5,18 +5,19 @@
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @rendermode InteractiveServer
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
 
 
 
-
-            <RadzenCard Style="background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <RadzenText TextStyle="TextStyle.H4" Style="margin: 0; color: #1a2a3a; font-weight: 500;">
-                    Facturas
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 4px 0 0 0; color: #6c757d;">
-                    Gestión de facturas mensuales del condominio
-                </RadzenText>
-            </RadzenCard>
+<RadzenCard Style="background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <RadzenText TextStyle="TextStyle.H4" Style="margin: 0; color: #1a2a3a; font-weight: 500;">
+        Facturas
+    </RadzenText>
+    <RadzenText TextStyle="TextStyle.Body2" Style="margin: 4px 0 0 0; color: #6c757d;">
+        Gestión de facturas mensuales del condominio
+    </RadzenText>
+</RadzenCard>
 
 
 <RadzenTabs @bind-SelectedIndex=@selectedIndex>
@@ -85,6 +86,21 @@
                             }
                         </Template>
                     </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="FacturaMes" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                        <Template Context="user">
+
+                            <RadzenButton Icon="delete"
+                                          ButtonStyle="ButtonStyle.Danger"
+                                          Size="ButtonSize.Small"
+                                          Tooltip="Eliminar usuario"
+                                          Click="@(() => ConfirmDelete(user))"
+                                          @onclick:stopPropagation="true" />
+
+
+                        </Template>
+                    </RadzenDataGridColumn>
+
                 </Columns>
             </RadzenDataGrid>
         </RadzenTabsItem>

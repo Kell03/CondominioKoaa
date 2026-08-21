@@ -1,7 +1,13 @@
 ﻿using Condominio.Domain.Entities;
+using Condominio.Infrastructure.Repositories;
+using Condominio.Web.Components.Dialogs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.JSInterop;
+using Microsoft.VisualBasic;
 using Radzen;
 using Radzen.Blazor;
+using System.Runtime;
+using System.Text.Json;
 
 namespace Condominio.Web.Components.Pages
 {
@@ -69,10 +75,70 @@ namespace Condominio.Web.Components.Pages
 
         private async Task AddUser()
         {
-            //selectedUser = new Users();
-            //selectedIndex = 1;
-            //StateHasChanged();
-            //await Task.CompletedTask;
+            await LoadStateAsync();
+
+      
+
+            var result = await DialogService.OpenAsync<FacturaDialog>(
+       "Factura",         // título
+       null,              // parámetros
+       new DialogOptions()
+   );
+
+            if (result != null && (bool)result == true)
+            {
+                await LoadData();  // Recargar los datos
+                StateHasChanged(); // Refrescar la UI
+            }
+
+        }
+
+
+        private async Task LoadData()
+        {
+            Invoices = await FacturaMesRepository.GetAllAsync();
+
+        }
+
+
+
+        private async Task LoadStateAsync()
+        {
+            await Task.CompletedTask;
+
+            var result = await JSRuntime.InvokeAsync<string>("window.localStorage.getItem", "DialogSettings");
+          
+        }
+
+
+        private async Task ConfirmDelete(FacturaMes item)
+        {
+            var result = await DialogService.Confirm(
+                $"¿Estás seguro de eliminar la factura {ObtenerNombreMes(item.Mes)} {item.Year}?",
+                "Confirmar eliminación",
+                new ConfirmOptions() { OkButtonText = "Sí", CancelButtonText = "No" }
+            );
+
+            if (result == true)
+            {
+                await DeleteUser(item);
+            }
+        }
+
+
+
+        private async Task DeleteUser(FacturaMes item)
+        {
+            FacturaMesRepository.Delete(item);
+            await FacturaMesRepository.SaveChangesAsync();
+            // Si tienes SaveChanges en el repositorio
+            await LoadData(); // Recargar la lista
+            StateHasChanged();
+
         }
     }
+
+
+
+
 }
