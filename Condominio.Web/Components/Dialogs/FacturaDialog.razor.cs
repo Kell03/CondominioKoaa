@@ -17,7 +17,7 @@ namespace Condominio.Web.Components.Dialogs
 
         RadzenDataGrid<FacturaMesHijo> ordersGrid;
         IEnumerable<FacturaMesHijo> orders;
-        DataGridEditMode editMode = DataGridEditMode.Single;
+        DataGridEditMode editMode = DataGridEditMode.Multiple;
 
         List<FacturaMesHijo> ordersToInsert = new List<FacturaMesHijo>();
         List<FacturaMesHijo> ordersToUpdate = new List<FacturaMesHijo>();
@@ -106,6 +106,7 @@ namespace Condominio.Web.Components.Dialogs
 
         async Task SaveRow(FacturaMesHijo order)
         {
+            var t = ordersToInsert.ToList();
             await ordersGrid.UpdateRow(order);
         }
 
@@ -144,7 +145,9 @@ namespace Condominio.Web.Components.Dialogs
 
 
             Item.UpdatedAt = DateTime.Now;
-            await FacturaMesRepository.AddAsync(Item);
+            await FacturaMesRepository.SaveWithFacturaHijo(Item, ordersToInsert);
+
+
             await FacturaMesRepository.SaveChangesAsync();
             DialogService.Close(true);
 
