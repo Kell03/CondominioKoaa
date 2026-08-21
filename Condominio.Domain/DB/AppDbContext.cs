@@ -33,6 +33,25 @@ namespace Condominio.Domain.DB
                       .HasForeignKey<Users>(u => u.HouseId) // ← Aquí se define la clave foránea
                       .OnDelete(DeleteBehavior.SetNull);    // ON DELETE SET NULL
             });
+
+
+            modelBuilder.Entity<FacturaMes>(entity =>
+            {
+
+                entity.HasMany(fm => fm.FacturaMesHijos)  // Un FacturaMes tiene muchos hijos
+                      .WithOne(fmh => fmh.facturaMes)     // Un hijo pertenece a un FacturaMes
+                      .HasForeignKey(fmh => fmh.FacturaMesId)  // Clave foránea
+                      .OnDelete(DeleteBehavior.Cascade);  // Al eliminar FacturaMes, se eliminan los hijos
+            });
+
+            modelBuilder.Entity<FacturaMesHijo>(entity =>
+            {
+
+                entity.HasOne(fmh => fmh.facturaMes)
+                      .WithMany(fm => fm.FacturaMesHijos)
+                      .HasForeignKey(fmh => fmh.FacturaMesId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
         }
 
     }

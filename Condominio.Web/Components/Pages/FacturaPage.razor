@@ -1,0 +1,103 @@
+﻿@page "/facturas"
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@inject IGenericRepository<FacturaMes> FacturaMesRepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@rendermode InteractiveServer
+
+
+
+
+            <RadzenCard Style="background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <RadzenText TextStyle="TextStyle.H4" Style="margin: 0; color: #1a2a3a; font-weight: 500;">
+                    Facturas
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 4px 0 0 0; color: #6c757d;">
+                    Gestión de facturas mensuales del condominio
+                </RadzenText>
+            </RadzenCard>
+
+
+<RadzenTabs @bind-SelectedIndex=@selectedIndex>
+    <Tabs>
+
+        <RadzenTabsItem Text="Lista">
+
+            
+            <RadzenButton Text="Agregar"
+                          Icon="add_circle"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Style="margin-bottom: 0.5rem;"
+                          Click="@(() => AddUser())" />
+
+            <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="3" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
+                            Data="@Invoices" TItem="FacturaMes" RowExpand="RowExpand">
+                <Template Context="order">
+                    <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0;">
+
+                        <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
+                            Detalle de Factura #@order.Id
+                        </RadzenText>
+                        <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Style="background: #b8c6d9; border-radius: 6px;" Data="@order.FacturaMesHijos">
+                            <Columns>
+                                <RadzenDataGridColumn Property="FacturaMes.FacturaMesHijos.Motivo" Title="Motivo" />
+                                <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="120px">
+                                    <Template Context="item">
+                                        @($"{item.Monto} $")
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+                            </Columns>
+                        </RadzenDataGrid>
+                        <RadzenText TextStyle="TextStyle.Body1" Style="margin-top: 10px; font-weight: bold; text-align: right; color: #333; border-top: 1px solid #ddd; padding-top: 8px;">
+                            Total: @order.FacturaMesHijos.Sum(h => h.Monto) $
+                        </RadzenText>
+                    </RadzenCard>
+
+                </Template>
+                <Columns>
+                    <RadzenDataGridColumn TItem="FacturaMes" Title="Monto Total" Width="auto">
+                        <Template Context="factura">
+                            @ObtenerMontoTotal(factura) $
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FacturaMes" Title="Mes" Width="120px">
+                        <Template Context="factura">
+                            @ObtenerNombreMes(factura.Mes)
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn Property="@nameof(FacturaMes.Year)" Title="Año" />
+
+                    <RadzenDataGridColumn TItem="FacturaMes" Property="IsActive" Title="Estado" Width="120px">
+                        <Template Context="user">
+                            @if (user.IsActive)
+                            {
+                                <RadzenBadge Style="background: green; color: white; padding: 4px 8px; border-radius: 4px;">
+                                    PAgada
+                                </RadzenBadge>
+                            }
+                            else
+                            {
+                                <RadzenBadge Style="background: red; color: white; padding: 4px 8px; border-radius: 4px;">
+                                    Pendiente
+                                </RadzenBadge>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    int selectedIndex = 0;
+
+    
+    
+}
+
+@code {
+
+}

@@ -11,5 +11,8 @@ namespace Condominio.Domain.Entities
        public int Year {  get; set; }
        public bool IsActive { get; set; } = true;
        public double MontoTotal { get; set; } = 0;
+
+        public ICollection<FacturaMesHijo> FacturaMesHijos { get; set; } = new List<FacturaMesHijo>();
+
     }
 }
