@@ -1,0 +1,81 @@
+﻿@page "/recibos"
+<h3>Recibos</h3>
+
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@inject IGenericRepository<FacturaMesCasa> FacturaMesCasaRepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@rendermode InteractiveServer
+
+
+<RadzenTabs @bind-SelectedIndex=@selectedIndex>
+    <Tabs>
+        <RadzenTabsItem Text="Lista">
+
+
+            <RadzenButton Text="Agregar"
+                          Icon="add_circle"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Style="margin-bottom: 0.5rem;"
+                          Click="@(() => AddUser())" />
+
+            @if (items == null)
+            {
+                <p>Cargando usuarios...</p>
+            }
+            else if (!items.Any())
+            {
+                <p>No hay usuarios registrados.</p>
+            }
+            else
+            {
+
+                <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
+                                RowSelect="@((FacturaMesCasa item) => EditUser(item))">
+                    <Columns>
+                        <RadzenDataGridColumn Property="@nameof(FacturaMesCasa.Id)" Filterable="false" Title="ID" Width="80px" TextAlign="TextAlign.Center" />
+
+                        <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Nro Casa" Width="160px">
+                            <Template Context="FacturaMesCasa">
+                                @FacturaMesCasa.House.Number
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                              Property="@nameof(FacturaMesCasa.NombreMes)"
+                                              Title="Mes"
+                                              Width="160px">
+                            <Template Context="facturaCasa">
+                                @facturaCasa.NombreMes
+                            </Template>
+                        </RadzenDataGridColumn>
+                                           
+                        <RadzenDataGridColumn Property="@nameof(FacturaMesCasa.MontoTotal)" Title="Monto" Width="160px" />
+                        <RadzenDataGridColumn Property="@nameof(FacturaMesCasa.Estado)" Title="Estado" Width="160px" />
+
+
+                    </Columns>
+                </RadzenDataGrid>
+
+
+            }
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Formulario">
+
+
+
+
+
+ 
+
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    int selectedIndex = 0;
+
+    
+    
+}

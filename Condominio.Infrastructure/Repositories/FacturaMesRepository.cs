@@ -18,6 +18,46 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
+
+        public  async Task DeleteWithHijos(FacturaMes entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. Buscar la factura con sus hijos
+                var factura = await _context.FacturaMes
+                    .Include(f => f.FacturaMesHijos)
+                    .FirstOrDefaultAsync(f => f.Id == entity.Id);
+
+                if (factura == null)
+                    throw new Exception("Factura no encontrada");
+
+                // 2. Eliminar TODOS los hijos
+                if (factura.FacturaMesHijos != null && factura.FacturaMesHijos.Any())
+                {
+                    _context.FacturaMesHijo.RemoveRange(factura.FacturaMesHijos);
+                }
+
+                // 3. Eliminar la factura
+                _context.FacturaMes.Remove(factura);
+
+                // 4. Guardar cambios
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($" Error al eliminar: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task<bool> SaveWithFacturaHijo(FacturaMes item, List<FacturaMesHijo> children)
         {
             // ✅ INICIAR TRANSACCIÓN
@@ -58,6 +98,66 @@ namespace Condominio.Infrastructure.Repositories
                 Console.WriteLine($"Error al guardar: {ex.Message}");
 
                 return false; // Falló
+            }
+        }
+
+
+        public async Task DistribuirFacturaEntreCasas(FacturaMes entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. Buscar la factura
+                var factura = await _context.FacturaMes
+                    .FirstOrDefaultAsync(f => f.Id == entity.Id);
+
+                if (factura == null)
+                    throw new Exception("Factura no encontrada");
+
+                if (factura.MontoTotal == 0)
+                    throw new Exception("El monto total de la factura es 0");
+
+                // 2. Obtener casas activas
+                var casasActivas = await _context.Houses
+                    .Where(h => h.IsActive)
+                    .ToListAsync();
+
+                if (!casasActivas.Any())
+                    throw new Exception("No hay casas activas");
+
+                // 3. Calcular monto por casa
+                decimal montoPorCasa = (decimal)Math.Round(factura.MontoTotal / casasActivas.Count, 2);
+
+                // 4. ✅ CREAR REGISTROS CON FOREACH
+                foreach (var casa in casasActivas)
+                {
+                    var facturaCasa = new FacturaMesCasa
+                    {
+                        FacturaMesId = factura.Id,
+                        HouseId = casa.Id,
+                        MontoTotal = montoPorCasa,
+                        Estado = "Pendiente"
+                    };
+
+                    await _context.FacturaMesCasa.AddAsync(facturaCasa);
+                }
+
+                // 5. Marcar como enviada
+                factura.Enviado = true;
+                _context.FacturaMes.Update(factura);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"❌ Error al distribuir factura: {ex.Message}");
+                throw;
             }
         }
     }

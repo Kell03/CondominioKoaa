@@ -36,7 +36,10 @@
                         <RadzenDataGridColumn Property="@nameof(Users.Id)" Filterable="false" Title="ID" Width="80px" TextAlign="TextAlign.Center" />
 
                         <RadzenDataGridColumn Property="@nameof(Users.Name)" Title="First Name" Width="160px" />
-                        <RadzenDataGridColumn TItem="Users" Title="Nro Casa" Width="160px">
+                        <RadzenDataGridColumn TItem="Users"
+                                              Property="House.Number"
+                                              Title="Nro Casa"
+                                              Width="160px">
                             <Template Context="user">
                                 @user.House?.Number
                             </Template>

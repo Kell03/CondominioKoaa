@@ -1,7 +1,8 @@
 ﻿@page "/facturas"
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
-@inject IGenericRepository<FacturaMes> FacturaMesRepository
+@using Condominio.Infrastructure.Repositories
+@inject FacturaMesRepository FacturaMesRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @rendermode InteractiveServer
@@ -63,9 +64,12 @@
                             @ObtenerMontoTotal(factura) $
                         </Template>
                     </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="FacturaMes" Title="Mes" Width="120px">
-                        <Template Context="factura">
-                            @ObtenerNombreMes(factura.Mes)
+                    <RadzenDataGridColumn TItem="FacturaMes"
+                                          Property="@nameof(FacturaMes.NombreMes)"
+                                          Title="Mes"
+                                          Width="160px">
+                        <Template Context="facturaMes">
+                            @facturaMes.NombreMes
                         </Template>
                     </RadzenDataGridColumn>
                     <RadzenDataGridColumn Property="@nameof(FacturaMes.Year)" Title="Año" />
@@ -83,6 +87,28 @@
                                 <RadzenBadge Style="background: red; color: white; padding: 4px 8px; border-radius: 4px;">
                                     Pendiente
                                 </RadzenBadge>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+
+
+                    <RadzenDataGridColumn TItem="FacturaMes" Property="Enviado" Title="Enviado" Width="120px">
+                        <Template Context="user">
+                            @if (user.Enviado)
+                            {
+                                <RadzenButton Text="Enviado"
+                                              Icon="check_circle"
+                                              ButtonStyle="ButtonStyle.Success"
+                                              Size="ButtonSize.Small"
+                                              Disabled="true" />
+                            }
+                            else
+                            {
+                                <RadzenButton Text="Confirmar"
+                                              Icon="send"
+                                              ButtonStyle="ButtonStyle.Primary"
+                                              Size="ButtonSize.Small"
+                                              Click="@(() => MarcarComoEnviado(user))" />
                             }
                         </Template>
                     </RadzenDataGridColumn>
