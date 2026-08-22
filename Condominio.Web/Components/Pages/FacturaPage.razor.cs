@@ -129,7 +129,7 @@ namespace Condominio.Web.Components.Pages
 
         private async Task DeleteUser(FacturaMes item)
         {
-            FacturaMesRepository.Delete(item);
+            await FacturaMesRepository.DeleteWithHijos(item);
             await FacturaMesRepository.SaveChangesAsync();
             // Si tienes SaveChanges en el repositorio
             await LoadData(); // Recargar la lista

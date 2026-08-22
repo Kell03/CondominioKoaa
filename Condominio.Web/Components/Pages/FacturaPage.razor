@@ -1,7 +1,8 @@
 ﻿@page "/facturas"
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
-@inject IGenericRepository<FacturaMes> FacturaMesRepository
+@using Condominio.Infrastructure.Repositories
+@inject FacturaMesRepository FacturaMesRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @rendermode InteractiveServer

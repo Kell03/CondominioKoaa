@@ -18,6 +18,46 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
+
+        public  async Task DeleteWithHijos(FacturaMes entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. Buscar la factura con sus hijos
+                var factura = await _context.FacturaMes
+                    .Include(f => f.FacturaMesHijos)
+                    .FirstOrDefaultAsync(f => f.Id == entity.Id);
+
+                if (factura == null)
+                    throw new Exception("Factura no encontrada");
+
+                // 2. Eliminar TODOS los hijos
+                if (factura.FacturaMesHijos != null && factura.FacturaMesHijos.Any())
+                {
+                    _context.FacturaMesHijo.RemoveRange(factura.FacturaMesHijos);
+                }
+
+                // 3. Eliminar la factura
+                _context.FacturaMes.Remove(factura);
+
+                // 4. Guardar cambios
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($" Error al eliminar: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task<bool> SaveWithFacturaHijo(FacturaMes item, List<FacturaMesHijo> children)
         {
             // ✅ INICIAR TRANSACCIÓN
