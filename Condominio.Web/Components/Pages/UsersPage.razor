@@ -40,8 +40,8 @@
                             <Template Context="user">
                                 @user.House?.Number
                             </Template>
-                        </RadzenDataGridColumn>                        <RadzenDataGridColumn Property="@nameof(Users.Email)" Title="Last Name" Width="160px" />
-                        <RadzenDataGridColumn Property="@nameof(Users.Role)" Title="Job Title" Width="200px" />
+                        </RadzenDataGridColumn>                        <RadzenDataGridColumn Property="@nameof(Users.Email)" Title="Email" Width="160px" />
+                        <RadzenDataGridColumn Property="@nameof(Users.Role)" Title="Rol" Width="200px" />
                         <RadzenDataGridColumn TItem="Users" Property="IsActive" Title="Estado" Width="120px">
                             <Template Context="user">
                                 @if (user.IsActive)
@@ -124,7 +124,7 @@
  
 
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Text="Select Value" Component="DropDownFiltering" />
+                        <RadzenLabel Text="Seleccionar Casa" Component="DropDownFiltering" />
                         <RadzenDropDown TValue="int?" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith" AllowFiltering="true"
                                         Data=@House TextProperty="@nameof(Houses.Number)" ValueProperty="@nameof(Houses.Id)" AllowClear="true" @bind-Value=selectedUser.HouseId Style="width: 100%; max-width: 400px;" Name="DropDownFiltering" />
                     </RadzenStack>

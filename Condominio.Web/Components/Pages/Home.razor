@@ -10,48 +10,6 @@
 <h1>Hello, world!</h1>
 <p>Welcome to your new app.</p>
 
-@if (users == null)
-{
-    <p>Cargando usuarios...</p>
-}
-else if (!users.Any())
-{
-    <p>No hay usuarios registrados.</p>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Rol</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in users)
-                {
-                    <tr>
-                        <td>@user.Id</td>
-                        <td>@user.Name</td>
-                        <td>@user.Email</td>
-                        <td>@user.Role</td>
-                        <td>@(user.IsActive ? "Activo" : "Inactivo")</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" @onclick="() => ToggleStatus(user.Id)">
-                                @(user.IsActive ? "Desactivar" : "Activar")
-                            </button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}
-
 
 
 @code {
