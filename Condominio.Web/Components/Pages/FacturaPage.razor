@@ -88,6 +88,28 @@
                         </Template>
                     </RadzenDataGridColumn>
 
+
+                    <RadzenDataGridColumn TItem="FacturaMes" Property="Enviado" Title="Enviado" Width="120px">
+                        <Template Context="user">
+                            @if (user.Enviado)
+                            {
+                                <RadzenButton Text="Enviado"
+                                              Icon="check_circle"
+                                              ButtonStyle="ButtonStyle.Success"
+                                              Size="ButtonSize.Small"
+                                              Disabled="true" />
+                            }
+                            else
+                            {
+                                <RadzenButton Text="Confirmar"
+                                              Icon="send"
+                                              ButtonStyle="ButtonStyle.Primary"
+                                              Size="ButtonSize.Small"
+                                              Click="@(() => MarcarComoEnviado(user))" />
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+
                     <RadzenDataGridColumn TItem="FacturaMes" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
                         <Template Context="user">
 

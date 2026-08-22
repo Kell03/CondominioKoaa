@@ -19,6 +19,8 @@ namespace Condominio.Domain.DB
         public DbSet<Houses> Houses { get; set; }
         public DbSet<FacturaMes> FacturaMes { get; set; }
         public DbSet<FacturaMesHijo> FacturaMesHijo { get; set; }
+        public DbSet<FacturaMesCasa> FacturaMesCasa { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +53,23 @@ namespace Condominio.Domain.DB
                       .WithMany(fm => fm.FacturaMesHijos)
                       .HasForeignKey(fmh => fmh.FacturaMesId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<FacturaMesCasa>(entity =>
+            {
+                
+                // ✅ RELACIÓN CON FacturaMes (N → 1)
+                entity.HasOne(fc => fc.FacturaMes)
+                    .WithMany()
+                    .HasForeignKey(fc => fc.FacturaMesId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // ✅ RELACIÓN CON Houses (N → 1)
+                entity.HasOne(fc => fc.House)
+                    .WithMany()
+                    .HasForeignKey(fc => fc.HouseId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
             });
         }
 

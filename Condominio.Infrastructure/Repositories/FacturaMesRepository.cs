@@ -100,5 +100,65 @@ namespace Condominio.Infrastructure.Repositories
                 return false; // Falló
             }
         }
+
+
+        public async Task DistribuirFacturaEntreCasas(FacturaMes entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // 1. Buscar la factura
+                var factura = await _context.FacturaMes
+                    .FirstOrDefaultAsync(f => f.Id == entity.Id);
+
+                if (factura == null)
+                    throw new Exception("Factura no encontrada");
+
+                if (factura.MontoTotal == 0)
+                    throw new Exception("El monto total de la factura es 0");
+
+                // 2. Obtener casas activas
+                var casasActivas = await _context.Houses
+                    .Where(h => h.IsActive)
+                    .ToListAsync();
+
+                if (!casasActivas.Any())
+                    throw new Exception("No hay casas activas");
+
+                // 3. Calcular monto por casa
+                decimal montoPorCasa = (decimal)Math.Round(factura.MontoTotal / casasActivas.Count, 2);
+
+                // 4. ✅ CREAR REGISTROS CON FOREACH
+                foreach (var casa in casasActivas)
+                {
+                    var facturaCasa = new FacturaMesCasa
+                    {
+                        FacturaMesId = factura.Id,
+                        HouseId = casa.Id,
+                        MontoTotal = montoPorCasa,
+                        Estado = "Pendiente"
+                    };
+
+                    await _context.FacturaMesCasa.AddAsync(facturaCasa);
+                }
+
+                // 5. Marcar como enviada
+                factura.Enviado = true;
+                _context.FacturaMes.Update(factura);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"❌ Error al distribuir factura: {ex.Message}");
+                throw;
+            }
+        }
     }
 }

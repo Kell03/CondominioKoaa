@@ -136,6 +136,23 @@ namespace Condominio.Web.Components.Pages
             StateHasChanged();
 
         }
+
+
+        private async Task MarcarComoEnviado(FacturaMes factura)
+        {
+            if (factura == null) return;
+
+            // 1. Actualizar el campo Enviado
+            factura.Enviado = true;
+
+            // 2. Guardar en la base de datos
+            await FacturaMesRepository.DistribuirFacturaEntreCasas(factura);
+            await FacturaMesRepository.SaveChangesAsync();
+
+            // 3. Recargar la lista para actualizar la UI
+            await LoadData();
+            StateHasChanged();
+        }
     }
 
 
