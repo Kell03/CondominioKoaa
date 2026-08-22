@@ -14,7 +14,10 @@ namespace Condominio.Web.Components.Pages
         FacturaMesCasa selectedItem = new FacturaMesCasa();
 
 
-
+        private List<string> MetodosPago = new List<string>
+    {
+        "Pago Movil"
+    };
 
         private IQueryable<FacturaMesCasa> items;
 
@@ -35,36 +38,7 @@ namespace Condominio.Web.Components.Pages
         }
 
 
-        private async Task SaveItem()
-        {
-
-            if (selectedItem.Id != 0)
-            {
-                selectedItem.UpdatedAt = DateTime.Now;
-                FacturaMesCasaRepository.Update(selectedItem);
-                await FacturaMesCasaRepository.SaveChangesAsync();
-                // Si tienes SaveChanges en el repositorio
-                await LoadUsers(); // Recargar la lista
-                selectedIndex = 0;
-                selectedItem = new FacturaMesCasa();
-
-                StateHasChanged();
-
-            }
-            else
-            {
-
-
-                await FacturaMesCasaRepository.AddAsync(selectedItem);
-                await FacturaMesCasaRepository.SaveChangesAsync();
-                // Si tienes SaveChanges en el repositorio
-                await LoadUsers(); // Recargar la lista
-                selectedIndex = 0;
-                selectedItem = new FacturaMesCasa();
-
-                StateHasChanged();
-            }
-        }
+    
 
 
 
@@ -99,6 +73,30 @@ namespace Condominio.Web.Components.Pages
             selectedIndex = 1;
             StateHasChanged();
             await Task.CompletedTask;
+        }
+
+
+        private string GetMesAnio()
+        {
+            return $"{selectedItem.NombreMes} {selectedItem.Year}";
+        }
+
+
+        private async Task SaveItem()
+        {
+
+                selectedItem.UpdatedAt = DateTime.Now;
+            selectedItem.Estado = "En Revisión"; // Cambiar el estado a "En Revisión"
+            FacturaMesCasaRepository.Update(selectedItem);
+                await FacturaMesCasaRepository.SaveChangesAsync();
+                // Si tienes SaveChanges en el repositorio
+                await LoadUsers(); // Recargar la lista
+                selectedIndex = 0;
+                selectedItem = new FacturaMesCasa();
+
+                StateHasChanged();
+
+           
         }
 
 

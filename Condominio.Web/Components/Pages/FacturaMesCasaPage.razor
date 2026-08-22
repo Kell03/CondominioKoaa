@@ -52,8 +52,31 @@
                         </RadzenDataGridColumn>
                                            
                         <RadzenDataGridColumn Property="@nameof(FacturaMesCasa.MontoTotal)" Title="Monto" Width="160px" />
-                        <RadzenDataGridColumn Property="@nameof(FacturaMesCasa.Estado)" Title="Estado" Width="160px" />
-
+                        <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                              Property="Estado"
+                                              Title="Estado"
+                                              Width="140px">
+                            <Template Context="facturaCasa">
+                                @if (facturaCasa.Estado == "Pendiente")
+                                {
+                                    <RadzenBadge Style="background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px;">
+                                         Pendiente
+                                    </RadzenBadge>
+                                }
+                                else if (facturaCasa.Estado == "En Revisión")
+                                {
+                                    <RadzenBadge Style="background: #6c757d; color: #fff; padding: 4px 8px; border-radius: 4px;">
+                                         En Revisión
+                                    </RadzenBadge>
+                                }
+                                else if (facturaCasa.Estado == "Confirmada")
+                                {
+                                    <RadzenBadge Style="background: #28a745; color: #fff; padding: 4px 8px; border-radius: 4px;">
+                                        Confirmada
+                                    </RadzenBadge>
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
 
                     </Columns>
                 </RadzenDataGrid>
@@ -61,14 +84,75 @@
 
             }
         </RadzenTabsItem>
-        <RadzenTabsItem Text="Formulario">
+        <RadzenTabsItem Text="Formulario" Disabled="true">
+
+            
+            <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SaveItem">
+                <RadzenStack Gap="1.5rem">
+
+
+            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Component="MesAnioLabel">
+                    Mes/Año <span style="color: var(--rz-danger);">*</span>
+                </RadzenLabel>
+                <RadzenText TextStyle="TextStyle.Body1"
+                            Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;">
+                    @selectedItem.NombreMes @selectedItem.Year
+                </RadzenText>
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Component="NumberRequiredInput">
+                    Numero Casa 
+                </RadzenLabel>
+                <RadzenText TextStyle="TextStyle.Body1"
+                            Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;">
+                    @selectedItem.House.Number
+                </RadzenText>
+            </RadzenStack>
 
 
 
+            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Component="MontoTotalLabel">
+                    Monto Total <span style="color: var(--rz-danger);">*</span>
+                </RadzenLabel>
+                <RadzenText TextStyle="TextStyle.Body1"
+                            Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px; cursor: default;">
+                    @selectedItem.MontoTotal.ToString("F2") $
+                </RadzenText>
+            </RadzenStack>
 
+
+            
+            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Component="MPRequiredInput">
+                    Metodo de Pago <span style="color: var(--rz-danger);">*</span>
+                </RadzenLabel>
+
+                <RadzenDropDown @bind-Value="@selectedItem.MetodoPago"
+                                Data="@MetodosPago"
+                                Style="width: 100%; max-width: 400px;"
+                                Name="MPRequiredInput" />
+
+                <RadzenRequiredValidator Component="MPRequiredInput" Text="El método de pago es requerido" />
+            </RadzenStack>
+
+
+            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                <RadzenLabel Component="NumeroReferenciaRequiredInput">
+                    Numero Referencia <span style="color: var(--rz-danger);">*</span>
+                </RadzenLabel>
+                <RadzenTextBox Name="NumeroReferenciaRequiredInput" @bind-Value=@selectedItem.Referencia Style="width: 100%; max-width: 400px;" />
+                <RadzenRequiredValidator Component="NumeroReferenciaRequiredInput" Text="Referencia is required" />
+            </RadzenStack>
 
  
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Form" Style="width: 100%; max-width: 400px;" />
 
+
+                </RadzenStack>
+            </RadzenTemplateForm>
         </RadzenTabsItem>
     </Tabs>
 </RadzenTabs>
