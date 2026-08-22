@@ -64,9 +64,12 @@
                             @ObtenerMontoTotal(factura) $
                         </Template>
                     </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="FacturaMes" Title="Mes" Width="120px">
-                        <Template Context="factura">
-                            @ObtenerNombreMes(factura.Mes)
+                    <RadzenDataGridColumn TItem="FacturaMes"
+                                          Property="@nameof(FacturaMes.NombreMes)"
+                                          Title="Mes"
+                                          Width="160px">
+                        <Template Context="facturaMes">
+                            @facturaMes.NombreMes
                         </Template>
                     </RadzenDataGridColumn>
                     <RadzenDataGridColumn Property="@nameof(FacturaMes.Year)" Title="Año" />

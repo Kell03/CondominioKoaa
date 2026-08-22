@@ -32,5 +32,20 @@ namespace Condominio.Domain.Entities
 
         public Houses House { get; set; }
 
+
+        [NotMapped]
+        public string NombreMes => ObtenerNombreMes(FacturaMes?.Mes ?? 0);
+
+        // ✅ PROPIEDAD CALCULADA PARA AÑO (OPCIONAL)
+        [NotMapped]
+        public int Year => FacturaMes?.Year ?? 0;
+
+        private string ObtenerNombreMes(int mes)
+        {
+            string[] meses = { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                               "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+            return mes >= 1 && mes <= 12 ? meses[mes - 1] : "Desconocido";
+        }
+
     }
 }

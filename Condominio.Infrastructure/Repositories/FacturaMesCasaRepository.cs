@@ -14,7 +14,7 @@ namespace Condominio.Infrastructure.Repositories
 
         public override async Task<IEnumerable<FacturaMesCasa>> GetAllAsync()
         {
-            return await _dbSet.OrderByDescending(x => x.CreatedAt).ToListAsync();
+            return await _dbSet.Include(x => x.House).Include(x => x.FacturaMes).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 
 
