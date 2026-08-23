@@ -14,11 +14,7 @@
         <RadzenTabsItem Text="Lista">
 
 
-            <RadzenButton Text="Agregar"
-                          Icon="add_circle"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Style="margin-bottom: 0.5rem;"
-                          Click="@(() => AddUser())" />
+         
 
             @if (items == null)
             {
@@ -35,11 +31,20 @@
                                 Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
                                 RowSelect="@((FacturaMesCasa item) => EditUser(item))">
                     <Columns>
-                        <RadzenDataGridColumn Property="@nameof(FacturaMesCasa.Id)" Filterable="false" Title="ID" Width="80px" TextAlign="TextAlign.Center" />
 
                         <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Nro Casa" Width="160px">
                             <Template Context="FacturaMesCasa">
                                 @FacturaMesCasa.House.Number
+                            </Template>
+                        </RadzenDataGridColumn>
+
+
+                        <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                              Property="@nameof(FacturaMesCasa.MontoTotal)"
+                                              Title="Monto"
+                                              Width="160px">
+                            <Template Context="facturaCasa">
+                                @facturaCasa.MontoTotal $
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="FacturaMesCasa"
@@ -50,8 +55,18 @@
                                 @facturaCasa.NombreMes
                             </Template>
                         </RadzenDataGridColumn>
-                                           
-                        <RadzenDataGridColumn Property="@nameof(FacturaMesCasa.MontoTotal)" Title="Monto" Width="160px" />
+
+
+                        <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                              Property="@nameof(FacturaMesCasa.FacturaMes.Year)"
+                                              Title="Año"
+                                              Width="160px">
+                            <Template Context="facturaCasa">
+                                @facturaCasa.FacturaMes.Year
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                    
                         <RadzenDataGridColumn TItem="FacturaMesCasa"
                                               Property="Estado"
                                               Title="Estado"

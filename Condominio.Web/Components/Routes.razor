@@ -1,7 +1,12 @@
-﻿<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+﻿<Router AppAssembly="@typeof(Program).Assembly">
+    <Found>
+        <RouteView RouteData="@context" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@context" Selector="h1" />
     </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p class="text-center">Lo sentimos, la página que buscas no existe.</p>
+        </LayoutView>
+    </NotFound>
 </Router>
-@rendermode InteractiveServer

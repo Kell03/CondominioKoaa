@@ -17,5 +17,12 @@ namespace Condominio.Infrastructure.Repositories
 
 
 
+        //public async Task<Users> LoginAsync()
+        //{
+        //
+        //}
+        //
+
+
     }
 }
