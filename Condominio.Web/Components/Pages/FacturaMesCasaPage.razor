@@ -1,12 +1,16 @@
 ﻿@page "/recibos"
-<h3>Recibos</h3>
-
+@attribute [Authorize]
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
+@using Microsoft.AspNetCore.Authorization
 @inject IGenericRepository<FacturaMesCasa> FacturaMesCasaRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @rendermode InteractiveServer
+
+
+<h3>Recibos</h3>
+
 
 
 <RadzenTabs @bind-SelectedIndex=@selectedIndex>

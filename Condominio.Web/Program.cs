@@ -1,8 +1,10 @@
 using Condominio.Application;
+using Condominio.Application.Services;
 using Condominio.Domain.DB;
 using Condominio.Infrastructure;
 using Condominio.Web.Components;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.EntityFrameworkCore;
 using Radzen;  
@@ -27,14 +29,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
 
+builder.Services.AddScoped<CustomAuthStateProvider>();  // ← ESTO ES CLAVE
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
+builder.Services.AddScoped<AuthService>();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 
 
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+builder.Services.AddAuthentication("CookieAuth")
+    .AddCookie("CookieAuth", options =>
     {
         options.LoginPath = "/login";
         options.LogoutPath = "/logout";
@@ -45,6 +50,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     });
+
+builder.Services.AddHttpContextAccessor();
+
 var app = builder.Build();
 
 app.UseAuthentication();

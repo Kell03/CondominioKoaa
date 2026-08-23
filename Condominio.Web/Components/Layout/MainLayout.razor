@@ -1,29 +1,90 @@
-﻿@inherits LayoutComponentBase
+﻿@using Condominio.Application.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager
+@inject AuthService AuthService
 
 <RadzenLayout>
+    <!-- ✅ HEADER -->
     <RadzenHeader>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
             <RadzenSidebarToggle Click="@(() => sidebar1Expanded = !sidebar1Expanded)" />
-            <RadzenLabel Text="Header" />
+            <RadzenLabel Text="Condominio" />
         </RadzenStack>
     </RadzenHeader>
+
+    <!-- ✅ SIDEBAR CON USUARIO Y LOGOUT ARRIBA -->
     <RadzenSidebar @bind-Expanded="@sidebar1Expanded">
+        <!-- ✅ SECCIÓN DE USUARIO (SIEMPRE VISIBLE) -->
+        <div style="padding: 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            @if (isAuthenticated)
+            {
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <RadzenIcon Icon="account_circle" Style="font-size: 32px; color: #fff;" />
+                        <div>
+                            <RadzenText TextStyle="TextStyle.Body1" Style="color: #fff; font-weight: 500;">
+                                @userName
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Style="color: rgba(255,255,255,0.6); font-size: 12px;">
+                                @(isAdmin ? "Administrador" : "Usuario")
+                            </RadzenText>
+                        </div>
+                    </div>
+                    <RadzenButton Text="Cerrar sesión"
+                                  Icon="logout"
+                                  ButtonStyle="ButtonStyle.Secondary"
+                                  Size="ButtonSize.Small"
+                                  Style="width: 100%;"
+                                  Click="@Logout" />
+                </div>
+            }
+            else
+            {
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <RadzenText TextStyle="TextStyle.Body1" Style="color: #fff;">
+                        👋 Invitado
+                    </RadzenText>
+                    <RadzenButton Text="Iniciar sesión"
+                                  Icon="login"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Size="ButtonSize.Small"
+                                  Style="width: 100%;"
+                                  Click="@(() => NavigationManager.NavigateTo("/login"))" />
+                </div>
+            }
+        </div>
+
+        <!-- ✅ MENÚ DE NAVEGACIÓN -->
         <RadzenPanelMenu>
-            <RadzenPanelMenuItem Text="Home" Path="" Icon="home" />
-            <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box" />
-            <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" />
-            <RadzenPanelMenuItem Text="Facturas" Path="facturas" Icon="receipt" />
-            <RadzenPanelMenuItem Text=" Recibos" Path="recibos" Icon="receipt" />
+            @if (isAuthenticated)
+            {
+                <RadzenPanelMenuItem Text="Home" Path="" Icon="home" />
+                <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box" />
+                <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" />
+
+                @if (isAdmin)
+                {
+                    <RadzenPanelMenuItem Text="Facturas" Path="facturas" Icon="receipt" />
+                }
+                <RadzenPanelMenuItem Text="Recibos" Path="recibos" Icon="receipt" />
+            }
         </RadzenPanelMenu>
+
         <div class="rz-p-4">
             Sidebar
         </div>
     </RadzenSidebar>
+
+    <!-- ✅ BODY -->
     <RadzenBody>
         <div class="rz-p-4">
             @Body
         </div>
     </RadzenBody>
+
+    <!-- ✅ FOOTER -->
     <RadzenFooter>
         Footer
     </RadzenFooter>
@@ -33,4 +94,29 @@
 
 @code {
     bool sidebar1Expanded = true;
+    private bool isAuthenticated = false;
+    private bool isAdmin = false;
+    private string userName = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UpdateAuthState();
+    }
+
+    private async Task UpdateAuthState()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        isAuthenticated = user.Identity?.IsAuthenticated == true;
+        isAdmin = user.IsInRole("Administrador");
+        userName = user.Identity?.Name ?? "";
+        StateHasChanged();
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.Logout();
+        NavigationManager.NavigateTo("/login", true);
+    }
 }

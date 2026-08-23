@@ -1,8 +1,10 @@
 ﻿@page "/login"
+@layout EmptyLayout  // ✅ LAYOUT VACÍO
 @using Condominio.Application.Services
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 @inject Radzen.NotificationService NotificationService
+@rendermode InteractiveServer
 
 <RadzenCard Style="max-width: 400px; margin: 50px auto;">
     <RadzenText TextStyle="TextStyle.H3" Style="text-align: center;">

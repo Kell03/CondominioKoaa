@@ -17,6 +17,40 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
+        public override async Task AddAsync(Users entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            try
+            {
+                // ✅ 1. Verificar que el email no exista
+                var existingUser = await _dbSet
+                    .FirstOrDefaultAsync(u => u.Email == entity.Email);
+
+                if (existingUser != null)
+                    throw new InvalidOperationException($"El email {entity.Email} ya está registrado");
+
+                // ✅ 2. Hashear la contraseña antes de guardar
+                if (!string.IsNullOrEmpty(entity.PasswordHash))
+                {
+                    entity.PasswordHash = HashPassword(entity.PasswordHash);
+                }
+
+                // ✅ 3. Agregar a la base de datos
+                await _dbSet.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al agregar usuario: {ex.Message}");
+                throw;
+            }
+        }
+
+        private string HashPassword(string password)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(password);
+        }
 
         // ✅ LOGIN CON VERIFICACIÓN DE CREDENCIALES
         public async Task<Users> LoginAsync(string email, string password)

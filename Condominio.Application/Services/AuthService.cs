@@ -17,48 +17,54 @@ namespace Condominio.Application.Services
 
         private readonly UserRepository _userRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly CustomAuthStateProvider _authStateProvider;
 
-        public AuthService(UserRepository userRepository, IHttpContextAccessor httpContextAccessor)
+        public AuthService(UserRepository userRepository, CustomAuthStateProvider authStateProvider)
         {
             _userRepository = userRepository;
-            _httpContextAccessor = httpContextAccessor;
+            _authStateProvider = authStateProvider;
         }
 
         // ✅ LOGIN: Valida y crea la cookie
         public async Task<Users> Login(string email, string password)
         {
-            // 1. Validar credenciales
-            var user = await _userRepository.LoginAsync(email, password);
-            if (user == null)
-                return null;
+            try
+            {
+                // 1. Validar credenciales
+                var user = await _userRepository.LoginAsync(email, password);
+                if (user == null)
+                    return null;
 
-            // 2. Obtener claims
-            var claims = _userRepository.GetUserClaims(user);
+                // 2. Obtener claims
+                var claims = _userRepository.GetUserClaims(user);
 
-            // 3. Crear identidad y principal
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
+                // 3. Crear identidad y principal
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
 
-            // 4. Crear la cookie
-            await _httpContextAccessor.HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                new AuthenticationProperties
-                {
-                    IsPersistent = true,
-                    ExpiresUtc = DateTime.UtcNow.AddDays(7)
-                }
-            );
+                _authStateProvider.NotifyUserAuthentication(principal);
 
-            return user;
+
+                return user;
+
+            }
+            catch (Exception ex) {
+
+                throw;
+            }
         }
 
         // ✅ LOGOUT: Elimina la cookie
         public async Task Logout()
         {
-            await _httpContextAccessor.HttpContext.SignOutAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme
-            );
+            try
+            {
+                _authStateProvider.NotifyUserLogout();
+                await Task.CompletedTask;
+            } 
+            catch(Exception ex) {
+                throw;
+            }
         }
 
         // ✅ OBTENER USUARIO ACTUAL DESDE CLAIMS

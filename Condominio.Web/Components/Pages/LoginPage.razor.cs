@@ -35,7 +35,7 @@ namespace Condominio.Web.Components.Pages
                         Duration = 4000
                     });
 
-                    NavigationManager.NavigateTo("/", true);
+                    NavigationManager.NavigateTo("/");
                 }
                 else
                 {

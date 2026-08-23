@@ -1,6 +1,8 @@
 ﻿@page "/users"
+@attribute [Authorize]
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
+@using Microsoft.AspNetCore.Authorization
 @inject IGenericRepository<Users> UserRepository
 @inject IGenericRepository<Houses> HouseRepository
 @using Radzen.Blazor
