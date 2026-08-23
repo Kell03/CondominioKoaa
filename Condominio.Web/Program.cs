@@ -2,6 +2,7 @@ using Condominio.Application;
 using Condominio.Domain.DB;
 using Condominio.Infrastructure;
 using Condominio.Web.Components;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.EntityFrameworkCore;
 using Radzen;  
@@ -30,7 +31,24 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 
+
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/login";
+        options.LogoutPath = "/logout";
+        options.AccessDeniedPath = "/access-denied";
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    });
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();  // ← ¡ESTA LÍNEA ES CLAVE!

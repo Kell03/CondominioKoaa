@@ -1,0 +1,34 @@
+﻿@page "/login"
+@using Condominio.Application.Services
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject Radzen.NotificationService NotificationService
+
+<RadzenCard Style="max-width: 400px; margin: 50px auto;">
+    <RadzenText TextStyle="TextStyle.H3" Style="text-align: center;">
+        🔐 Iniciar Sesión
+    </RadzenText>
+
+    <RadzenStack Gap="1rem">
+        <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+            <RadzenLabel Text="Email" />
+            <RadzenTextBox @bind-Value="@email" />
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+            <RadzenLabel Text="Contraseña" />
+            <RadzenTextBox @bind-Value="@password" Type="InputType.Password" />
+        </RadzenStack>
+
+        <RadzenButton Text="Ingresar"
+                      Icon="login"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Click="@Login"
+                      IsLoading="@isLoading" />
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <RadzenText Style="color: red;">@errorMessage</RadzenText>
+        }
+    </RadzenStack>
+</RadzenCard>

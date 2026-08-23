@@ -1,7 +1,9 @@
 ﻿@page "/facturas"
+@attribute [Authorize]  
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
+@using Microsoft.AspNetCore.Authorization
 @inject FacturaMesRepository FacturaMesRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
