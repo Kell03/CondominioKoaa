@@ -150,7 +150,7 @@
                                                   ButtonStyle="ButtonStyle.Success"
                                                   Size="ButtonSize.Small"
                                                   Tooltip="Confirmar pago"
-                                                  Click="@(() => ConfirmarPago(factura))"
+                                                  Click="@(() => ConfirmSend(factura))"
                                                   @onclick:stopPropagation="true" />
                                 }
                                 else
@@ -160,7 +160,6 @@
                                                   Size="ButtonSize.Small"
                                                   Disabled="true"
                                                   Tooltip="Confirmar pago"
-                                                  Click="@(() => ConfirmarPago(factura))"
                                                   @onclick:stopPropagation="true" />
                                 }
 

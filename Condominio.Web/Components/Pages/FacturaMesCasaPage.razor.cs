@@ -102,6 +102,39 @@ namespace Condominio.Web.Components.Pages
            
         }
 
+        private string ObtenerNombreMes(int? mes)
+        {
+            if (mes == null)
+            {
+                return "";
+            }
+            else
+            {
+                string[] meses = { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                           "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+                return meses[(int)mes - 1];
+            }
+        }
+
+        private async Task ConfirmSend(FacturaMesCasa item)
+        {
+            var result = await DialogService.Confirm(
+                $"¿Confirmar pago de {ObtenerNombreMes(item.FacturaMes.Mes)} {item.FacturaMes.Year}?\n\n" +
+                $"Se le notificará al propietario que su pago ha sido aprobado.\n\n" +
+                $"¿Deseas continuar?",
+                "Confirmar aprobación de pago",
+                new ConfirmOptions()
+                {
+                    OkButtonText = " Sí, aprobar pago",
+                    CancelButtonText = " Cancelar",
+                }
+            );
+
+            if (result == true)
+            {
+                await ConfirmarPago(item);
+            }
+        }
 
         private async Task ConfirmarPago(FacturaMesCasa facturaCasa)
         {

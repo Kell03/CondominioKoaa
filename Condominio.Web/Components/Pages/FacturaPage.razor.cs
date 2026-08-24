@@ -126,6 +126,27 @@ namespace Condominio.Web.Components.Pages
         }
 
 
+        private async Task ConfirmSend(FacturaMes item)
+        {
+            var result = await DialogService.Confirm(
+                $"¿Enviar factura de {ObtenerNombreMes(item.Mes)} {item.Year}?\n\n" +
+                $"Esta acción enviará la factura a TODOS los propietarios.\n" +
+                $"Los propietarios recibirán la notificación en sus correos.\n\n" +
+                $"¿Estás seguro de continuar?",
+                "Confirmar envío masivo",
+                new ConfirmOptions()
+                {
+                    OkButtonText = " Sí, enviar a todos",
+                    CancelButtonText = " Cancelar",
+                }
+            );
+
+            if (result == true)
+            {
+                await MarcarComoEnviado(item);
+            }
+        }
+
 
         private async Task DeleteUser(FacturaMes item)
         {
