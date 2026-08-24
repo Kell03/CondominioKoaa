@@ -25,7 +25,7 @@ namespace Condominio.Domain.Entities
     
         public decimal MontoRecaudado { get; set; } = 0;
 
-        public string Estado { get; set; }  
+        public string Estado { get; set; } = "";
 
         public bool IsActive { get; set; } = true;
 
