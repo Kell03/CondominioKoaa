@@ -14,7 +14,7 @@ namespace Condominio.Domain.Entities
        public bool Enviado { get; set; } = false;
        public double MontoTotal { get; set; } = 0;
 
-        public decimal? MontoRecaudado { get; set; }  // Nullable
+        public decimal? MontoRecaudado { get; set; } = 0;// Nullable
 
 
         public ICollection<FacturaMesHijo> FacturaMesHijos { get; set; } = new List<FacturaMesHijo>();

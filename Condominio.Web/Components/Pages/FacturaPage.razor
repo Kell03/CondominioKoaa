@@ -61,20 +61,26 @@
 
                 </Template>
                 <Columns>
-                    <RadzenDataGridColumn TItem="FacturaMes" Title="Monto Total" Width="auto">
+                    <RadzenDataGridColumn TItem="FacturaMes" Title="Monto Total" Width="140px">
                         <Template Context="factura">
                             @ObtenerMontoTotal(factura) $
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="FacturaMes" Title="Monto Recaudado" Width="170px">
+                        <Template Context="factura">
+                            @factura.MontoRecaudado $
                         </Template>
                     </RadzenDataGridColumn>
                     <RadzenDataGridColumn TItem="FacturaMes"
                                           Property="@nameof(FacturaMes.NombreMes)"
                                           Title="Mes"
-                                          Width="160px">
+                                          Width="100px">
                         <Template Context="facturaMes">
                             @facturaMes.NombreMes
                         </Template>
                     </RadzenDataGridColumn>
-                    <RadzenDataGridColumn Property="@nameof(FacturaMes.Year)" Title="Año" />
+                    <RadzenDataGridColumn Property="@nameof(FacturaMes.Year)" Title="Año" Width="100px" />
 
                     <RadzenDataGridColumn TItem="FacturaMes" Property="IsActive" Title="Estado" Width="120px">
                         <Template Context="user">

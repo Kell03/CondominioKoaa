@@ -1,11 +1,13 @@
 ﻿@page "/recibos"
 @attribute [Authorize]
 @using Condominio.Domain.Entities
-@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
 @using Microsoft.AspNetCore.Authorization
-@inject IGenericRepository<FacturaMesCasa> FacturaMesCasaRepository
+@using Microsoft.AspNetCore.Components.Authorization
+@inject FacturaMesCasaRepository FacturaMesCasaRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
+@inject AuthenticationStateProvider AuthProvider
 @rendermode InteractiveServer
 
 
@@ -22,14 +24,16 @@
 
             @if (items == null)
             {
-                <p>Cargando usuarios...</p>
+                <p>Cargando Recibos...</p>
             }
             else if (!items.Any())
             {
-                <p>No hay usuarios registrados.</p>
+                <p>No hay recibos registrados.</p>
             }
             else
             {
+
+
 
                 <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
                                 Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
@@ -46,7 +50,7 @@
                         <RadzenDataGridColumn TItem="FacturaMesCasa"
                                               Property="@nameof(FacturaMesCasa.MontoTotal)"
                                               Title="Monto"
-                                              Width="160px">
+                                              Width="auto">
                             <Template Context="facturaCasa">
                                 @facturaCasa.MontoTotal $
                             </Template>
@@ -54,7 +58,7 @@
                         <RadzenDataGridColumn TItem="FacturaMesCasa"
                                               Property="@nameof(FacturaMesCasa.NombreMes)"
                                               Title="Mes"
-                                              Width="160px">
+                                              Width="auto">
                             <Template Context="facturaCasa">
                                 @facturaCasa.NombreMes
                             </Template>
@@ -64,7 +68,7 @@
                         <RadzenDataGridColumn TItem="FacturaMesCasa"
                                               Property="@nameof(FacturaMesCasa.FacturaMes.Year)"
                                               Title="Año"
-                                              Width="160px">
+                                              Width="auto">
                             <Template Context="facturaCasa">
                                 @facturaCasa.FacturaMes.Year
                             </Template>
@@ -97,6 +101,38 @@
                             </Template>
                         </RadzenDataGridColumn>
 
+
+                        @if (isAdmin)
+                        {
+                        <RadzenDataGridColumn TItem="FacturaMesCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                            <Template Context="factura">
+
+
+                                    @if (factura.Estado != "Confirmada")
+                                    {
+                                        <RadzenButton Text="Confirmar"
+                                                      Icon="check_circle"
+                                                      ButtonStyle="ButtonStyle.Success"
+                                                      Size="ButtonSize.Small"
+                                                      Tooltip="Confirmar pago"
+                                                      Click="@(() => ConfirmarPago(factura))"
+                                                      @onclick:stopPropagation="true" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenButton Text="Confirmado"
+                                                      Style="background: #6c757d;"
+                                                      Size="ButtonSize.Small"
+                                                      Disabled ="true"
+                                                      Tooltip="Confirmar pago"
+                                                      Click="@(() => ConfirmarPago(factura))"
+                                                      @onclick:stopPropagation="true" />
+                                    }
+
+
+                            </Template>
+                        </RadzenDataGridColumn>
+                     }
                     </Columns>
                 </RadzenDataGrid>
 
@@ -180,5 +216,6 @@
     int selectedIndex = 0;
 
     
+
     
 }

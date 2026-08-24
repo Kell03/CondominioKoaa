@@ -18,7 +18,7 @@ namespace Condominio.Domain.Entities
         public decimal MontoTotal { get; set; }
 
 
-        public string Estado { get; set; } = "Pendiente"; // 'Pendiente', 'Parcial', 'Pagada', 'Vencida', 'Anulada'
+        public string Estado { get; set; } = "Pendiente"; // 'En Revisión', 'Confirmada'
 
         public string? Referencia { get; set; }
 

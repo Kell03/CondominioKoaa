@@ -1,5 +1,5 @@
 ﻿@page "/login"
-@layout EmptyLayout  // ✅ LAYOUT VACÍO
+@layout EmptyLayout
 @using Condominio.Application.Services
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
@@ -12,16 +12,21 @@
     </RadzenText>
 
     <RadzenStack Gap="1rem">
+        <!-- ✅ EMAIL -->
         <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
             <RadzenLabel Text="Email" />
             <RadzenTextBox @bind-Value="@email" />
         </RadzenStack>
 
+        <!-- ✅ CONTRASEÑA (CON RadzenTextBox + Type Password) -->
         <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
             <RadzenLabel Text="Contraseña" />
-            <RadzenTextBox @bind-Value="@password" Type="InputType.Password" />
+            <RadzenPassword Name="PasswordRequiredInput" @bind-Value=@password aria-label="enter password" />
         </RadzenStack>
 
+
+
+        <!-- ✅ BOTÓN LOGIN -->
         <RadzenButton Text="Ingresar"
                       Icon="login"
                       ButtonStyle="ButtonStyle.Primary"
