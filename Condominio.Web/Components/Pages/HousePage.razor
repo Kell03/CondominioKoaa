@@ -35,7 +35,6 @@
                                 Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
                                 RowSelect="@((Houses item) => EditUser(item))">
                     <Columns>
-                        <RadzenDataGridColumn Property="@nameof(Houses.Id)" Filterable="false" Title="ID" Width="80px" TextAlign="TextAlign.Center" />
 
                         <RadzenDataGridColumn Property="@nameof(Houses.Number)" Title="Nro Casa" Width="160px" />
                         <RadzenDataGridColumn Property="@nameof(Houses.Street)" Title="Calle" Width="160px" />

@@ -32,6 +32,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<CustomAuthStateProvider>();  // ← ESTO ES CLAVE
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<AppState>();
+
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();

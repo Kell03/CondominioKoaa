@@ -1,5 +1,7 @@
-﻿using Condominio.Domain.Entities;
+﻿using Condominio.Application.Services;
+using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Components;
 using Radzen;
 using Radzen.Blazor;
 
@@ -8,8 +10,7 @@ namespace Condominio.Web.Components.Pages
     public partial class FacturaMesCasaPage
     {
 
-
-
+        RadzenDataGrid<FacturaMesCasa> grid;
 
         IList<FacturaMesCasa> selectedEmployees;
         FacturaMesCasa selectedItem = new FacturaMesCasa();
@@ -33,13 +34,35 @@ namespace Condominio.Web.Components.Pages
 
         private async Task LoadData()
         {
-            // Usas el método específico si existe
-            var itemList = await FacturaMesCasaRepository.GetAllAsync();
-            selectedEmployees = new List<FacturaMesCasa>() { itemList.FirstOrDefault() };
+            try
+            {
 
-            items = itemList.AsQueryable();
+                var role = AppState.CurrentUser.Role;
+                IEnumerable<FacturaMesCasa> itemList;
+
+                if (role == "Administrador")
+                {
+                    itemList = await FacturaMesCasaRepository.GetAllAsync();
+                }
+                else
+                {
+                    itemList = await FacturaMesCasaRepository.GetAllForUserAsync(AppState.CurrentUser.Id);
+                }
+
+                items = itemList.AsQueryable();
+
+                selectedEmployees = itemList.Any()
+                    ? new List<FacturaMesCasa> { itemList.First() }
+                    : new List<FacturaMesCasa>();
+
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al cargar datos: {ex.Message}");
+                // Opcional: mostrar notificación al usuario
+            }
         }
-
 
 
         private async Task CheckAdminRole()
@@ -96,6 +119,22 @@ namespace Condominio.Web.Components.Pages
         }
 
 
+        //nuevo grid
+
+
+
+        void RowRender(RowRenderEventArgs<FacturaMesCasa> args)
+        {
+            args.Expandable = (args.Data.FacturaMes.FacturaMesHijos != null && args.Data.FacturaMes.FacturaMesHijos.Any());
+        }
+
+        void RowExpand(FacturaMesCasa order)
+        {
+            if (order.FacturaMes.FacturaMesHijos == null)
+            {
+                order.FacturaMes.FacturaMesHijos = order.FacturaMes.FacturaMesHijos.ToList();
+            }
+        }
 
     }
 }

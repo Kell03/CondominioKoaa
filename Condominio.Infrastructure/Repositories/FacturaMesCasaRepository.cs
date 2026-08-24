@@ -14,7 +14,47 @@ namespace Condominio.Infrastructure.Repositories
 
         public override async Task<IEnumerable<FacturaMesCasa>> GetAllAsync()
         {
-            return await _dbSet.Include(x => x.House).Include(x => x.FacturaMes).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            // 1. Obtener facturas
+            var facturas = await _dbSet
+                .Include(x => x.House)
+                .Include(x => x.FacturaMes)
+                .ThenInclude(x => x.FacturaMesHijos)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();  // ✅ 1 consulta
+
+            // 2. Obtener HouseIds únicos
+            var houseIds = facturas
+                .Where(f => f.HouseId > 0)
+                .Select(f => f.HouseId)
+                .Distinct()
+                .ToList();
+
+            // 3. Obtener dueños (si hay casas)
+            if (houseIds.Any())
+            {
+                var owners = await _context.Users
+                    .Where(u => u.HouseId.HasValue && houseIds.Contains(u.HouseId.Value))
+                    .ToDictionaryAsync(u => u.HouseId.Value, u => u);
+
+                // 4. Asignar dueños
+                foreach (var factura in facturas)
+                {
+                    if (owners.TryGetValue(factura.HouseId, out var owner))
+                    {
+                        factura.User = owner;
+                    }
+                }
+            }
+
+            // ✅ RETORNAR LA LISTA (SIN ToListAsync)
+            return facturas;
+        }
+
+
+        public async  Task<IEnumerable<FacturaMesCasa>> GetAllForUserAsync(int id)
+        {
+            var idCasa = await _context.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
+            return await _dbSet.Include(x => x.House).Include(x => x.FacturaMes).ThenInclude(x => x.FacturaMesHijos).Where(x => x.House.Id == idCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 
 

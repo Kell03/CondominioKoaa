@@ -34,6 +34,10 @@ namespace Condominio.Domain.Entities
 
 
         [NotMapped]
+        public Users? User { get; set; } // ✅ RELACIÓN CON USUARIO (DUEÑO DE LA CASA)
+
+
+        [NotMapped]
         public string NombreMes => ObtenerNombreMes(FacturaMes?.Mes ?? 0);
 
         // ✅ PROPIEDAD CALCULADA PARA AÑO (OPCIONAL)

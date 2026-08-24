@@ -4,6 +4,7 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager NavigationManager
 @inject AuthService AuthService
+@inject AppState AppState
 
 <RadzenLayout>
     <!-- ✅ HEADER -->
@@ -117,6 +118,7 @@
     private async Task Logout()
     {
         await AuthService.Logout();
+        AppState.CurrentUser = null;
         NavigationManager.NavigateTo("/login", true);
     }
 }

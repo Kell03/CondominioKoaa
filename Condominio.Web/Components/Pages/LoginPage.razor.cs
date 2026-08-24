@@ -1,4 +1,5 @@
-﻿using Radzen;
+﻿using Condominio.Application.Services;
+using Radzen;
 
 namespace Condominio.Web.Components.Pages
 {
@@ -24,6 +25,7 @@ namespace Condominio.Web.Components.Pages
             try
             {
                 var user = await AuthService.Login(email, password);
+                AppState.CurrentUser = user;
 
                 if (user != null)
                 {
