@@ -17,7 +17,7 @@ namespace Condominio.Domain.Entities
         public decimal? MontoRecaudado { get; set; } = 0;// Nullable
 
 
-        public ICollection<FacturaMesHijo> FacturaMesHijos { get; set; } = new List<FacturaMesHijo>();
+        public ICollection<FacturaMesHijo>? FacturaMesHijos { get; set; } = new List<FacturaMesHijo>();
 
         [NotMapped]
         public string NombreMes => ObtenerNombreMes(this.Mes);

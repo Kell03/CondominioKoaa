@@ -121,37 +121,48 @@ namespace Condominio.Infrastructure.Repositories
                 if (factura.MontoTotal == 0)
                     throw new Exception("El monto total de la factura es 0");
 
-                // 2. Obtener casas activas
-                var casasActivas = await _context.Houses
+                // 2. Obtener SOLO IDs de casas activas (más eficiente)
+                var casasIds = await _context.Houses
                     .Where(h => h.IsActive)
+                    .Select(h => h.Id)
                     .ToListAsync();
 
-                if (!casasActivas.Any())
+                int totalCasas = casasIds.Count;
+
+                if (totalCasas == 0)
                     throw new Exception("No hay casas activas");
 
-                // 3. Calcular monto por casa
-                decimal montoPorCasa = (decimal)Math.Round(factura.MontoTotal / casasActivas.Count, 2);
+                // 3. ✅ TODOS PAGAN EL MISMO MONTO (SIN CONVERSIONES INNECESARIAS)
+                decimal montoPorCasa = decimal.Round((decimal)factura.MontoTotal / totalCasas, 2);
 
-                // 4. ✅ CREAR REGISTROS CON FOREACH
-                foreach (var casa in casasActivas)
+                // 4. CREAR REGISTROS (TODOS CON EL MISMO MONTO)
+                var facturasCasas = new List<FacturaMesCasa>(totalCasas);
+
+                foreach (var houseId in casasIds)
                 {
-                    var facturaCasa = new FacturaMesCasa
+                    facturasCasas.Add(new FacturaMesCasa
                     {
                         FacturaMesId = factura.Id,
-                        HouseId = casa.Id,
+                        HouseId = houseId,
                         MontoTotal = montoPorCasa,
                         Estado = "Pendiente"
-                    };
-
-                    await _context.FacturaMesCasa.AddAsync(facturaCasa);
+                    });
                 }
 
-                // 5. Marcar como enviada
+                // 5. INSERTAR TODOS DE UNA VEZ (UNA SOLA LLAMADA A BD)
+                await _context.FacturaMesCasa.AddRangeAsync(facturasCasas);
+
+                // 6. Marcar como enviada
                 factura.Enviado = true;
                 _context.FacturaMes.Update(factura);
 
+                // 7. GUARDAR TODOS LOS CAMBIOS (UNA SOLA VEZ)
                 await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
+
+                Console.WriteLine($"✅ Factura {factura.Mes}/{factura.Year} distribuida entre {totalCasas} casas");
+                Console.WriteLine($"📊 Cada casa paga: ${montoPorCasa}");
             }
             catch (Exception ex)
             {
@@ -160,5 +171,8 @@ namespace Condominio.Infrastructure.Repositories
                 throw;
             }
         }
+
+
+
     }
 }

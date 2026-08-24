@@ -44,21 +44,6 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
-        public  async Task DeleteFacturaHijo(FacturaMesHijo entity)
-        {
-            _dbSet.Remove(entity);
-
-            FacturaMes factura = await _context.Set<FacturaMes>()
-                .FirstOrDefaultAsync(f => f.Id == entity.FacturaMesId);
-
-            if (factura != null)
-            {
-                factura.MontoTotal =- entity.Monto;
-
-                _context.Set<FacturaMes>().Update(factura);
-            }
-
-            await _context.SaveChangesAsync();
-        }
+        
     }
 }

@@ -16,14 +16,21 @@ namespace Condominio.Web.Components.Pages
 
         RadzenDataGrid<FacturaMes> grid;
 
-        IEnumerable<FacturaMes> Invoices;
+        IEnumerable<FacturaMes> Invoices = [];
 
 
         protected override async Task OnInitializedAsync()
         {
-            await base.OnInitializedAsync();
+            try
+            {
+                await base.OnInitializedAsync();
 
-            Invoices = await FacturaMesRepository.GetAllAsync();
+                Invoices = await FacturaMesRepository.GetAllAsync();
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
 
         }
 
@@ -43,11 +50,11 @@ namespace Condominio.Web.Components.Pages
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            base.OnAfterRender(firstRender);
+            await base.OnAfterRenderAsync(firstRender);
 
-            if (firstRender)
+            if (firstRender && Invoices != null && Invoices.Any())
             {
-                await grid.ExpandRow(Invoices.FirstOrDefault());
+                await grid.ExpandRow(Invoices.First());
             }
         }
 

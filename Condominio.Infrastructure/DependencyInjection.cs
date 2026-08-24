@@ -21,6 +21,7 @@ namespace Condominio.Infrastructure
             services.AddScoped<IGenericRepository<FacturaMesCasa>, FacturaMesCasaRepository>();
             services.AddScoped<FacturaMesRepository>();//para funciones especificas
             services.AddScoped<FacturaMesCasaRepository>();
+            services.AddScoped<CuotaEspecialRepository>();
             services.AddScoped<UserRepository>();
 
             services.AddScoped<IGenericRepository<FacturaMesHijo>, FacturaMesHijoRepository>();
