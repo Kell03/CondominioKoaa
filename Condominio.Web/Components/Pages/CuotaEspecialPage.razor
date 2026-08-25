@@ -49,8 +49,30 @@
                                 @cuota.MontoRecaudado $
                             </Template>
                         </RadzenDataGridColumn>
-                        <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Mes)" Title="Mes" Width="100px" />
+                        <RadzenDataGridColumn Property="@nameof(CuotaEspecial.NombreMes)" Title="Mes" Width="100px" />
                         <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Year)" Title="Año" Width="100px" />
+                        <RadzenDataGridColumn TItem="CuotaEspecial" Property="Enviado" Title="Enviado" Width="120px">
+                            <Template Context="cuota">
+                                @if (cuota.Enviado)
+                                {
+                                    <RadzenButton Text="Enviado"
+                                                  Icon="check_circle"
+                                                  ButtonStyle="ButtonStyle.Success"
+                                                  Size="ButtonSize.Small"
+                                                  Disabled="true" />
+                                }
+                                else
+                                {
+                                    <RadzenButton Text="Confirmar"
+                                                  Icon="send"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Size="ButtonSize.Small"
+                                                  Click="@(() => ConfirmSend(cuota))"
+                                                  @onclick:stopPropagation="true" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                        
                         <RadzenDataGridColumn TItem="CuotaEspecial" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
                             <Template Context="item">
 

@@ -1,0 +1,212 @@
+﻿@page "/cuotaespecialcasa"
+@attribute [Authorize]
+@using Condominio.Application.Services
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject CuotaEspecialCasaRepository CuotaEspecialCasaRepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@inject AuthenticationStateProvider AuthProvider
+@inject AppState AppState
+@rendermode InteractiveServer
+
+<RadzenTabs @bind-SelectedIndex=@selectedIndex>
+    <Tabs>
+        <RadzenTabsItem Text="Lista">
+
+
+            <RadzenButton Text="Agregar"
+                          Icon="add_circle"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Style="margin-bottom: 0.5rem;"
+                          Click="@(() => AddUser())" />
+
+            @if (items == null)
+            {
+                <p>Cargando usuarios...</p>
+            }
+            else if (!items.Any())
+            {
+                <p>No hay cuota especial registrada.</p>
+            }
+            else
+            {
+
+                <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
+                                RowSelect="@((CuotaEspecialCasa item) => EditUser(item))">
+                    <Columns>
+
+                        <RadzenDataGridColumn TItem="CuotaEspecialCasa"
+                                              Title="Propietario"
+                                              Width="160px"
+                                              Property="User.Name"
+                                              Visible="@isAdmin">
+                            <Template Context="cuotaCasa">
+                                @cuotaCasa.User?.Name
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Motivo" Width="140px">
+                            <Template Context="cuota">
+                                @cuota.CuotaEspecial.Motivo
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Monto" Width="140px">
+                            <Template Context="cuota">
+                                @cuota.Monto $
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Mes" Width="140px">
+                            <Template Context="cuota">
+                                @cuota.CuotaEspecial.NombreMes
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Año" Width="140px">
+                            <Template Context="cuota">
+                                @cuota.CuotaEspecial.Year
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                      
+                        <RadzenDataGridColumn TItem="CuotaEspecialCasa"
+                                              Property="Estado"
+                                              Title="Estado"
+                                              Width="140px">
+                            <Template Context="cuotaCasa">
+                                @if (cuotaCasa.Estado == "Pendiente")
+                                {
+                                    <RadzenBadge Style="background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px;">
+                                        Pendiente
+                                    </RadzenBadge>
+                                }
+                                else if (cuotaCasa.Estado == "En Revisión")
+                                {
+                                    <RadzenBadge Style="background: #6c757d; color: #fff; padding: 4px 8px; border-radius: 4px;">
+                                        En Revisión
+                                    </RadzenBadge>
+                                }
+                                else if (cuotaCasa.Estado == "Confirmada")
+                                {
+                                    <RadzenBadge Style="background: #28a745; color: #fff; padding: 4px 8px; border-radius: 4px;">
+                                        Confirmada
+                                    </RadzenBadge>
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center" Visible="@isAdmin">
+                            <Template Context="cuotaCasa">
+
+
+                                @if (cuotaCasa.Estado != "Confirmada")
+                                {
+                                    <RadzenButton Text="Confirmar"
+                                                  Icon="check_circle"
+                                                  ButtonStyle="ButtonStyle.Success"
+                                                  Size="ButtonSize.Small"
+                                                  Tooltip="Confirmar pago"
+                                                  Click="@(() => ConfirmSend(cuotaCasa))"
+                                                  @onclick:stopPropagation="true" />
+                                }
+                                else
+                                {
+                                    <RadzenButton Text="Confirmado"
+                                                  Style="background: #6c757d;"
+                                                  Size="ButtonSize.Small"
+                                                  Disabled="true"
+                                                  Tooltip="Confirmar pago"
+                                                  @onclick:stopPropagation="true" />
+                                }
+
+
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                   
+
+                    </Columns>
+                </RadzenDataGrid>
+
+
+            }
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Formulario" Disabled="true">
+            <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SaveItem">
+                <RadzenStack Gap="1.5rem">
+
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="MesAnioLabel">
+                            Mes/Año <span style="color: var(--rz-danger);">*</span>
+                        </RadzenLabel>
+                        <RadzenText TextStyle="TextStyle.Body1"
+                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;">
+                            @selectedItem.CuotaEspecial.Mes @selectedItem.CuotaEspecial.Year
+                        </RadzenText>
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="NumberRequiredInput">
+                            Numero Casa
+                        </RadzenLabel>
+                        <RadzenText TextStyle="TextStyle.Body1"
+                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;">
+                            @selectedItem.House.Number
+                        </RadzenText>
+                    </RadzenStack>
+
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="MontoTotalLabel">
+                            Monto Total <span style="color: var(--rz-danger);">*</span>
+                        </RadzenLabel>
+                        <RadzenText TextStyle="TextStyle.Body1"
+                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px; cursor: default;">
+                            @selectedItem.Monto.ToString("F2") $
+                        </RadzenText>
+                    </RadzenStack>
+
+
+            
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="MPRequiredInput">
+                            Metodo de Pago <span style="color: var(--rz-danger);">*</span>
+                        </RadzenLabel>
+
+                        <RadzenDropDown @bind-Value="@selectedItem.MetodoPago"
+                                        Data="@MetodosPago"
+                                        Style="width: 100%; max-width: 400px;"
+                                        Name="MPRequiredInput" />
+
+                        <RadzenRequiredValidator Component="MPRequiredInput" Text="El método de pago es requerido" />
+                    </RadzenStack>
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="NumeroReferenciaRequiredInput">
+                            Numero Referencia <span style="color: var(--rz-danger);">*</span>
+                        </RadzenLabel>
+                        <RadzenTextBox Name="NumeroReferenciaRequiredInput" @bind-Value=@selectedItem.Referencia Style="width: 100%; max-width: 400px;" />
+                        <RadzenRequiredValidator Component="NumeroReferenciaRequiredInput" Text="Referencia is required" />
+                    </RadzenStack>
+
+ 
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Form" Style="width: 100%; max-width: 400px;" />
+
+
+                </RadzenStack>
+            </RadzenTemplateForm>
+
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    int selectedIndex = 0;
+}

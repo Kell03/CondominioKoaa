@@ -34,5 +34,9 @@ namespace Condominio.Domain.Entities
         public CuotaEspecial CuotaEspecial { get; set; }
 
         public Houses House { get; set; }
+
+
+        [NotMapped]
+        public Users? User { get; set; } 
     }
 }

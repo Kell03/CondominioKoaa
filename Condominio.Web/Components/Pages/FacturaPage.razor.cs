@@ -181,6 +181,7 @@ namespace Condominio.Web.Components.Pages
             await LoadData();
             StateHasChanged();
         }
+
     }
 
 

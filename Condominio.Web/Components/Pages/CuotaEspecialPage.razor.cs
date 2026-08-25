@@ -1,14 +1,11 @@
 ﻿using Condominio.Domain.Entities;
+using Condominio.Infrastructure.Repositories;
 using Radzen;
 
 namespace Condominio.Web.Components.Pages
 {
     public partial class CuotaEspecialPage
     {
-
-
-
-
 
         IList<CuotaEspecial> selectedEmployees;
         CuotaEspecial selectedItem = new CuotaEspecial();
@@ -24,7 +21,7 @@ namespace Condominio.Web.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            await LoadUsers();
+            await LoadData();
 
             for (int i = 2020; i <= 2030; i++)
             {
@@ -35,7 +32,7 @@ namespace Condominio.Web.Components.Pages
 
         }
 
-        private async Task LoadUsers()
+        private async Task LoadData()
         {
             // Usas el método específico si existe
             var itemList = await CuotaEspecialRepository.GetAllAsync();
@@ -54,7 +51,7 @@ namespace Condominio.Web.Components.Pages
                 CuotaEspecialRepository.Update(selectedItem);
                 await CuotaEspecialRepository.SaveChangesAsync();
                 // Si tienes SaveChanges en el repositorio
-                await LoadUsers(); // Recargar la lista
+                await LoadData(); // Recargar la lista
                 selectedIndex = 0;
                 selectedItem = new CuotaEspecial();
 
@@ -69,7 +66,7 @@ namespace Condominio.Web.Components.Pages
                     await CuotaEspecialRepository.AddAsync(selectedItem);
                     await CuotaEspecialRepository.SaveChangesAsync();
                     // Si tienes SaveChanges en el repositorio
-                    await LoadUsers(); // Recargar la lista
+                    await LoadData(); // Recargar la lista
                     selectedIndex = 0;
                     selectedItem = new CuotaEspecial();
 
@@ -88,7 +85,7 @@ namespace Condominio.Web.Components.Pages
         private async Task ConfirmDelete(CuotaEspecial item)
         {
             var result = await DialogService.Confirm(
-                $"¿Estás seguro de eliminar la casa {item.Id}?",
+                $"¿Estás seguro de eliminar la cuota especial de {item.Motivo}?",
                 "Confirmar eliminación",
                 new ConfirmOptions() { OkButtonText = "Sí", CancelButtonText = "No" }
             );
@@ -104,7 +101,7 @@ namespace Condominio.Web.Components.Pages
             CuotaEspecialRepository.Delete(item);
             await CuotaEspecialRepository.SaveChangesAsync();
             // Si tienes SaveChanges en el repositorio
-            await LoadUsers(); // Recargar la lista
+            await LoadData(); // Recargar la lista
             StateHasChanged();
 
         }
@@ -126,6 +123,44 @@ namespace Condominio.Web.Components.Pages
             selectedIndex = 1;
             StateHasChanged();
             await Task.CompletedTask;
+        }
+
+        private async Task ConfirmSend(CuotaEspecial item)
+        {
+            var result = await DialogService.Confirm(
+                $"¿Enviar cuota especial de {item.Motivo}?\n\n" +
+                $"Esta acción enviará la factura a TODOS los propietarios.\n" +
+                $"Los propietarios recibirán la notificación en sus correos.\n\n" +
+                $"¿Estás seguro de continuar?",
+                "Confirmar envío masivo",
+                new ConfirmOptions()
+                {
+                    OkButtonText = " Sí, enviar a todos",
+                    CancelButtonText = " Cancelar",
+                }
+            );
+
+            if (result == true)
+            {
+                await MarcarComoEnviado(item);
+            }
+        }
+
+
+        private async Task MarcarComoEnviado(CuotaEspecial item)
+        {
+            if (item == null) return;
+
+            // 1. Actualizar el campo Enviado
+            item.Enviado = true;
+
+            // 2. Guardar en la base de datos
+            await CuotaEspecialRepository.DistribuirCuotaEspecialEntreCasas(item);
+            await CuotaEspecialRepository.SaveChangesAsync();
+
+            // 3. Recargar la lista para actualizar la UI
+            await LoadData();
+            StateHasChanged();
         }
 
 

@@ -34,5 +34,19 @@ namespace Condominio.Domain.Entities
 
         // ✅ NAVEGACIÓN
         public ICollection<CuotaEspecialCasa> CuotaEspecialCasas { get; set; } = new List<CuotaEspecialCasa>();
+
+        [NotMapped]
+        public string NombreMes => ObtenerNombreMes(this.Mes);
+
+        // ✅ PROPIEDAD CALCULADA PARA AÑO (OPCIONAL)
+
+
+        private string ObtenerNombreMes(int mes)
+        {
+            string[] meses = { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                               "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+            return mes >= 1 && mes <= 12 ? meses[mes - 1] : "Desconocido";
+        }
+
     }
 }
