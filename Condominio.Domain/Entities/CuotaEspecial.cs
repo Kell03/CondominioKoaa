@@ -20,7 +20,7 @@ namespace Condominio.Domain.Entities
 
         public string? Comentario { get; set; }
 
-        public decimal MontoTotal { get; set; }
+        public decimal MontoTotal { get; set; } = 0;
 
     
         public decimal MontoRecaudado { get; set; } = 0;

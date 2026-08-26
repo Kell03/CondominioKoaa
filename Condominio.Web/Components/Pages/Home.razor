@@ -1,49 +1,166 @@
 ﻿@page "/"
 @attribute [Authorize]
 @using Condominio.Domain.Entities
-@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
 @using Microsoft.AspNetCore.Authorization
-@inject IGenericRepository<Users> UserRepository
+@inject FacturaMesRepository FacturaMesRepository
+@inject CuotaEspecialRepository CuotaEspecialRepository
+@using Radzen
 @using Radzen.Blazor
 @rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
 
-<h1>Hello, world!</h1>
-<p>Welcome to your new app.</p>
+    <!-- Columna 1: Gráfico 1 -->
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
 
+        <RadzenCard class="rz-p-0 rz-p-md-4 rz-p-lg-8"
+                    Style="border-radius: 8px; width: 100%; height: 100%; overflow: hidden;  padding: 15px; padding: 25px !important;" ">
+
+            <h3 style="text-align: center; font-weight: bold; color: #333; margin-bottom: 20px; ">
+                 Estado de Facturas
+            </h3>
+
+            <RadzenStack AlignItems="AlignItems.Center">
+                <RadzenStack Style="width: 100%; max-width: 450px;">
+
+                    <RadzenChart Style="height: 160px; width: 100%; margin-bottom: 10px;=">
+                        <RadzenDonutSeries Data="@revenue"
+                                           CategoryProperty="Category"
+                                           ValueProperty="Value"
+                                           SegmentGap="3"
+                                           Fills="@colorsFacturas"
+                                           Radius="90"
+                                           InnerRadius="55"
+                                           ShowTooltipOnLegend="true"
+                                           ExplodedProperty="Highlight">
+
+                            <ChildContent>
+                                <RadzenSeriesDataLabels Visible="true"
+                                                        Position="DataLabelPosition.Inside"
+                                                        FormatString="{0:$#,##0.00}" />
+                            </ChildContent>
+
+                            <TitleTemplate>
+                                <div class="rz-donut-content">
+                                    <div style="font-size: 11px; color: #666;">@Title</div>
+                                    <div style="font-size: 18px; font-weight: bold;">@Total.ToString("$#,##0")</div>
+                                </div>
+                            </TitleTemplate>
+
+                        </RadzenDonutSeries>
+                        <RadzenLegend Position="LegendPosition.Right" />
+                    </RadzenChart>
+
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%;">
+
+                        <RadzenDropDown @bind-Value="selectedMonth"
+                                        Data="@months"
+                                        TextProperty="Name"
+                                        ValueProperty="Value"
+                                        Placeholder="Mes"
+                                        Style="flex: 1 1 120px; min-width: 120px; max-width: 100%;" />
+
+                        <RadzenTextBox @bind-Value="yearInput"
+                                       MaxLength="4"
+                                       Change="@(args => OnYearChanged())"
+                                       Placeholder="Año"
+                                       Style="flex: 0 1 100px; min-width: 80px; max-width: 100%;" />
+
+                        <RadzenButton Text="Buscar"
+                                      Icon="search"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Click="@(args => LoadFacturasChart())"
+                                      Style="flex: 1 1 100%; min-width: 70px; max-width: 100%; padding: 6px 12px;" />
+                    </div>
+
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+
+    </div>
+
+    <!-- Columna 2: Gráfico 2 -->
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+
+            <RadzenCard class="rz-p-0 rz-p-md-4 rz-p-lg-8"
+                    Style="border-radius: 8px; width: 100%; height: 100%; overflow: hidden; padding: 15px; padding: 25px !important;">
+
+                <h3 style="text-align: center; font-weight: bold; color: #333; margin-bottom: 20px; ">
+                     Estado de Cuotas Especiales
+                </h3>
+
+                <RadzenStack AlignItems="AlignItems.Center">
+                    <RadzenStack Style="width: 100%; max-width: 450px;">
+
+                        <RadzenChart Style="height: 160px; width: 100%; margin-bottom: 10px;">
+                            <RadzenDonutSeries Data="@revenue2"
+                                               CategoryProperty="Category"
+                                               ValueProperty="Value"
+                                               SegmentGap="3"
+                                               Fills="@colorsCuotas"
+                                               Radius="90"
+                                               InnerRadius="55"
+                                               ShowTooltipOnLegend="true"
+                                               ExplodedProperty="Highlight">
+
+                                <ChildContent>
+                                    <RadzenSeriesDataLabels Visible="true"
+                                                            Position="DataLabelPosition.Inside"
+                                                            FormatString="{0:$#,##0.00}" />
+                                </ChildContent>
+
+                                <TitleTemplate>
+                                    <div class="rz-donut-content">
+                                        <div style="font-size: 11px; color: #666;">@TitleCuota</div>
+                                        <div style="font-size: 18px; font-weight: bold;">@Total2.ToString("$#,##0")</div>
+                                    </div>
+                                </TitleTemplate>
+
+                            </RadzenDonutSeries>
+                            <RadzenLegend Position="LegendPosition.Right" />
+                        </RadzenChart>
+
+
+                    <!-- FILTROS CUOTAS -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%;">
+
+                        <RadzenDropDown @bind-Value="selectedCuota"
+                                        Data="@listaCuotas"
+                                        AllowFiltering="true"
+                                        FilterPlaceholder="Buscar..."
+                                        Placeholder="Motivo"
+                                        Style="flex: 1 1 140px; min-width: 120px; max-width: 100%;" />
+
+                        <RadzenButton Text="Buscar"
+                                      Icon="search"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Click="@(args => LoadCuotasChart())"
+                                      Style="flex: 0 1 auto; min-width: 70px; padding: 6px 12px;" />
+                    </div>
+
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+
+    </div>
+
+</div>
 
 
 @code {
-    string mensaje = "Esperando...";
 
+    private string[] colorsFacturas = new[]
+{
+    "#4B5563",
+    "#3B82F6"
+};
 
-
-    private List<Users> users = new();
-
-    protected override async Task OnInitializedAsync()
+    // 📌 Colores para el GRÁFICO 2 (Cuotas)
+    private string[] colorsCuotas = new[]
     {
-        await LoadUsers();
-    }
+     "#4B5563" ,
+    "#6EE7B7",
+};
 
-    private async Task LoadUsers()
-    {
-        // Usas el método específico si existe
-        var userList = await UserRepository.GetAllAsync();
-        users = userList.ToList();
-    }
-
-    private async Task ToggleStatus(int userId)
-    {
-        var user = await UserRepository.GetByIdAsync(userId);
-        if (user != null)
-        {
-            user.IsActive = !user.IsActive;
-            UserRepository.Update(user);
-            // Si tienes SaveChanges en el repositorio
-            await UserRepository.AddAsync(user);
-            await LoadUsers(); // Recargar la lista
-            StateHasChanged();
-        }
-    }
 }

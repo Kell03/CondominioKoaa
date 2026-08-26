@@ -31,7 +31,7 @@ namespace Condominio.Domain.Entities
         public string? Comentario { get; set; }
 
         // ✅ NAVEGACIÓN
-        public CuotaEspecial CuotaEspecial { get; set; }
+        public CuotaEspecial CuotaEspecial { get; set; } = new CuotaEspecial();
 
         public Houses House { get; set; }
 

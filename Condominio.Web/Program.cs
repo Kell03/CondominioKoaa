@@ -25,9 +25,12 @@ builder.Services.AddRadzenComponents();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
-);
+
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+    options.UseMySql(connectionString,
+        ServerVersion.AutoDetect(connectionString))
+    .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
+    .EnableDetailedErrors(builder.Environment.IsDevelopment()));
 
 builder.Services.AddScoped<CustomAuthStateProvider>();  // ← ESTO ES CLAVE
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());

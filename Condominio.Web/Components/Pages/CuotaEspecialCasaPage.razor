@@ -40,6 +40,12 @@
                                 RowSelect="@((CuotaEspecialCasa item) => EditUser(item))">
                     <Columns>
 
+                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="140px">
+                            <Template Context="cuota">
+                                @cuota.HouseId
+                            </Template>
+                        </RadzenDataGridColumn>
+
                         <RadzenDataGridColumn TItem="CuotaEspecialCasa"
                                               Title="Propietario"
                                               Width="160px"
@@ -52,7 +58,7 @@
 
                         <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Motivo" Width="140px">
                             <Template Context="cuota">
-                                @cuota.CuotaEspecial.Motivo
+                                @cuota.CuotaEspecial?.Motivo
                             </Template>
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Monto" Width="140px">
