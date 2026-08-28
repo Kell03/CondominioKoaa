@@ -100,9 +100,10 @@ namespace Condominio.Infrastructure.Repositories
                     cuotasCasas.Add(new CuotaEspecialCasa
                     {
                         CuotaEspecialId = cuota.Id,
+                        CuotaEspecial = cuota,
                         HouseId = houseId,
                         Monto = montoPorCasa,
-                        Estado = "Pendiente"
+                        Estado = "Pendiente",
                     });
                 }
 
@@ -111,6 +112,7 @@ namespace Condominio.Infrastructure.Repositories
 
                 // 6. Actualizar estado de la cuota
                 cuota.Enviado = true;
+                cuota.Motivo = entity.Motivo; // Actualizar el motivo si es necesario
                 _context.CuotaEspecial.Update(cuota);
 
                 // 7. GUARDAR TODOS LOS CAMBIOS (UNA SOLA VEZ)

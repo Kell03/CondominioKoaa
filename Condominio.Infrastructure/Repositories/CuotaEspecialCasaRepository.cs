@@ -18,7 +18,7 @@ namespace Condominio.Infrastructure.Repositories
         public override async Task<IEnumerable<CuotaEspecialCasa>> GetAllAsync()
         {
             var query = from item in _dbSet
-                        join user in _context.Users on item.Id equals user.HouseId into ownerGroup
+                        join user in _context.Users on item.HouseId equals user.HouseId into ownerGroup
                         from owner in ownerGroup.DefaultIfEmpty()
                         select new CuotaEspecialCasa
                         {

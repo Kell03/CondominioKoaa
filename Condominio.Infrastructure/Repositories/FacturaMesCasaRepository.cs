@@ -14,40 +14,49 @@ namespace Condominio.Infrastructure.Repositories
 
         public override async Task<IEnumerable<FacturaMesCasa>> GetAllAsync()
         {
-            // 1. Obtener facturas
-            var facturas = await _dbSet
-                .Include(x => x.House)
-                .Include(x => x.FacturaMes)
-                .ThenInclude(x => x.FacturaMesHijos)
-                .OrderByDescending(x => x.CreatedAt)
-                .ToListAsync();  // ✅ 1 consulta
+            // ✅ UNA SOLA CONSULTA CON JOIN (más eficiente)
+            var query = from factura in _dbSet
+                        join house in _context.Houses on factura.HouseId equals house.Id
+                        join user in _context.Users on house.Id equals user.HouseId into ownerGroup
+                        from owner in ownerGroup.DefaultIfEmpty()
+                        select new FacturaMesCasa
+                        {
+                            Id = factura.Id,
+                            FacturaMesId = factura.FacturaMesId,
+                            HouseId = factura.HouseId,
+                            MontoTotal = factura.MontoTotal,
+                            Estado = factura.Estado,
+                            Referencia = factura.Referencia,
+                            MetodoPago = factura.MetodoPago,
+                            FechaPago = factura.FechaPago,
+                            Comentario = factura.Comentario,
+                            CreatedAt = factura.CreatedAt,
+                            UpdatedAt = factura.UpdatedAt,
+                            House = house,
+                            FacturaMes = factura.FacturaMes,
+                            User = owner
+                        };
 
-            // 2. Obtener HouseIds únicos
-            var houseIds = facturas
-                .Where(f => f.HouseId > 0)
-                .Select(f => f.HouseId)
-                .Distinct()
-                .ToList();
+            // ✅ Incluir hijos
+            var result = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
 
-            // 3. Obtener dueños (si hay casas)
-            if (houseIds.Any())
+            // ✅ Cargar hijos por separado (1 consulta adicional)
+            var facturaIds = result.Select(x => x.FacturaMesId).Distinct().ToList();
+            if (facturaIds.Any())
             {
-                var owners = await _context.Users
-                    .Where(u => u.HouseId.HasValue && houseIds.Contains(u.HouseId.Value))
-                    .ToDictionaryAsync(u => u.HouseId.Value, u => u);
+                var hijos = await _context.FacturaMesHijo
+                    .Where(h => facturaIds.Contains(h.FacturaMesId))
+                    .ToListAsync();
 
-                // 4. Asignar dueños
-                foreach (var factura in facturas)
+                foreach (var factura in result)
                 {
-                    if (owners.TryGetValue(factura.HouseId, out var owner))
-                    {
-                        factura.User = owner;
-                    }
+                    factura.FacturaMes.FacturaMesHijos = hijos
+                        .Where(h => h.FacturaMesId == factura.FacturaMesId)
+                        .ToList();
                 }
             }
 
-            // ✅ RETORNAR LA LISTA (SIN ToListAsync)
-            return facturas;
+            return result;
         }
 
 

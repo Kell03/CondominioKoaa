@@ -15,6 +15,7 @@ namespace Condominio.Web.Components.Pages
         private int selectedMonth = DateTime.Now.Month;
         private int selectedYear = DateTime.Now.Year;
         private bool isAdmin = false;
+        private ApiMoneda monedaData;
 
         IEnumerable<CuotaEspecialCasa> Cuotas;
 
@@ -36,6 +37,13 @@ namespace Condominio.Web.Components.Pages
 
             Cuotas = await CuotaEspecialCasaRepository.GetAllAsync();
             await CheckAdminRole();
+            await CargarMoneda();
+        }
+
+        private async Task CargarMoneda()
+        {
+            monedaData = await MonedaApiService.GetMonedaAsync();
+            StateHasChanged();
         }
 
         private async Task LoadData()
@@ -81,6 +89,13 @@ namespace Condominio.Web.Components.Pages
 
             selectedItem.UpdatedAt = DateTime.Now;
             selectedItem.Estado = "En Revisión"; // Cambiar el estado a "En Revisión"
+                                                 // Limpiar y convertir a decimal
+            decimal valorDecimal = decimal.Parse(
+                selectedItem.MontoBsShow.Replace(".", "").Replace(",", "."),
+                System.Globalization.CultureInfo.InvariantCulture
+            );
+
+            selectedItem.MontoBs = valorDecimal;
             CuotaEspecialCasaRepository.Update(selectedItem);
             await CuotaEspecialCasaRepository.SaveChangesAsync();
             // Si tienes SaveChanges en el repositorio
@@ -101,7 +116,15 @@ namespace Condominio.Web.Components.Pages
 
         private async Task EditUser(CuotaEspecialCasa item)
         {
+            if (!isAdmin && item.Estado != "Pendiente")
+            {
+                return;
+            }
+
             selectedItem = item;
+            selectedItem.MontoBsShow = monedaData != null
+              ? (item.Monto * (decimal)Math.Round(monedaData.Promedio, 2)).ToString("N2")
+              : item.Monto.ToString("N2");
             selectedIndex = 1;
             StateHasChanged();
             await Task.CompletedTask;
