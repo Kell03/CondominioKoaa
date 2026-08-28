@@ -30,12 +30,12 @@ namespace Condominio.Domain.Entities
 
         public string? Comentario { get; set; }
 
-        [NotMapped]
-        public string? MontoBsShow { get; set; }
+   
+
         public decimal? MontoBs { get; set; }
 
         // ✅ NAVEGACIÓN
-        public CuotaEspecial CuotaEspecial { get; set; } = new CuotaEspecial();
+        public CuotaEspecial CuotaEspecial { get; set; } 
 
         public Houses House { get; set; }
 

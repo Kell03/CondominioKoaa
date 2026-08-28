@@ -11,6 +11,8 @@ namespace Condominio.Web.Components.Pages
         IList<CuotaEspecialCasa> selectedEmployees;
         CuotaEspecialCasa selectedItem = new CuotaEspecialCasa();
         private List<int> years = new List<int>();
+        private IEnumerable<CuotaEspecial> CuotasEspeciales;
+        private IEnumerable<Houses> HouseList;
 
         private int selectedMonth = DateTime.Now.Month;
         private int selectedYear = DateTime.Now.Year;
@@ -26,6 +28,7 @@ namespace Condominio.Web.Components.Pages
     {
         "Pago Movil"
     };
+
         protected override async Task OnInitializedAsync()
         {
             await LoadData();
@@ -78,6 +81,28 @@ namespace Condominio.Web.Components.Pages
             }
         }
 
+        private async Task CreateNewItem()
+        {
+            await LoadCuotas();
+            await LoadHouses();
+            selectedItem = new CuotaEspecialCasa();
+            selectedIndex = 2;
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+
+
+        private async Task LoadCuotas()
+        {
+            CuotasEspeciales = await CuotaEspecialRepository.GetAllAsync();
+        }
+
+
+        private async Task LoadHouses()
+        {
+            HouseList = await HousesRepository.GetAllAsync();
+        }
+
         private async Task CheckAdminRole()
         {
             var authState = await AuthProvider.GetAuthenticationStateAsync();
@@ -88,14 +113,9 @@ namespace Condominio.Web.Components.Pages
         {
 
             selectedItem.UpdatedAt = DateTime.Now;
-            selectedItem.Estado = "En Revisión"; // Cambiar el estado a "En Revisión"
+            selectedItem.Estado = "En Revision"; // Cambiar el estado a "En Revisión"
                                                  // Limpiar y convertir a decimal
-            decimal valorDecimal = decimal.Parse(
-                selectedItem.MontoBsShow.Replace(".", "").Replace(",", "."),
-                System.Globalization.CultureInfo.InvariantCulture
-            );
-
-            selectedItem.MontoBs = valorDecimal;
+       
             CuotaEspecialCasaRepository.Update(selectedItem);
             await CuotaEspecialCasaRepository.SaveChangesAsync();
             // Si tienes SaveChanges en el repositorio
@@ -104,13 +124,36 @@ namespace Condominio.Web.Components.Pages
             selectedItem = new CuotaEspecialCasa();
 
             StateHasChanged();
-        
+
         }
 
+        private async Task SaveNewItem()
+        {
+            try
+            {
+                // ✅ 1. GUARDAR
+                selectedItem.Estado = "Pendiente";
+                await CuotaEspecialCasaRepository.AddAsync(selectedItem);
+                await CuotaEspecialCasaRepository.SaveChangesAsync();
 
+                // ✅ 2. RECARGAR DATOS
+                await LoadData();
 
+                // ✅ 3. CAMBIAR DE TAB Y LIMPIAR
+                selectedIndex = 0;
+                selectedItem = new CuotaEspecialCasa();
 
-       
+                // ✅ 4. FORZAR ACTUALIZACIÓN DE LA UI
+                StateHasChanged();
+
+                // ✅ 5. OPCIONAL: PEQUEÑO DELAY PARA ASEGURAR
+                await Task.Delay(100);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al guardar: {ex.Message}");
+            }
+        }
 
 
 
@@ -121,10 +164,16 @@ namespace Condominio.Web.Components.Pages
                 return;
             }
 
+
+            if(item.MontoBs == null || item.MontoBs == 0)
+            {
+                item.MontoBs = monedaData != null
+                ? item.Monto * (decimal)Math.Round(monedaData.Promedio, 2)
+                : item.Monto;
+            }
+            
             selectedItem = item;
-            selectedItem.MontoBsShow = monedaData != null
-              ? (item.Monto * (decimal)Math.Round(monedaData.Promedio, 2)).ToString("N2")
-              : item.Monto.ToString("N2");
+
             selectedIndex = 1;
             StateHasChanged();
             await Task.CompletedTask;
@@ -141,25 +190,57 @@ namespace Condominio.Web.Components.Pages
         }
 
 
-        private async Task ConfirmSend(CuotaEspecialCasa item)
+        private async Task ConfirmSend(CuotaEspecialCasa item, bool confirmar)
         {
-            var result = await DialogService.Confirm(
-                $"¿Confirmar pago de {item.User.Name} para el" +  
-            $" {item.CuotaEspecial.NombreMes} {item.CuotaEspecial.Year}?\n\n" +
-                $"Se le notificará al propietario que su pago ha sido aprobado.\n\n" +
-                $"¿Deseas continuar?",
-                "Confirmar aprobación de pago",
-                new ConfirmOptions()
-                {
-                    OkButtonText = " Sí, aprobar pago",
-                    CancelButtonText = " Cancelar",
-                }
-            );
-
-            if (result == true)
+            if (confirmar == true)
             {
-                await ConfirmarPago(item);
+                var result = await DialogService.Confirm(
+               $"¿Confirmar pago de {item.User.Name} para el" +
+           $" {item.CuotaEspecial.NombreMes} {item.CuotaEspecial.Year}?\n\n" +
+               $"Se le notificará al propietario que su pago ha sido aprobado.\n\n" +
+               $"¿Deseas continuar?",
+               "Confirmar aprobación de pago",
+               new ConfirmOptions()
+               {
+                   OkButtonText = " Sí, aprobar pago",
+                   CancelButtonText = " Cancelar",
+               }
+           );
+
+                if (result == true)
+                {
+                    await ConfirmarPago(item);
+                }
             }
+            else
+            {
+                var result = await DialogService.Confirm(
+              $"¿Rechazar pago de {item.User.Name} para el" +
+          $" {item.CuotaEspecial.NombreMes} {item.CuotaEspecial.Year}?\n\n" +
+              $"Se le notificará al propietario que su pago ha sido pasado a pendiente nuevamente.\n\n" +
+              $"¿Deseas continuar?",
+              "Confirmar Rechazo de pago",
+              new ConfirmOptions()
+              {
+                  OkButtonText = " Sí, rechazar pago",
+                  CancelButtonText = " Cancelar",
+              }
+          );
+
+
+                if (result == true)
+                {
+                    item.Estado = "Rechazado";
+                    CuotaEspecialCasaRepository.Update(selectedItem);
+                    await CuotaEspecialCasaRepository.SaveChangesAsync();
+                    // Si tienes SaveChanges en el repositorio
+                    await LoadData(); // Recargar la lista
+
+                }
+
+            }
+
+
         }
 
         private async Task ConfirmarPago(CuotaEspecialCasa item)

@@ -7,6 +7,8 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @inject CuotaEspecialCasaRepository CuotaEspecialCasaRepository
+@inject CuotaEspecialRepository CuotaEspecialRepository
+@inject IGenericRepository<Houses> HousesRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @inject AuthenticationStateProvider AuthProvider
@@ -23,7 +25,7 @@
                           Icon="add_circle"
                           ButtonStyle="ButtonStyle.Primary"
                           Style="margin-bottom: 0.5rem;"
-                          Click="@(() => AddUser())" />
+                          Click="@(() => CreateNewItem())" />
 
             @if (items == null)
             {
@@ -43,7 +45,7 @@
 
                         <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="140px">
                             <Template Context="cuota">
-                                @cuota.HouseId
+                                @cuota.House.Number
                             </Template>
                         </RadzenDataGridColumn>
 
@@ -90,7 +92,7 @@
                                         Pendiente
                                     </RadzenBadge>
                                 }
-                                else if (cuotaCasa.Estado == "En Revisión")
+                                else if (cuotaCasa.Estado == "En Revision")
                                 {
                                     <RadzenBadge Style="background: #6c757d; color: #fff; padding: 4px 8px; border-radius: 4px;">
                                         En Revisión
@@ -111,12 +113,21 @@
 
                                 @if (cuotaCasa.Estado != "Confirmada")
                                 {
-                                    <RadzenButton Text="Confirmar"
-                                                  Icon="check_circle"
+                                
+
+                                    <RadzenButton Icon="check_circle"
                                                   ButtonStyle="ButtonStyle.Success"
                                                   Size="ButtonSize.Small"
                                                   Tooltip="Confirmar pago"
-                                                  Click="@(() => ConfirmSend(cuotaCasa))"
+                                                  Click="@(() => ConfirmSend(cuotaCasa, confirmar:true))"
+                                                  @onclick:stopPropagation="true" />
+
+                                    <!-- ✅ BOTÓN RECHAZAR -->
+                                    <RadzenButton Icon="cancel"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Size="ButtonSize.Small"
+                                                  Tooltip="Rechazar pago"
+                                                  Click="@(() => ConfirmSend(cuotaCasa, confirmar:false))"
                                                   @onclick:stopPropagation="true" />
                                 }
                                 else
@@ -173,21 +184,56 @@
                         <RadzenLabel Component="MontoTotalLabel">
                             Monto Total <span style="color: var(--rz-danger);">*</span>
                         </RadzenLabel>
-                        <RadzenText TextStyle="TextStyle.Body1"
-                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px; cursor: default;">
-                            @selectedItem.Monto.ToString("F2") $
-                        </RadzenText>
+
+                        @if (isAdmin)
+                        {
+                            <RadzenNumeric @bind-Value="@selectedItem.Monto"
+                                           Style="width: 100%; max-width: 400px;"
+                                           Format="N2"
+                                           Min="0"
+                                           Step="0.01" />
+                        }
+                        else
+                        {
+
+                          
+
+                            <RadzenNumeric @bind-Value="@selectedItem.Monto"
+                                           Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;"
+                                           Format="N2"
+                                           Min="0"
+                                           ReadOnly=" true"
+                                           Step="0.01" />
+
+                        }
+                       
                     </RadzenStack>
 
-                    
+
+                   
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
                         <RadzenLabel Component="NumberRequiredInput">
                             Monto Bs
                         </RadzenLabel>
-                        <RadzenText TextStyle="TextStyle.Body1"
-                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;">
-                            @selectedItem.MontoBsShow
-                        </RadzenText>
+                        @if (isAdmin)
+                        {
+                            <RadzenNumeric @bind-Value="@selectedItem.MontoBs"
+                                           Style="width: 100%; max-width: 400px;"
+                                           Format="N2"
+                                           Min="0"
+                                           Step="0.01" />
+                        }
+                        else
+                        {
+                            
+                            <RadzenNumeric @bind-Value="@selectedItem.MontoBs"
+                                           Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;" 
+                                           Format="N2"
+                                           Min="0"
+                                           ReadOnly=" true"
+                                           Step="0.01" />
+                         
+                        }
                     </RadzenStack>
             
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
@@ -203,7 +249,6 @@
                         <RadzenRequiredValidator Component="MPRequiredInput" Text="El método de pago es requerido" />
                     </RadzenStack>
 
-
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
                         <RadzenLabel Component="NumeroReferenciaRequiredInput">
                             Numero Referencia <span style="color: var(--rz-danger);">*</span>
@@ -218,6 +263,66 @@
                         <RadzenDatePicker @bind-Value=@selectedItem.FechaPago Name="RadzenDatePickerBindValue" ShowCalendarWeek Style="width: 100%; max-width: 400px;" />
                     </RadzenStack>
 
+
+
+
+
+
+         
+ 
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Form" Style="width: 100%; max-width: 400px;" />
+
+
+                </RadzenStack>
+            </RadzenTemplateForm>
+
+        </RadzenTabsItem>
+
+
+
+        <RadzenTabsItem Text="Nuevo" Disabled="true">
+            <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SaveNewItem">
+                <RadzenStack Gap="1.5rem">
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Seleccionar Cuota" Component="DropDownFiltering" />
+                        <RadzenDropDown TValue="int"
+                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        FilterOperator="StringFilterOperator.StartsWith"
+                                        AllowFiltering="true"
+                                        Data="@CuotasEspeciales"
+                                        ValueProperty="@nameof(CuotaEspecial.Id)"
+                                        AllowClear="true"
+                                        @bind-Value="@selectedItem.CuotaEspecialId"
+                                        Style="width: 100%; max-width: 400px;"
+                                        Name="DropDownFiltering">
+                            <Template Context="item">
+                                @item.Motivo - @item.NombreMes @item.Year
+                            </Template>
+                        </RadzenDropDown>
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Seleccionar Casa" Component="DropDownFiltering" />
+                        <RadzenDropDown TValue="int" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith" AllowFiltering="true"
+                                        Data=@HouseList TextProperty="@nameof(Houses.Number)" ValueProperty="@nameof(Houses.Id)" AllowClear="true" @bind-Value=selectedItem.HouseId Style="width: 100%; max-width: 400px;" Name="DropDownFiltering" />
+                    </RadzenStack>
+
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="NumberRequiredInput">
+                            Monto Usd
+                        </RadzenLabel>
+                        <RadzenNumeric @bind-Value="@selectedItem.Monto"
+                                       Style="width: 100%; max-width: 400px;"
+                                       Format="N2"
+                                       Min="0"
+                                       Step="0.01" />
+                    </RadzenStack>
+
+         
  
                     <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Form" Style="width: 100%; max-width: 400px;" />
 

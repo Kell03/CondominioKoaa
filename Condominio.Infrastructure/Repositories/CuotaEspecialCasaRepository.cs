@@ -26,6 +26,7 @@ namespace Condominio.Infrastructure.Repositories
                             CuotaEspecialId = item.CuotaEspecialId,
                             HouseId = item.HouseId,
                             Monto = item.Monto,
+                            MontoBs = item.MontoBs,
                             Estado = item.Estado,
                             Referencia = item.Referencia,
                             MetodoPago = item.MetodoPago,

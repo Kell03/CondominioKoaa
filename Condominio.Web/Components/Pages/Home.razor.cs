@@ -63,10 +63,10 @@ namespace Condominio.Web.Components.Pages
             data2.Category = "Pagado";
             var pagado = (double)(facturas.Select(x => x.MontoRecaudado).LastOrDefault() ?? 0);
             data2.Value = pagado;
-            revenue = new DataItem[] { data1, data2 };
+            revenue = new DataItem[] { data2, data1 };
             var item = facturas.LastOrDefault();
-            Title = $"{item.NombreMes} {item.Year}";
-            Total = item.MontoTotal;
+            Title = $"{item?.NombreMes} {item?.Year}";
+            Total = item?.MontoTotal ?? 0;
 
         }
 
@@ -82,10 +82,10 @@ namespace Condominio.Web.Components.Pages
             data2.Category = "Pagado";
             var pagado = (double)cuotas.Select(x => x.MontoRecaudado).LastOrDefault();
             data2.Value = pagado;
-            revenue2 = new DataItem[] { data1, data2 };
+            revenue2 = new DataItem[] { data2, data1 };
             var item = cuotas.LastOrDefault();
-            TitleCuota = $"{item.Motivo}";
-            Total2 = (double)item.MontoTotal;
+            TitleCuota = $"{item?.Motivo}";
+            Total2 = (double)(item?.MontoTotal ?? 0);
 
         }
 
