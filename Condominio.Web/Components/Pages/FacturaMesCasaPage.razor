@@ -10,6 +10,7 @@
 @inject Radzen.DialogService DialogService
 @inject AuthenticationStateProvider AuthProvider
 @inject AppState AppState
+@inject MonedaApiService MonedaApiService
 @rendermode InteractiveServer
 
 
@@ -220,6 +221,16 @@
                     </RadzenStack>
 
 
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="NumberRequiredInput">
+                            Monto Bs
+                        </RadzenLabel>
+                        <RadzenText TextStyle="TextStyle.Body1"
+                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;">
+                            @selectedItem.MontoBsShow
+                        </RadzenText>
+                    </RadzenStack>
+
             
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
                         <RadzenLabel Component="MPRequiredInput">
@@ -241,6 +252,12 @@
                         </RadzenLabel>
                         <RadzenTextBox Name="NumeroReferenciaRequiredInput" @bind-Value=@selectedItem.Referencia Style="width: 100%; max-width: 400px;" />
                         <RadzenRequiredValidator Component="NumeroReferenciaRequiredInput" Text="Referencia is required" />
+                    </RadzenStack>
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Text="Fecha Pago" Component="RadzenDatePickerBindValue" />
+                        <RadzenDatePicker @bind-Value=@selectedItem.FechaPago Name="RadzenDatePickerBindValue" ShowCalendarWeek Style="width: 100%; max-width: 400px;" />
                     </RadzenStack>
 
  

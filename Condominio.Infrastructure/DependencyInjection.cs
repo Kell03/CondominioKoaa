@@ -27,6 +27,7 @@ namespace Condominio.Infrastructure
 
             services.AddScoped<IGenericRepository<FacturaMesHijo>, FacturaMesHijoRepository>();
 
+          
             // Register application services here
             return services;
         }

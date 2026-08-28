@@ -2,6 +2,7 @@
 using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Components;
+using System.Globalization;
 using Radzen;
 using Radzen.Blazor;
 
@@ -17,11 +18,13 @@ namespace Condominio.Web.Components.Pages
 
         private bool isAdmin = false;
 
-       
+        private ApiMoneda monedaData;
+
+
         private List<string> MetodosPago = new List<string>
-    {
+        {
         "Pago Movil"
-    };
+        };
 
         private IQueryable<FacturaMesCasa> items;
 
@@ -29,7 +32,14 @@ namespace Condominio.Web.Components.Pages
         {
             await LoadData();
             await CheckAdminRole();
+            await CargarMoneda();
 
+        }
+
+        private async Task CargarMoneda()
+        {
+            monedaData = await MonedaApiService.GetMonedaAsync();
+            StateHasChanged();
         }
 
         private async Task LoadData()
@@ -76,7 +86,15 @@ namespace Condominio.Web.Components.Pages
 
         private async Task EditUser(FacturaMesCasa item)
         {
+            if(!isAdmin && item.Estado != "Pendiente")
+            {
+                return;
+            }
+
             selectedItem = item;
+            selectedItem.MontoBsShow = monedaData != null
+              ? (item.MontoTotal * (decimal)Math.Round(monedaData.Promedio, 2)).ToString("N2")
+              : item.MontoTotal.ToString("N2");
             selectedIndex = 1;
             StateHasChanged();
             await Task.CompletedTask;
@@ -88,18 +106,26 @@ namespace Condominio.Web.Components.Pages
         private async Task SaveItem()
         {
 
-                selectedItem.UpdatedAt = DateTime.Now;
+            selectedItem.UpdatedAt = DateTime.Now;
             selectedItem.Estado = "En Revisión"; // Cambiar el estado a "En Revisión"
+
+            // Limpiar y convertir a decimal
+            decimal valorDecimal = decimal.Parse(
+                selectedItem.MontoBsShow.Replace(".", "").Replace(",", "."),
+                System.Globalization.CultureInfo.InvariantCulture
+            );
+
+            selectedItem.MontoBs = valorDecimal;
             FacturaMesCasaRepository.Update(selectedItem);
-                await FacturaMesCasaRepository.SaveChangesAsync();
-                // Si tienes SaveChanges en el repositorio
-                await LoadData(); // Recargar la lista
-                selectedIndex = 0;
-                selectedItem = new FacturaMesCasa();
+            await FacturaMesCasaRepository.SaveChangesAsync();
+            // Si tienes SaveChanges en el repositorio
+            await LoadData(); // Recargar la lista
+            selectedIndex = 0;
+            selectedItem = new FacturaMesCasa();
 
-                StateHasChanged();
+            StateHasChanged();
 
-           
+
         }
 
         private string ObtenerNombreMes(int? mes)
@@ -140,7 +166,7 @@ namespace Condominio.Web.Components.Pages
         {
             if (facturaCasa == null) return;
 
-            
+
 
             // 2. Guardar en la base de datos
             await FacturaMesCasaRepository.ConfirmarPagoFacturaCasa(facturaCasa);
