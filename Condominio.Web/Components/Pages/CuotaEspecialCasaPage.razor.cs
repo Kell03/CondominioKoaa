@@ -230,8 +230,8 @@ namespace Condominio.Web.Components.Pages
 
                 if (result == true)
                 {
-                    item.Estado = "Rechazado";
-                    CuotaEspecialCasaRepository.Update(selectedItem);
+                    item.Estado = "Pendiente";
+                    CuotaEspecialCasaRepository.Update(item);
                     await CuotaEspecialCasaRepository.SaveChangesAsync();
                     // Si tienes SaveChanges en el repositorio
                     await LoadData(); // Recargar la lista

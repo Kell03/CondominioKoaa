@@ -25,7 +25,8 @@
                           Icon="add_circle"
                           ButtonStyle="ButtonStyle.Primary"
                           Style="margin-bottom: 0.5rem;"
-                          Click="@(() => CreateNewItem())" />
+                          Click="@(() => CreateNewItem())" 
+                          Visible="@isAdmin" />
 
             @if (items == null)
             {
@@ -59,6 +60,11 @@
                             </Template>
                         </RadzenDataGridColumn>
 
+                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Referencia" Width="140px">
+                            <Template Context="cuota">
+                                @cuota.Referencia
+                            </Template>
+                        </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Motivo" Width="140px">
                             <Template Context="cuota">
                                 @cuota.CuotaEspecial?.Motivo
@@ -280,7 +286,7 @@
 
 
 
-        <RadzenTabsItem Text="Nuevo" Disabled="true">
+        <RadzenTabsItem Text="Nuevo" Disabled="true" Visible="@isAdmin">
             <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SaveNewItem">
                 <RadzenStack Gap="1.5rem">
 
