@@ -25,6 +25,7 @@ namespace Condominio.Infrastructure.Repositories
                             FacturaMesId = factura.FacturaMesId,
                             HouseId = factura.HouseId,
                             MontoTotal = factura.MontoTotal,
+                            MontoBs = factura.MontoBs,
                             Estado = factura.Estado,
                             Referencia = factura.Referencia,
                             MetodoPago = factura.MetodoPago,

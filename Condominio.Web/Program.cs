@@ -11,6 +11,21 @@ using Radzen;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ✅ 1. CONFIGURAR KESTREL PARA ESCUCHAR EN TODAS LAS INTERFACES
+//builder.WebHost.ConfigureKestrel(options =>
+//{
+//    options.ListenAnyIP(5000);
+//});
+//
+//// ✅ 2. CONFIGURAR COOKIES PARA ACEPTAR CONEXIONES EXTERNAS
+//builder.Services.ConfigureApplicationCookie(options =>
+//{
+//    options.Cookie.SameSite = SameSiteMode.Lax;
+//    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // ✅ CLAVE: NO FORZAR HTTPS
+//});
+//builder.WebHost.UseUrls("http://0.0.0.0:5000");
+
+
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
 // Add services to the container.

@@ -20,6 +20,9 @@ namespace Condominio.Web.Components.Pages
 
         private ApiMoneda monedaData;
 
+        private IEnumerable<FacturaMes> FacturasMes;
+        private IEnumerable<Houses> HouseList;
+
 
         private List<string> MetodosPago = new List<string>
         {
@@ -75,6 +78,29 @@ namespace Condominio.Web.Components.Pages
         }
 
 
+
+
+        private async Task CreateNewItem()
+        {
+            await LoadFacturas();
+            await LoadHouses();
+            selectedItem = new FacturaMesCasa();
+            selectedIndex = 2;
+            StateHasChanged();
+            await Task.CompletedTask;
+        }
+
+
+        private async Task LoadFacturas()
+        {
+            FacturasMes = await FacturaMesRepository.GetAllAsync();
+        }
+
+
+        private async Task LoadHouses()
+        {
+            HouseList = await HousesRepository.GetAllAsync();
+        }
         private async Task CheckAdminRole()
         {
             var authState = await AuthProvider.GetAuthenticationStateAsync();
@@ -86,15 +112,19 @@ namespace Condominio.Web.Components.Pages
 
         private async Task EditUser(FacturaMesCasa item)
         {
-            if(!isAdmin && item.Estado != "Pendiente")
+            if (!isAdmin && item.Estado != "Pendiente")
             {
                 return;
             }
 
+
+            if (item.MontoBs == null || item.MontoBs == 0)
+            {
+                item.MontoBs = monedaData != null
+                ? item.MontoTotal * (decimal)Math.Round(monedaData.Promedio, 2)
+                : item.MontoTotal;
+            }
             selectedItem = item;
-            selectedItem.MontoBsShow = monedaData != null
-              ? (item.MontoTotal * (decimal)Math.Round(monedaData.Promedio, 2)).ToString("N2")
-              : item.MontoTotal.ToString("N2");
             selectedIndex = 1;
             StateHasChanged();
             await Task.CompletedTask;
@@ -107,15 +137,9 @@ namespace Condominio.Web.Components.Pages
         {
 
             selectedItem.UpdatedAt = DateTime.Now;
-            selectedItem.Estado = "En Revisión"; // Cambiar el estado a "En Revisión"
+            selectedItem.Estado = "En Revision"; // Cambiar el estado a "En Revisión"
+                                                 // Limpiar y convertir a decimal
 
-            // Limpiar y convertir a decimal
-            decimal valorDecimal = decimal.Parse(
-                selectedItem.MontoBsShow.Replace(".", "").Replace(",", "."),
-                System.Globalization.CultureInfo.InvariantCulture
-            );
-
-            selectedItem.MontoBs = valorDecimal;
             FacturaMesCasaRepository.Update(selectedItem);
             await FacturaMesCasaRepository.SaveChangesAsync();
             // Si tienes SaveChanges en el repositorio
@@ -127,6 +151,35 @@ namespace Condominio.Web.Components.Pages
 
 
         }
+
+        private async Task SaveNewItem()
+        {
+            try
+            {
+                // ✅ 1. GUARDAR
+                selectedItem.Estado = "Pendiente";
+                await FacturaMesCasaRepository.AddAsync(selectedItem);
+                await FacturaMesCasaRepository.SaveChangesAsync();
+
+                // ✅ 2. RECARGAR DATOS
+                await LoadData();
+
+                // ✅ 3. CAMBIAR DE TAB Y LIMPIAR
+                selectedIndex = 0;
+                selectedItem = new FacturaMesCasa();
+
+                // ✅ 4. FORZAR ACTUALIZACIÓN DE LA UI
+                StateHasChanged();
+
+                // ✅ 5. OPCIONAL: PEQUEÑO DELAY PARA ASEGURAR
+                await Task.Delay(100);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al guardar: {ex.Message}");
+            }
+        }
+
 
         private string ObtenerNombreMes(int? mes)
         {
@@ -142,24 +195,59 @@ namespace Condominio.Web.Components.Pages
             }
         }
 
-        private async Task ConfirmSend(FacturaMesCasa item)
+
+
+
+        private async Task ConfirmSend(FacturaMesCasa item, bool confirmar)
         {
-            var result = await DialogService.Confirm(
+            if (confirmar == true)
+            {
+                var result = await DialogService.Confirm(
                 $"¿Confirmar pago de {ObtenerNombreMes(item.FacturaMes.Mes)} {item.FacturaMes.Year}?\n\n" +
                 $"Se le notificará al propietario que su pago ha sido aprobado.\n\n" +
                 $"¿Deseas continuar?",
                 "Confirmar aprobación de pago",
-                new ConfirmOptions()
-                {
-                    OkButtonText = " Sí, aprobar pago",
-                    CancelButtonText = " Cancelar",
-                }
-            );
+               new ConfirmOptions()
+               {
+                   OkButtonText = " Sí, aprobar pago",
+                   CancelButtonText = " Cancelar",
+               }
+          );
 
-            if (result == true)
-            {
-                await ConfirmarPago(item);
+                if (result == true)
+                {
+                    await ConfirmarPago(item);
+                }
             }
+            else
+            {
+                var result = await DialogService.Confirm(
+              $"¿Rechazar pago de {item.User.Name} para el" +
+          $"{ObtenerNombreMes(item.FacturaMes.Mes)} {item.FacturaMes.Year}?\n\n" +
+              $"Se le notificará al propietario que su pago ha sido pasado a pendiente nuevamente.\n\n" +
+              $"¿Deseas continuar?",
+              "Confirmar Rechazo de pago",
+              new ConfirmOptions()
+              {
+                  OkButtonText = " Sí, rechazar pago",
+                  CancelButtonText = " Cancelar",
+              }
+          );
+
+
+                if (result == true)
+                {
+                    item.Estado = "Pendiente";
+                    FacturaMesCasaRepository.Update(item);
+                    await FacturaMesCasaRepository.SaveChangesAsync();
+                    // Si tienes SaveChanges en el repositorio
+                    await LoadData(); // Recargar la lista
+
+                }
+
+            }
+
+
         }
 
         private async Task ConfirmarPago(FacturaMesCasa facturaCasa)

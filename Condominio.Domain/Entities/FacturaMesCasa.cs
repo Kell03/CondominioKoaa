@@ -36,8 +36,6 @@ namespace Condominio.Domain.Entities
         [NotMapped]
         public Users? User { get; set; } // ✅ RELACIÓN CON USUARIO (DUEÑO DE LA CASA)
 
-        [NotMapped]
-        public string? MontoBsShow { get; set; } 
         public decimal? MontoBs { get; set; } 
 
 

@@ -63,10 +63,11 @@
             {
                 <RadzenPanelMenuItem Text="Home" Path="" Icon="home" />
                 <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box" />
-                <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" />
+                
 
                 @if (isAdmin)
                 {
+                    <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" />
                     <RadzenPanelMenuItem Text="Cuota Especial" Path="cuotaespecial" Icon="receipt" />
                     <RadzenPanelMenuItem Text="Facturas" Path="facturas" Icon="receipt" />
                 }
