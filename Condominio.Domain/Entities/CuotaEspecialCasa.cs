@@ -17,9 +17,10 @@ namespace Condominio.Domain.Entities
         public int HouseId { get; set; }
 
   
-        public decimal Monto { get; set; }
+        public decimal MontoTotal { get; set; }
 
-  
+        public decimal MontoPagado { get; set; }
+        public decimal SaldoPendiente { get; set; }
         public string Estado { get; set; } = "Pendiente"; // 'Pendiente', 'Pagada', 'Rechazada'
 
         public string? Referencia { get; set; }

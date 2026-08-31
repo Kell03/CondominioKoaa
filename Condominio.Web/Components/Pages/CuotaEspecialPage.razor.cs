@@ -11,8 +11,8 @@ namespace Condominio.Web.Components.Pages
         CuotaEspecial selectedItem = new CuotaEspecial();
         private List<int> years = new List<int>();
 
-        private int selectedMonth = DateTime.Now.Month;
-        private int selectedYear = DateTime.Now.Year;
+        private string? yearInput = DateTime.Now.Year.ToString();
+        private int? selectedYear = DateTime.Now.Year;
 
 
         IEnumerable<CuotaEspecial> Cuotas;
@@ -117,9 +117,10 @@ namespace Condominio.Web.Components.Pages
 
 
 
-        private async Task AddUser()
+        private async Task AddItem()
         {
             selectedItem = new CuotaEspecial();
+            selectedItem.Year = (int)selectedYear;
             selectedIndex = 1;
             StateHasChanged();
             await Task.CompletedTask;
@@ -164,6 +165,20 @@ namespace Condominio.Web.Components.Pages
         }
 
 
+
+        private void OnYearChanged()
+        {
+            if (!string.IsNullOrEmpty(yearInput) && yearInput.Length == 4 && int.TryParse(yearInput, out int year))
+            {
+                selectedYear = year;
+                selectedItem.Year = year;
+            }
+            else if (!string.IsNullOrEmpty(yearInput) && yearInput.Length > 4)
+            {
+                yearInput = yearInput.Substring(0, 4); // Corta a 4 dígitos
+                selectedItem.Year = int.Parse(yearInput);
+            }
+        }
         private List<object> months = new List<object>
         {
             new { Value = 1, Name = "Enero" },

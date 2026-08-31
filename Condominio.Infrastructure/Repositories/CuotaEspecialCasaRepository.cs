@@ -25,7 +25,9 @@ namespace Condominio.Infrastructure.Repositories
                             Id = item.Id,
                             CuotaEspecialId = item.CuotaEspecialId,
                             HouseId = item.HouseId,
-                            Monto = item.Monto,
+                            MontoTotal = item.MontoTotal,
+                            MontoPagado = item.MontoPagado,
+                            SaldoPendiente = item.SaldoPendiente,
                             MontoBs = item.MontoBs,
                             Estado = item.Estado,
                             Referencia = item.Referencia,
@@ -68,7 +70,7 @@ namespace Condominio.Infrastructure.Repositories
                     throw new Exception("Cuota Especial no encontrada");
 
                 // 2. ✅ SUMAR el monto recaudado (NO asignar)
-                cuota.MontoRecaudado += item.Monto;
+                cuota.MontoRecaudado += item.MontoTotal;
 
                 item.Estado = "Confirmada";
 
@@ -97,6 +99,169 @@ namespace Condominio.Infrastructure.Repositories
             }
         }
 
+
+        public async Task<bool> RegistrarPagoCuota(Payments pago)
+        {
+            try
+            {
+
+                var payment = new Payments
+                {
+                    CuotaEspecialCasaId = pago.CuotaEspecialCasaId,
+                    Monto = pago.Monto,
+                    MontoBs = pago.MontoBs,
+                    Tasa = pago.Tasa,
+                    MetodoPago = pago.MetodoPago,
+                    Referencia = pago.Referencia,
+                    Estado = "Pendiente"
+                };
+
+                await _context.Payments.AddAsync(payment);
+                await _context.SaveChangesAsync();
+
+                // ✅ Actualizar saldo de la factura
+                // ... (código anterior)
+
+                return true;
+
+            }
+            catch (Exception ex)
+            {
+
+                // Opcional: guardar el error en un log
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+
+                return false; // Falló
+            }
+        }
+
+
+
+        public async Task<IEnumerable<Payments>> GetPaymentsForUserAsync(int userId, int idCuotaCasaMes)
+        {
+            try
+            {
+                // 1. Obtener la casa del usuario
+                var houseId = await _context.Users
+                    .Where(u => u.Id == userId)
+                    .Select(u => u.HouseId)
+                    .FirstOrDefaultAsync();
+
+                if (houseId == null || houseId == 0)
+                    return new List<Payments>();
+
+                // 2. Obtener todos los pagos de esa casa
+                // Un pago puede estar asociado a FacturaMesCasa o CuotaEspecialCasa
+                // Ambos tienen HouseId
+
+                var payments = await _context.Payments
+                    .Include(p => p.CuotaEspecialCasa)
+                        .ThenInclude(c => c.CuotaEspecial)
+                    .Include(p => p.CuotaEspecialCasa)
+                        .ThenInclude(c => c.House)
+                    .Where(p =>
+                        (p.CuotaEspecialCasa != null && p.CuotaEspecialCasa.HouseId == houseId && p.CuotaEspecialCasaId == idCuotaCasaMes)
+                    )
+                    .OrderByDescending(p => p.FechaPago)
+                    .ToListAsync();
+
+                return payments;
+
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+        }
+
+
+        public async Task<IEnumerable<Payments>> GetPaymentsForInvoiceAsync(int idCuotaCasaMes)
+        {
+            try
+            {
+
+                var payments = await _context.Payments
+                    .Include(p => p.CuotaEspecialCasa)
+                        .ThenInclude(c => c.CuotaEspecial)
+                    .Include(p => p.CuotaEspecialCasa)
+                        .ThenInclude(c => c.House)
+                    .Where(p =>
+                         p.CuotaEspecialCasaId == idCuotaCasaMes
+                    )
+                    .OrderByDescending(p => p.FechaPago)
+                    .ToListAsync();
+
+                return payments;
+
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+        }
+
+
+        public async Task<bool> ConfirmPayment(Payments payment)
+        {
+            // ✅ INICIAR TRANSACCIÓN
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+
+                var cuotaCasa = await _context.CuotaEspecialCasa.FirstOrDefaultAsync(x => x.Id == payment.CuotaEspecialCasaId);
+
+                if (cuotaCasa == null)
+                    throw new Exception("Cuota no encontrada");
+
+
+
+                var cuota = await _context.CuotaEspecial
+                    .FirstOrDefaultAsync(x => x.Id == cuotaCasa.CuotaEspecialId);
+
+                if (cuota == null)
+                    throw new Exception("Cuota no encontrada");
+
+
+
+                // 2. ✅ SUMAR el monto recaudado (NO asignar)
+                cuotaCasa.MontoPagado = cuotaCasa.MontoPagado + payment.Monto;
+
+
+                cuotaCasa.SaldoPendiente = cuotaCasa.MontoTotal - cuotaCasa.MontoPagado;
+
+                cuota.MontoRecaudado += payment.Monto;
+
+                cuotaCasa.Estado = cuotaCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pendiente";
+
+                payment.Estado = "Confirmada";
+
+
+                _context.Payments.Update(payment);
+                _context.CuotaEspecialCasa.Update(cuotaCasa);
+
+                _context.CuotaEspecial.Update(cuota);
+
+                await _context.SaveChangesAsync();
+
+                // ✅ CONFIRMAR TRANSACCIÓN
+                await transaction.CommitAsync();
+
+                return true; // Éxito
+            }
+            catch (Exception ex)
+            {
+                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
+                await transaction.RollbackAsync();
+
+                // Opcional: guardar el error en un log
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+
+                return false; // Falló
+            }
+        }
 
     }
 }

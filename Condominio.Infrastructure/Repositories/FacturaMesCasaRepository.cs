@@ -171,10 +171,6 @@ namespace Condominio.Infrastructure.Repositories
                         .ThenInclude(f => f.FacturaMes)
                     .Include(p => p.FacturaMesCasa)
                         .ThenInclude(f => f.House)
-                    .Include(p => p.CuotaEspecialCasa)
-                        .ThenInclude(c => c.CuotaEspecial)
-                    .Include(p => p.CuotaEspecialCasa)
-                        .ThenInclude(c => c.House)
                     .Where(p =>
                         (p.FacturaMesCasa != null && p.FacturaMesCasa.HouseId == houseId && p.FacturaMesCasaId == idFacturaMes)
                     )
@@ -202,10 +198,6 @@ namespace Condominio.Infrastructure.Repositories
                         .ThenInclude(f => f.FacturaMes)
                     .Include(p => p.FacturaMesCasa)
                         .ThenInclude(f => f.House)
-                    .Include(p => p.CuotaEspecialCasa)
-                        .ThenInclude(c => c.CuotaEspecial)
-                    .Include(p => p.CuotaEspecialCasa)
-                        .ThenInclude(c => c.House)
                     .Where(p =>
                          p.FacturaMesCasaId == idFacturaMes
                     )

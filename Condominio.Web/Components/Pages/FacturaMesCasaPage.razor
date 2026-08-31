@@ -13,7 +13,6 @@
 @inject Radzen.DialogService DialogService
 @inject AuthenticationStateProvider AuthProvider
 @inject AppState AppState
-@inject MonedaApiService MonedaApiService
 @inject BcvScraperService BcvScraper
 @rendermode InteractiveServer
 
@@ -204,7 +203,7 @@
 
             @if(selectedItem.SaldoPendiente > 0)
             {
-                <h3>Formulario de Recibos</h3>
+                <h3>Registro de Pagos</h3>
 
                 <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SavePago">
                     <RadzenStack Gap="1.5rem">
@@ -393,57 +392,7 @@
 
         </RadzenTabsItem>
 
-        <RadzenTabsItem Text="Nuevo" Disabled="true" Visible="@isAdmin">
-            <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SaveNewItem">
-                <RadzenStack Gap="1.5rem">
-
-
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Text="Seleccionar Cuota" Component="DropDownFiltering" />
-                        <RadzenDropDown TValue="int"
-                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                                        FilterOperator="StringFilterOperator.StartsWith"
-                                        AllowFiltering="true"
-                                        Data="@FacturasMes"
-                                        ValueProperty="@nameof(FacturaMes.Id)"
-                                        AllowClear="true"
-                                        @bind-Value="@selectedItem.FacturaMesId"
-                                        Style="width: 100%; max-width: 400px;"
-                                        Name="DropDownFiltering">
-                            <Template Context="item">
-                                @item.NombreMes @item.Year
-                            </Template>
-                        </RadzenDropDown>
-                    </RadzenStack>
-
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Text="Seleccionar Casa" Component="DropDownFiltering" />
-                        <RadzenDropDown TValue="int" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith" AllowFiltering="true"
-                                        Data=@HouseList TextProperty="@nameof(Houses.Number)" ValueProperty="@nameof(Houses.Id)" AllowClear="true" @bind-Value=selectedItem.HouseId Style="width: 100%; max-width: 400px;" Name="DropDownFiltering" />
-                    </RadzenStack>
-
-
-
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Component="NumberRequiredInput">
-                            Monto Usd
-                        </RadzenLabel>
-                        <RadzenNumeric @bind-Value="@selectedItem.MontoTotal"
-                                       Style="width: 100%; max-width: 400px;"
-                                       Format="N2"
-                                       Min="0"
-                                       Step="0.01" />
-                    </RadzenStack>
-
-         
- 
-                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Form" Style="width: 100%; max-width: 400px;" />
-
-
-                </RadzenStack>
-            </RadzenTemplateForm>
-
-        </RadzenTabsItem>
+       
     </Tabs>
 </RadzenTabs>
 

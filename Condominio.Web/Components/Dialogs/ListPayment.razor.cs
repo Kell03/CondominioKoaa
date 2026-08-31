@@ -9,7 +9,10 @@ namespace Condominio.Web.Components.Dialogs
     {
 
         [Parameter]
-        public int IdFactura { get; set; }  // ✅ RECIBIR EL ID
+        public int IdItem { get; set; }
+
+        [Parameter]
+        public bool Cuotas { get; set; } 
         private IEnumerable<Payments> PagosList = Enumerable.Empty<Payments>();
         private FacturaMesCasa FacturaCasa;
 
@@ -21,7 +24,14 @@ namespace Condominio.Web.Components.Dialogs
 
         private async Task LoadPagos()
         {
-            PagosList = await FacturaMesCasaRepository.GetPaymentsForInvoiceAsync(IdFactura);
+            if(Cuotas)
+            {
+                PagosList = await CuotaEspecialCasaRepository.GetPaymentsForInvoiceAsync(IdItem);
+            }
+            else
+            {
+                PagosList = await FacturaMesCasaRepository.GetPaymentsForInvoiceAsync(IdItem);
+            }
         }
 
 
@@ -53,8 +63,14 @@ namespace Condominio.Web.Components.Dialogs
         private async Task ConfirmPayment(Payments payment)
         {
                 
-
-            await FacturaMesCasaRepository.ConfirmPayment(payment);
+            if(Cuotas)
+            {
+                await CuotaEspecialCasaRepository.ConfirmPayment(payment);
+            }
+            else
+            {
+                await FacturaMesCasaRepository.ConfirmPayment(payment);
+            }
 
             await LoadPagos();
             StateHasChanged();

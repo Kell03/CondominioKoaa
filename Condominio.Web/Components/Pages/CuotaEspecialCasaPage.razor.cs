@@ -1,6 +1,7 @@
 ﻿using Condominio.Application.Services;
 using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
+using Condominio.Web.Components.Dialogs;
 using Radzen;
 
 namespace Condominio.Web.Components.Pages
@@ -13,9 +14,6 @@ namespace Condominio.Web.Components.Pages
         private List<int> years = new List<int>();
         private IEnumerable<CuotaEspecial> CuotasEspeciales;
         private IEnumerable<Houses> HouseList;
-
-        private int selectedMonth = DateTime.Now.Month;
-        private int selectedYear = DateTime.Now.Year;
         private bool isAdmin = false;
         private ApiMoneda monedaData;
 
@@ -23,30 +21,23 @@ namespace Condominio.Web.Components.Pages
 
         private IQueryable<CuotaEspecialCasa> items;
 
-
+        Payments Pago = new Payments();
+        private IEnumerable<Payments> PagosList;
         private List<string> MetodosPago = new List<string>
-    {
+        {
         "Pago Movil"
-    };
+        };
+        private BcvRates rates;
 
         protected override async Task OnInitializedAsync()
         {
-            await LoadData();
-
-            for (int i = 2020; i <= 2030; i++)
-            {
-                years.Add(i);
-            }
-
-            Cuotas = await CuotaEspecialCasaRepository.GetAllAsync();
             await CheckAdminRole();
-            await CargarMoneda();
-        }
-
-        private async Task CargarMoneda()
-        {
-            monedaData = await MonedaApiService.GetMonedaAsync();
+            await LoadData();
+            Cuotas = await CuotaEspecialCasaRepository.GetAllAsync();
+            rates = await BcvScraper.GetRatesAsync();
+            await Task.Delay(5000);
             StateHasChanged();
+
         }
 
         private async Task LoadData()
@@ -105,53 +96,15 @@ namespace Condominio.Web.Components.Pages
 
         private async Task CheckAdminRole()
         {
-            var authState = await AuthProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-            isAdmin = user.IsInRole("Administrador");
-        }
-        private async Task SaveItem()
-        {
 
-            selectedItem.UpdatedAt = DateTime.Now;
-            selectedItem.Estado = "En Revision"; // Cambiar el estado a "En Revisión"
-                                                 // Limpiar y convertir a decimal
-       
-            CuotaEspecialCasaRepository.Update(selectedItem);
-            await CuotaEspecialCasaRepository.SaveChangesAsync();
-            // Si tienes SaveChanges en el repositorio
-            await LoadData(); // Recargar la lista
-            selectedIndex = 0;
-            selectedItem = new CuotaEspecialCasa();
-
-            StateHasChanged();
-
-        }
-
-        private async Task SaveNewItem()
-        {
-            try
+            var role = AppState.CurrentUser.Role;
+            if (role == "Administrador")
             {
-                // ✅ 1. GUARDAR
-                selectedItem.Estado = "Pendiente";
-                await CuotaEspecialCasaRepository.AddAsync(selectedItem);
-                await CuotaEspecialCasaRepository.SaveChangesAsync();
-
-                // ✅ 2. RECARGAR DATOS
-                await LoadData();
-
-                // ✅ 3. CAMBIAR DE TAB Y LIMPIAR
-                selectedIndex = 0;
-                selectedItem = new CuotaEspecialCasa();
-
-                // ✅ 4. FORZAR ACTUALIZACIÓN DE LA UI
-                StateHasChanged();
-
-                // ✅ 5. OPCIONAL: PEQUEÑO DELAY PARA ASEGURAR
-                await Task.Delay(100);
+                isAdmin = true;
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"❌ Error al guardar: {ex.Message}");
+                isAdmin =false;
             }
         }
 
@@ -159,105 +112,93 @@ namespace Condominio.Web.Components.Pages
 
         private async Task EditUser(CuotaEspecialCasa item)
         {
-            if (!isAdmin && item.Estado != "Pendiente")
+            if (isAdmin == true)
             {
                 return;
             }
 
-
-            if(item.MontoBs == null || item.MontoBs == 0)
-            {
-                item.MontoBs = monedaData != null
-                ? item.Monto * (decimal)Math.Round(monedaData.Promedio, 2)
-                : item.Monto;
-            }
-            
+            Pago.Tasa = rates?.EUR;
+            Pago.MontoBs = 0;
+            await LoadPagos(item.Id);
             selectedItem = item;
-
             selectedIndex = 1;
             StateHasChanged();
             await Task.CompletedTask;
         }
 
+        #region Pagos 
 
-
-        private async Task AddUser()
+        private async Task SavePago()
         {
-            selectedItem = new CuotaEspecialCasa();
-            selectedIndex = 1;
+
+            Pago.CuotaEspecialCasaId = selectedItem.Id;
+            await CuotaEspecialCasaRepository.RegistrarPagoCuota(Pago);
+            await CuotaEspecialCasaRepository.SaveChangesAsync();
+            // Si tienes SaveChanges en el repositorio
+            await LoadPagos((int)Pago.CuotaEspecialCasaId); // Recargar la lista
+            Pago = new Payments();
+
             StateHasChanged();
-            await Task.CompletedTask;
+
+
+        }
+
+        private async Task LoadPagos(int idFacturaMes)
+        {
+            PagosList = await CuotaEspecialCasaRepository.GetPaymentsForUserAsync(AppState.CurrentUser.Id, idFacturaMes);
         }
 
 
-        private async Task ConfirmSend(CuotaEspecialCasa item, bool confirmar)
+
+        private void OnMontoChanged(decimal? value)
         {
-            if (confirmar == true)
+            if (value.HasValue && value.Value > 0 && Pago.Tasa > 0)
             {
-                var result = await DialogService.Confirm(
-               $"¿Confirmar pago de {item.User.Name} para el" +
-           $" {item.CuotaEspecial.NombreMes} {item.CuotaEspecial.Year}?\n\n" +
-               $"Se le notificará al propietario que su pago ha sido aprobado.\n\n" +
-               $"¿Deseas continuar?",
-               "Confirmar aprobación de pago",
-               new ConfirmOptions()
-               {
-                   OkButtonText = " Sí, aprobar pago",
-                   CancelButtonText = " Cancelar",
-               }
-           );
-
-                if (result == true)
-                {
-                    await ConfirmarPago(item);
-                }
+                Pago.MontoBs = Math.Round(value.Value * (decimal)Pago.Tasa, 2);
+                Pago.Monto = (decimal)value;
             }
             else
             {
-                var result = await DialogService.Confirm(
-              $"¿Rechazar pago de {item.User.Name} para el" +
-          $" {item.CuotaEspecial.NombreMes} {item.CuotaEspecial.Year}?\n\n" +
-              $"Se le notificará al propietario que su pago ha sido pasado a pendiente nuevamente.\n\n" +
-              $"¿Deseas continuar?",
-              "Confirmar Rechazo de pago",
-              new ConfirmOptions()
-              {
-                  OkButtonText = " Sí, rechazar pago",
-                  CancelButtonText = " Cancelar",
-              }
-          );
-
-
-                if (result == true)
-                {
-                    item.Estado = "Pendiente";
-                    CuotaEspecialCasaRepository.Update(item);
-                    await CuotaEspecialCasaRepository.SaveChangesAsync();
-                    // Si tienes SaveChanges en el repositorio
-                    await LoadData(); // Recargar la lista
-
-                }
-
+                Pago.MontoBs = null;
             }
-
-
-        }
-
-        private async Task ConfirmarPago(CuotaEspecialCasa item)
-        {
-            if (item == null) return;
-
-
-
-            // 2. Guardar en la base de datos
-            await CuotaEspecialCasaRepository.ConfirmarPagoCuotaCasa(item);
-            await CuotaEspecialCasaRepository.SaveChangesAsync();
-
-            // 3. Recargar la lista para actualizar la UI
-            await LoadData();
             StateHasChanged();
         }
 
+
+        private async Task AddPagosList(CuotaEspecialCasa cuota)
+        {
+
+            var parameters = new Dictionary<string, object>
+        {
+            { "IdItem", cuota.Id },
+            { "Cuotas", true } // Indica que no es una cuota especial
+        };
+
+            var result = await DialogService.OpenAsync<ListPayment>(
+                $"{cuota.CuotaEspecial.Motivo} {cuota.CuotaEspecial.NombreMes} {cuota.CuotaEspecial.Year} casa {cuota.House.Number}",
+                parameters,
+                  new DialogOptions
+                  {
+                      Style = "margin-top: 20px; width: 600px; max-width: 90vw;",  // ✅ RESPONSIVE
+                      Resizable = true,
+                      Draggable = true,
+                  }
+            );
+
+
+            await LoadData();
+            StateHasChanged();
+
+
+        }
+        #endregion
+
+
+
+      
+
+
+       
 
 
     }

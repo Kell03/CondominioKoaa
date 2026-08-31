@@ -102,7 +102,9 @@ namespace Condominio.Infrastructure.Repositories
                         CuotaEspecialId = cuota.Id,
                         CuotaEspecial = cuota,
                         HouseId = houseId,
-                        Monto = montoPorCasa,
+                        MontoTotal = montoPorCasa,
+                        MontoPagado = 0,
+                        SaldoPendiente = montoPorCasa,
                         Estado = "Pendiente",
                     });
                 }

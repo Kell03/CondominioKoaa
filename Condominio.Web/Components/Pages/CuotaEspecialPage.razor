@@ -19,7 +19,7 @@
                           Icon="add_circle"
                           ButtonStyle="ButtonStyle.Primary"
                           Style="margin-bottom: 0.5rem;"
-                          Click="@(() => AddUser())" />
+                          Click="@(() => AddItem())" />
 
             @if (items == null)
             {
@@ -125,10 +125,11 @@
                         <RadzenLabel Component="YearDropDown">
                             Año <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Required" Variant="Variant.Outlined" IsPill="true" class="rz-ml-1" />
                         </RadzenLabel>
-                        <RadzenDropDown @bind-Value="@selectedItem.Year"
-                                        Data="@years"
-                                        Style="width: 100%; max-width: 400px;"
-                                        Name="YearDropDown" />
+                        <RadzenTextBox @bind-Value="yearInput"
+                                       MaxLength="4"
+                                       Change="@(args => OnYearChanged())"
+                                       Placeholder="Año"
+                                       Style="width: 100%; max-width: 400px;" />
                         <RadzenRequiredValidator Component="YearDropDown" Text="Año es requerido" />
                     </RadzenStack>
 

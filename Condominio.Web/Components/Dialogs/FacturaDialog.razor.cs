@@ -39,6 +39,7 @@ namespace Condominio.Web.Components.Dialogs
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
+            Item.Year = int.Parse(yearInput);
             orders = new List<FacturaMesHijo>();
 
         }
