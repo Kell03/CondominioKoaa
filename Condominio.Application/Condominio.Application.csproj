@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Condominio.Domain\Condominio.Domain.csproj" />
     <ProjectReference Include="..\Condominio.Infrastructure\Condominio.Infrastructure.csproj" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.13.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.12" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="9.0.19" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.12" />

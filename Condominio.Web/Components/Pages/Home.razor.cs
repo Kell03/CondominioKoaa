@@ -108,7 +108,7 @@ namespace Condominio.Web.Components.Pages
             data2.Category = "Pagado";
             var pagado = (double)(currentFactura.MontoRecaudado ?? 0);
             data2.Value = pagado;
-            revenue = new DataItem[] { data1, data2 };
+            revenue = new DataItem[] { data2, data1 };
             Title = $"{currentFactura.NombreMes} {currentFactura.Year}";
             Total = currentFactura.MontoTotal;
             StateHasChanged();
@@ -132,7 +132,7 @@ namespace Condominio.Web.Components.Pages
             data2.Category = "Pagado";
             var pagado = (double)currentCuota.MontoRecaudado;
             data2.Value = pagado;
-            revenue2 = new DataItem[] { data1, data2 };
+            revenue2 = new DataItem[] { data2, data1 };
             TitleCuota = $"{currentCuota.Motivo}";
             Total2 = (double)currentCuota.MontoTotal;
             StateHasChanged();

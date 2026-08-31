@@ -15,6 +15,8 @@ namespace Condominio.Domain.Entities
 
         // ✅ DATOS DEL PAGO
         public decimal Monto { get; set; }
+        public decimal? Tasa { get; set; }
+        public decimal? MontoBs { get; set; }
         public string? Referencia { get; set; }
         public string? MetodoPago { get; set; }
         public string Estado { get; set; } = "Pendiente";

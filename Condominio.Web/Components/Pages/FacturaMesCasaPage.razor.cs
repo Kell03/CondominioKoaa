@@ -16,7 +16,6 @@ namespace Condominio.Web.Components.Pages
         IList<FacturaMesCasa> selectedEmployees;
         FacturaMesCasa selectedItem = new FacturaMesCasa();
         private bool isAdmin = false;
-        private ApiMoneda monedaData;
         private IEnumerable<FacturaMes> FacturasMes;
         private IEnumerable<Houses> HouseList;
         Payments Pago = new Payments();
@@ -26,6 +25,7 @@ namespace Condominio.Web.Components.Pages
         "Pago Movil"
         };
         private IQueryable<FacturaMesCasa> items;
+        private BcvRates rates;
 
 
 
@@ -35,15 +35,14 @@ namespace Condominio.Web.Components.Pages
         {
             await LoadData();
             await CheckAdminRole();
-            await CargarMoneda();
-
-        }
-
-        private async Task CargarMoneda()
-        {
-            monedaData = await MonedaApiService.GetMonedaAsync();
+            rates = await BcvScraper.GetRatesAsync();
+            await Task.Delay(5000);  // 2000 milisegundos = 2 segundos
             StateHasChanged();
+
+
         }
+
+      
 
         private async Task LoadData()
         {
@@ -117,14 +116,9 @@ namespace Condominio.Web.Components.Pages
                 return;
             }
             Pago = new Payments();
-            await LoadPagos();
-
-            if (item.MontoBs == null || item.MontoBs == 0)
-            {
-                item.MontoBs = monedaData != null
-                ? item.MontoTotal * (decimal)Math.Round(monedaData.Promedio, 2)
-                : item.MontoTotal;
-            }
+            Pago.Tasa = rates?.EUR; 
+            Pago.MontoBs = 0;
+            await LoadPagos(item.Id);
             selectedItem = item;
             selectedIndex = 1;
             StateHasChanged();
@@ -163,7 +157,7 @@ namespace Condominio.Web.Components.Pages
             await FacturaMesCasaRepository.RegistrarPagoFactura(Pago);
             await FacturaMesCasaRepository.SaveChangesAsync();
             // Si tienes SaveChanges en el repositorio
-            await LoadPagos(); // Recargar la lista
+            await LoadPagos((int)Pago.FacturaMesCasaId); // Recargar la lista
             Pago = new Payments();
 
             StateHasChanged();
@@ -171,12 +165,26 @@ namespace Condominio.Web.Components.Pages
 
         }
 
-        private async Task LoadPagos()
+        private async Task LoadPagos(int idFacturaMes)
         {
-            PagosList = await FacturaMesCasaRepository.GetPaymentsForUserAsync(AppState.CurrentUser.Id, selectedItem.Id);
+            PagosList = await FacturaMesCasaRepository.GetPaymentsForUserAsync(AppState.CurrentUser.Id, idFacturaMes);
         }
 
 
+
+        private void OnMontoChanged(decimal? value)
+        {
+            if (value.HasValue && value.Value > 0 && Pago.Tasa > 0)
+            {
+                Pago.MontoBs = Math.Round(value.Value * (decimal)Pago.Tasa, 2);
+                Pago.Monto = (decimal)value;
+            }
+            else
+            {
+                Pago.MontoBs = null;
+            }
+            StateHasChanged();
+        }
         #endregion
 
 
@@ -244,11 +252,10 @@ namespace Condominio.Web.Components.Pages
                   }
             );
 
-            if (result is bool && (bool)result == true)
-            {
+          
                 await LoadData();
                 StateHasChanged();
-            }
+            
 
         }
 

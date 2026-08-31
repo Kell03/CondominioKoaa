@@ -1,6 +1,7 @@
 using Condominio.Application.Services;
 using Condominio.Domain.Entities;
 using Microsoft.AspNetCore.Components;
+using Radzen;
 
 namespace Condominio.Web.Components.Dialogs
 {
@@ -23,7 +24,44 @@ namespace Condominio.Web.Components.Dialogs
             PagosList = await FacturaMesCasaRepository.GetPaymentsForInvoiceAsync(IdFactura);
         }
 
-     
+
+        private async Task ConfirmSend(Payments item)
+        {
+            
+                var result = await DialogService.Confirm(
+                $"¿Confirmar pago con referencia {(item.Referencia)}?\n\n" +
+                $"Se le notificará al propietario que su pago ha sido aprobado.\n\n" +
+                $"¿Deseas continuar?",
+                "Confirmar aprobación de pago",
+               new ConfirmOptions()
+               {
+                   OkButtonText = " Sí, aprobar pago",
+                   CancelButtonText = " Cancelar",
+               }
+          );
+
+                if (result == true)
+                {
+                    await ConfirmPayment(item);
+                }
+            
+          
+
+
+        }
+
+        private async Task ConfirmPayment(Payments payment)
+        {
+                
+
+            await FacturaMesCasaRepository.ConfirmPayment(payment);
+
+            await LoadPagos();
+            StateHasChanged();
+            
+
+        }
+
 
 
     }

@@ -1,6 +1,7 @@
 ﻿@using Condominio.Domain.Entities
 @using Condominio.Infrastructure.Repositories
 @inject FacturaMesCasaRepository FacturaMesCasaRepository
+@inject Radzen.DialogService DialogService
 
 
 <RadzenDataGrid AllowFiltering="true"
@@ -18,24 +19,63 @@
                 SelectionMode="DataGridSelectionMode.Single">
 
     <Columns>
-        <RadzenDataGridColumn Property="@nameof(Payments.Referencia)"
-                              Filterable="false"
-                              Title="Referencia"
-                              Width="80px"
-                              TextAlign="TextAlign.Center" />
+
+        
+
+        <RadzenDataGridColumn Property="@nameof(Payments.Referencia)" Filterable="false" Title="Referencia" Width="120px" TextAlign="TextAlign.Center" />
+
 
         <RadzenDataGridColumn TItem="Payments"
                               Property="@nameof(Payments.Monto)"
                               Title="Monto"
-                              Width="auto">
+                              Width="100px">
             <Template Context="pago">
                 @pago.Monto $
             </Template>
         </RadzenDataGridColumn>
 
-        <RadzenDataGridColumn Property="@nameof(Payments.FechaPago)"
-                              Title="Fecha de Pago"
-                              Width="160px" />
+        <RadzenDataGridColumn TItem="Payments"
+                              Property="@nameof(Payments.MontoBs)"
+                              Title="Monto Bs"
+                              Width="120px">
+            <Template Context="pago">
+                @pago.MontoBs Bs
+            </Template>
+        </RadzenDataGridColumn>
+
+
+        <RadzenDataGridColumn TItem="Payments" Title="Fecha" Width="100px">
+            <Template Context="payment">
+                @payment.FechaPago.ToString("dd/MM/yyyy")
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn TItem="Payments"
+                              Title="Opciones"
+                              Width="120px"
+                              TextAlign="TextAlign.Center">
+            <Template Context="payment">
+                @if (payment.Estado != "Confirmada")
+                {
+                    <RadzenButton Icon="check"
+                                  ButtonStyle="ButtonStyle.Success"
+                                  Size="ButtonSize.Small"
+                                  Tooltip="Ver detalles"
+                                  Click="@(() => ConfirmSend(payment))"
+                                  @onclick:stopPropagation="true" />
+                }
+                else
+                {
+                    <RadzenButton Text="Confirmado"
+                                  Style="background: #6c757d;"
+                                  Size="ButtonSize.Small"
+                                  Disabled="true"
+                                  Tooltip="Confirmar pago"
+                                  @onclick:stopPropagation="true" />
+                }
+            </Template>
+        </RadzenDataGridColumn>
+
     </Columns>
 
     <!-- ✅ MENSAJE CUANDO NO HAY DATOS -->
@@ -45,9 +85,7 @@
             <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
                 No hay pagos registrados
             </RadzenText>
-            <RadzenText TextStyle="TextStyle.Body2">
-                Haz clic en "Agregar Pago" para registrar uno nuevo.
-            </RadzenText>
+
         </div>
     </EmptyTemplate>
 

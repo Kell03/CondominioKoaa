@@ -53,7 +53,18 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AppState>();
 builder.Services.AddHttpClient<MonedaApiService>();
 builder.Services.AddScoped<MonedaApiService>();
+// ✅ SERVICIO
+builder.Services.AddScoped<BcvScraperService>();
 
+// ✅ HTTPCLIENT
+builder.Services.AddHttpClient<BcvScraperService>(client =>
+{
+    client.DefaultRequestHeaders.Add("User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+});
+
+// ✅ MEMORY CACHE
+builder.Services.AddMemoryCache();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();

@@ -145,6 +145,7 @@ namespace Condominio.Infrastructure.Repositories
                         FacturaMesId = factura.Id,
                         HouseId = houseId,
                         MontoTotal = montoPorCasa,
+                        SaldoPendiente = montoPorCasa,
                         Estado = "Pendiente"
                     });
                 }

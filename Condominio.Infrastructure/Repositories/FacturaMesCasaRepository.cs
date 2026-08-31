@@ -25,6 +25,8 @@ namespace Condominio.Infrastructure.Repositories
                             FacturaMesId = factura.FacturaMesId,
                             HouseId = factura.HouseId,
                             MontoTotal = factura.MontoTotal,
+                            MontoPagado = factura.MontoPagado,
+                            SaldoPendiente = factura.SaldoPendiente,
                             MontoBs = factura.MontoBs,
                             Estado = factura.Estado,
                             Comentario = factura.Comentario,
@@ -121,6 +123,8 @@ namespace Condominio.Infrastructure.Repositories
                 {
                     FacturaMesCasaId = pago.FacturaMesCasaId,
                     Monto = pago.Monto,
+                    MontoBs = pago.MontoBs,
+                    Tasa = pago.Tasa,
                     MetodoPago = pago.MetodoPago,
                     Referencia = pago.Referencia,
                     Estado = "Pendiente"
@@ -172,9 +176,7 @@ namespace Condominio.Infrastructure.Repositories
                     .Include(p => p.CuotaEspecialCasa)
                         .ThenInclude(c => c.House)
                     .Where(p =>
-                        (p.FacturaMesCasa != null && p.FacturaMesCasa.HouseId == houseId) ||
-                        (p.CuotaEspecialCasa != null && p.CuotaEspecialCasa.HouseId == houseId)
-                        && p.FacturaMesCasaId == idFacturaMes
+                        (p.FacturaMesCasa != null && p.FacturaMesCasa.HouseId == houseId && p.FacturaMesCasaId == idFacturaMes)
                     )
                     .OrderByDescending(p => p.FechaPago)
                     .ToListAsync();
@@ -218,6 +220,68 @@ namespace Condominio.Infrastructure.Repositories
                 throw;
             }
 
+        }
+
+
+        public async Task<bool> ConfirmPayment(Payments payment)
+        {
+            // ✅ INICIAR TRANSACCIÓN
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+
+                var facturaMesCasa = await _context.FacturaMesCasa
+                 .FirstOrDefaultAsync(x => x.Id == payment.FacturaMesCasaId);
+
+                if (facturaMesCasa == null)
+                    throw new Exception("Factura no encontrada");
+
+
+
+                var factura = await _context.FacturaMes
+                    .FirstOrDefaultAsync(x => x.Id == facturaMesCasa.FacturaMesId);
+
+                if (factura == null)
+                    throw new Exception("Factura no encontrada");
+
+
+               
+                // 2. ✅ SUMAR el monto recaudado (NO asignar)
+                facturaMesCasa.MontoPagado = facturaMesCasa.MontoPagado + payment.Monto;
+
+                
+                facturaMesCasa.SaldoPendiente = facturaMesCasa.MontoTotal - facturaMesCasa.MontoPagado;
+
+                factura.MontoRecaudado += payment.Monto;
+
+                facturaMesCasa.Estado = facturaMesCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pendiente";
+
+                payment.Estado = "Confirmada";
+
+
+                _context.Payments.Update(payment);
+                _context.FacturaMesCasa.Update(facturaMesCasa);
+
+                _context.FacturaMes.Update(factura);
+
+                await _context.SaveChangesAsync();
+
+                // ✅ CONFIRMAR TRANSACCIÓN
+                await transaction.CommitAsync();
+
+                return true; // Éxito
+            }
+            catch (Exception ex)
+            {
+                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
+                await transaction.RollbackAsync();
+
+                // Opcional: guardar el error en un log
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+
+                return false; // Falló
+            }
         }
 
     }
