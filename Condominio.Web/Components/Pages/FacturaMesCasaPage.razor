@@ -155,7 +155,16 @@
                             <Template Context="factura">
 
 
-                                @if (factura.Estado != "Confirmada")
+
+                                <RadzenButton Icon="visibility"
+                                              ButtonStyle="ButtonStyle.Secondary"
+                                              Size="ButtonSize.Small"
+                                              Tooltip="Ver detalles"
+                                              Click="@(() => AddPagosList(factura))"
+                                              @onclick:stopPropagation="true" />
+                               
+                                              
+                                              @if (factura.Estado != "Confirmada")
                                 {
 
                                 

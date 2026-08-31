@@ -1,10 +1,11 @@
 ﻿using Condominio.Application.Services;
 using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
+using Condominio.Web.Components.Dialogs;
 using Microsoft.AspNetCore.Components;
-using System.Globalization;
 using Radzen;
 using Radzen.Blazor;
+using System.Globalization;
 
 namespace Condominio.Web.Components.Pages
 {
@@ -111,6 +112,10 @@ namespace Condominio.Web.Components.Pages
 
         private async Task EditUser(FacturaMesCasa item)
         {
+            if(isAdmin == true)
+            {
+                return;
+            }
             Pago = new Payments();
             await LoadPagos();
 
@@ -168,7 +173,7 @@ namespace Condominio.Web.Components.Pages
 
         private async Task LoadPagos()
         {
-            PagosList = await FacturaMesCasaRepository.GetPaymentsForUserAsync(AppState.CurrentUser.Id);
+            PagosList = await FacturaMesCasaRepository.GetPaymentsForUserAsync(AppState.CurrentUser.Id, selectedItem.Id);
         }
 
 
@@ -219,6 +224,33 @@ namespace Condominio.Web.Components.Pages
         }
 
 
+
+        private async Task AddPagosList(FacturaMesCasa factura)
+        {
+
+            var parameters = new Dictionary<string, object>
+        {
+            { "IdFactura", factura.Id }
+        };
+
+            var result = await DialogService.OpenAsync<ListPayment>(
+                $"Pago de {factura.NombreMes} {factura.FacturaMes.Year} casa {factura.House.Number}",
+                parameters,
+                  new DialogOptions
+                  {
+                      Style = "margin-top: 20px; width: 600px; max-width: 90vw;",  // ✅ RESPONSIVE
+                      Resizable = true,
+                      Draggable = true,
+                  }
+            );
+
+            if (result is bool && (bool)result == true)
+            {
+                await LoadData();
+                StateHasChanged();
+            }
+
+        }
 
 
         private async Task ConfirmSend(FacturaMesCasa item, bool confirmar)

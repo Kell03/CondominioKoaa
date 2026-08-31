@@ -145,7 +145,7 @@ namespace Condominio.Infrastructure.Repositories
             }
         }
 
-        public async Task<IEnumerable<Payments>> GetPaymentsForUserAsync(int userId)
+        public async Task<IEnumerable<Payments>> GetPaymentsForUserAsync(int userId, int idFacturaMes)
         {
             try
             {
@@ -174,6 +174,38 @@ namespace Condominio.Infrastructure.Repositories
                     .Where(p =>
                         (p.FacturaMesCasa != null && p.FacturaMesCasa.HouseId == houseId) ||
                         (p.CuotaEspecialCasa != null && p.CuotaEspecialCasa.HouseId == houseId)
+                        && p.FacturaMesCasaId == idFacturaMes
+                    )
+                    .OrderByDescending(p => p.FechaPago)
+                    .ToListAsync();
+
+                return payments;
+
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+        }
+
+
+        public async Task<IEnumerable<Payments>> GetPaymentsForInvoiceAsync( int idFacturaMes)
+        {
+            try
+            {
+               
+                var payments = await _context.Payments
+                    .Include(p => p.FacturaMesCasa)
+                        .ThenInclude(f => f.FacturaMes)
+                    .Include(p => p.FacturaMesCasa)
+                        .ThenInclude(f => f.House)
+                    .Include(p => p.CuotaEspecialCasa)
+                        .ThenInclude(c => c.CuotaEspecial)
+                    .Include(p => p.CuotaEspecialCasa)
+                        .ThenInclude(c => c.House)
+                    .Where(p =>
+                         p.FacturaMesCasaId == idFacturaMes
                     )
                     .OrderByDescending(p => p.FechaPago)
                     .ToListAsync();

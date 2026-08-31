@@ -101,6 +101,8 @@ namespace Condominio.Web.Components.Pages
         }
 
 
+       
+
         private async Task LoadData()
         {
             Invoices = await FacturaMesRepository.GetAllAsync();
