@@ -21,6 +21,7 @@ namespace Condominio.Web.Components.Dialogs
 
         List<FacturaMesHijo> ordersToInsert = new List<FacturaMesHijo>();
         List<FacturaMesHijo> ordersToUpdate = new List<FacturaMesHijo>();
+        private string? yearInput = DateTime.Now.Year.ToString();
 
         void Reset()
         {
@@ -63,20 +64,6 @@ namespace Condominio.Web.Components.Dialogs
             var order = new FacturaMesHijo();
             ordersToInsert.Add(order);
             await ordersGrid.InsertRow(order);
-        }
-
-        async Task InsertAfterRow(FacturaMesHijo row)
-        {
-            if (!ordersGrid.IsValid) return;
-
-            if (editMode == DataGridEditMode.Single)
-            {
-                Reset();
-            }
-
-            var order = new FacturaMesHijo();
-            ordersToInsert.Add(order);
-            await ordersGrid.InsertAfterRow(order, row);
         }
 
         void OnCreateRow(FacturaMesHijo order)
@@ -151,6 +138,21 @@ namespace Condominio.Web.Components.Dialogs
             await FacturaMesRepository.SaveChangesAsync();
             DialogService.Close(true);
 
+        }
+
+        private void OnYearChanged(FacturaMes item)
+        {
+            if (!string.IsNullOrEmpty(yearInput) && yearInput.Length == 4 && int.TryParse(yearInput, out int year))
+            {
+                selectedYear = year;
+                item.Year = selectedYear;
+            }
+            else if (!string.IsNullOrEmpty(yearInput) && yearInput.Length > 4)
+            {
+                yearInput = yearInput.Substring(0, 4); // Corta a 4 dígitos
+
+                item.Year = int.Parse(yearInput);
+            }
         }
 
     }

@@ -34,10 +34,11 @@
             <!-- Año -->
             <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
                 <RadzenLabel Text="Año" Component="YearDropDown" Style="font-weight: 500; color: #333;" />
-                <RadzenDropDown @bind-Value="@Item.Year"
-                                Data="@years"
-                                Style="width: 120px;"
-                                Name="YearDropDown" />
+                <RadzenTextBox @bind-Value="yearInput"
+                               MaxLength="4"
+                               Change="@(args => OnYearChanged(Item))"
+                               Placeholder="Año"
+                               Style="width: 160px;" />
             </RadzenStack>
 
         </RadzenStack>
