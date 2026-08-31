@@ -96,11 +96,7 @@
 
 
                         
-                        <RadzenDataGridColumn TItem="FacturaMesCasa" Title="Referencia" Width="140px">
-                            <Template Context="facturaCasa">
-                                @facturaCasa.Referencia
-                            </Template>
-                        </RadzenDataGridColumn>
+     
                        
                         <RadzenDataGridColumn TItem="FacturaMesCasa"
                                               Property="@nameof(FacturaMesCasa.MontoTotal)"
@@ -208,125 +204,144 @@
         </RadzenTabsItem>
         <RadzenTabsItem Text="Formulario" Disabled="true">
 
-            
-            <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SaveItem">
+            <h3>Formulario de Recibos</h3>
+
+            <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SavePago">
                 <RadzenStack Gap="1.5rem">
 
+                    <RadzenRow class="rz-text-align-center rz-border-info-light" Gap="1rem">
 
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Component="MesAnioLabel">
-                            Mes/Año <span style="color: var(--rz-danger);">*</span>
-                        </RadzenLabel>
-                        <RadzenText TextStyle="TextStyle.Body1"
-                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;">
-                            @selectedItem.NombreMes @selectedItem.Year
-                        </RadzenText>
+                        <RadzenColumn Size="12" SizeSM="6">
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="MPRequiredInput">
+                                    Metodo de Pago <span style="color: var(--rz-danger);">*</span>
+                                </RadzenLabel>
+
+                                <RadzenDropDown @bind-Value="@Pago.MetodoPago"
+                                                Data="@MetodosPago"
+                                                Style="width: 100%;"
+                                                Name="MPRequiredInput" />
+
+                                <RadzenRequiredValidator Component="MPRequiredInput" Text="El método de pago es requerido" />
+                            </RadzenStack>
+                        </RadzenColumn>
+
+
+
+
+
+                        <RadzenColumn Size="12" SizeSM="6">
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="MontoTotalLabel">
+                                    Monto Total <span style="color: var(--rz-danger);">*</span>
+                                </RadzenLabel>
+
+                           
+                                <RadzenNumeric @bind-Value="@Pago.Monto"
+                                               Style="width: 100%;"
+                                               Format="N2"
+                                               Min="0"
+                                               Step="0.01" />
+
+                            </RadzenStack>
+                        </RadzenColumn>
+
+
+
+                        
+
+
+
+                        <RadzenColumn Size="12" SizeSM="6">
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="NameRequiredInput">
+                                    Referencia
+                                </RadzenLabel>
+                                <RadzenTextBox Name="NameRequiredInput"
+                                               @bind-Value="@Pago.Referencia"
+                                               Style="width: 100%;" />
+                            </RadzenStack>
+                        </RadzenColumn>
+
+
+
+                        <RadzenColumn Size="12" SizeSM="6">
+
+                            
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Text="Fecha Pago" Component="RadzenDatePickerBindValue" />
+                                <RadzenDatePicker @bind-Value="@Pago.FechaPago"
+                                                  Name="RadzenDatePickerBindValue"
+                                                  ShowCalendarWeek="true"
+                                                  DateFormat="yyyy-MM-dd"
+                                                  ShowTime="false"
+                                                  Style="width: 100%;" />
+                            </RadzenStack>
+                            
+                        </RadzenColumn>
+
+
+
+                        <RadzenColumn Size="12" SizeSM="12">
+
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="NameRequiredInput">
+                                    Comentario 
+                                </RadzenLabel>
+                                <RadzenTextBox Name="NameRequiredInput" @bind-Value=@Pago.Comentario Style="width: 100%; " />
+                            </RadzenStack>
+
+
+                        </RadzenColumn>
+                    </RadzenRow>
+
+
+                    <!-- ✅ BOTÓN GUARDAR -->
+                    <RadzenStack Orientation="Orientation.Horizontal"
+                                 JustifyContent="JustifyContent.Center"
+                                 Gap="1rem"
+                                 Style="flex-wrap: wrap;">
+                        <RadzenButton ButtonType="ButtonType.Submit"
+                                      Text="Guardar"
+                                      Icon="save"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Style="width: 100%; max-width: 400px;" />
+                        <RadzenButton Text="Cancelar"
+                                      Icon="cancel"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Click="@(() => selectedIndex = 0)"
+                                      Style="width: 100%; max-width: 200px;" />
                     </RadzenStack>
-
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Component="NumberRequiredInput">
-                            Numero Casa
-                        </RadzenLabel>
-                        <RadzenText TextStyle="TextStyle.Body1"
-                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;">
-                            @selectedItem.House.Number
-                        </RadzenText>
-                    </RadzenStack>
-
-
-
-                    
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Component="MontoTotalLabel">
-                            Monto Total <span style="color: var(--rz-danger);">*</span>
-                        </RadzenLabel>
-
-                        @if (isAdmin)
-                        {
-                            <RadzenNumeric @bind-Value="@selectedItem.MontoTotal"
-                                           Style="width: 100%; max-width: 400px;"
-                                           Format="N2"
-                                           Min="0"
-                                           Step="0.01" />
-                        }
-                        else
-                        {
-
-                          
-
-                            <RadzenNumeric @bind-Value="@selectedItem.MontoTotal"
-                                           Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;"
-                                           Format="N2"
-                                           Min="0"
-                                           ReadOnly=" true"
-                                           Step="0.01" />
-
-                        }
-
-                    </RadzenStack>
-
-
-                   
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Component="NumberRequiredInput">
-                            Monto Bs
-                        </RadzenLabel>
-                        @if (isAdmin)
-                        {
-                            <RadzenNumeric @bind-Value="@selectedItem.MontoBs"
-                                           Style="width: 100%; max-width: 400px;"
-                                           Format="N2"
-                                           Min="0"
-                                           Step="0.01" />
-                        }
-                        else
-                        {
-
-                            <RadzenNumeric @bind-Value="@selectedItem.MontoBs"
-                                           Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; max-width: 400px;  cursor: default;"
-                                           Format="N2"
-                                           Min="0"
-                                           ReadOnly=" true"
-                                           Step="0.01" />
-
-                        }
-                    </RadzenStack>
-
-            
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Component="MPRequiredInput">
-                            Metodo de Pago <span style="color: var(--rz-danger);">*</span>
-                        </RadzenLabel>
-
-                        <RadzenDropDown @bind-Value="@selectedItem.MetodoPago"
-                                        Data="@MetodosPago"
-                                        Style="width: 100%; max-width: 400px;"
-                                        Name="MPRequiredInput" />
-
-                        <RadzenRequiredValidator Component="MPRequiredInput" Text="El método de pago es requerido" />
-                    </RadzenStack>
-
-
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Component="NumeroReferenciaRequiredInput">
-                            Numero Referencia <span style="color: var(--rz-danger);">*</span>
-                        </RadzenLabel>
-                        <RadzenTextBox Name="NumeroReferenciaRequiredInput" @bind-Value=@selectedItem.Referencia Style="width: 100%; max-width: 400px;" />
-                        <RadzenRequiredValidator Component="NumeroReferenciaRequiredInput" Text="Referencia is required" />
-                    </RadzenStack>
-
-
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                        <RadzenLabel Text="Fecha Pago" Component="RadzenDatePickerBindValue" />
-                        <RadzenDatePicker @bind-Value=@selectedItem.FechaPago Name="RadzenDatePickerBindValue" ShowCalendarWeek Style="width: 100%; max-width: 400px;" />
-                    </RadzenStack>
-
- 
-                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Form" Style="width: 100%; max-width: 400px;" />
-
 
                 </RadzenStack>
             </RadzenTemplateForm>
+
+
+
+
+            <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                            Data="@PagosList" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single">
+                <Columns>
+                    <RadzenDataGridColumn Property="@nameof(Payments.Referencia)" Filterable="false" Title="Referencia" Width="80px" TextAlign="TextAlign.Center" />
+
+                    <RadzenDataGridColumn Property="@nameof(Payments.Monto)" Title="First Name" Width="160px" />
+
+                    <RadzenDataGridColumn TItem="Payments"
+                                          Property="@nameof(Payments.Monto)"
+                                          Title="Monto"
+                                          Width="auto">
+                        <Template Context="pago">
+                            @pago.Monto $
+                        </Template>
+                    </RadzenDataGridColumn>
+                                       
+
+                    <RadzenDataGridColumn Property="@nameof(Payments.FechaPago)" Title="Fecha de Pago" Width="160px" />
+                   
+
+                </Columns>
+            </RadzenDataGrid>
+
         </RadzenTabsItem>
 
         <RadzenTabsItem Text="Nuevo" Disabled="true" Visible="@isAdmin">
@@ -347,7 +362,7 @@
                                         Style="width: 100%; max-width: 400px;"
                                         Name="DropDownFiltering">
                             <Template Context="item">
-                               @item.NombreMes @item.Year
+                                @item.NombreMes @item.Year
                             </Template>
                         </RadzenDropDown>
                     </RadzenStack>

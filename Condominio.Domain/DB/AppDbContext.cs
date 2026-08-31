@@ -22,6 +22,7 @@ namespace Condominio.Domain.DB
         public DbSet<FacturaMesCasa> FacturaMesCasa { get; set; }
         public DbSet<CuotaEspecialCasa> CuotaEspecialCasa { get; set; }
         public DbSet<CuotaEspecial> CuotaEspecial { get; set; }
+        public DbSet<Payments> Payments { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -99,6 +100,25 @@ namespace Condominio.Domain.DB
                     .WithMany()
                     .HasForeignKey(cec => cec.HouseId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+
+            modelBuilder.Entity<Payments>(entity =>
+            {
+
+                // ✅ RELACIÓN CON FACTURA
+                entity.HasOne(p => p.FacturaMesCasa)
+                    .WithMany(fc => fc.Payments)
+                    .HasForeignKey(p => p.FacturaMesCasaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // ✅ RELACIÓN CON CUOTA ESPECIAL
+                entity.HasOne(p => p.CuotaEspecialCasa)
+                    .WithMany(cec => cec.Payments)
+                    .HasForeignKey(p => p.CuotaEspecialCasaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+               
             });
         }
 

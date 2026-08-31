@@ -41,6 +41,9 @@ namespace Condominio.Domain.Entities
 
 
         [NotMapped]
-        public Users? User { get; set; } 
+        public Users? User { get; set; }
+
+        public ICollection<Payments>? Payments { get; set; }
+
     }
 }

@@ -27,9 +27,6 @@ namespace Condominio.Infrastructure.Repositories
                             MontoTotal = factura.MontoTotal,
                             MontoBs = factura.MontoBs,
                             Estado = factura.Estado,
-                            Referencia = factura.Referencia,
-                            MetodoPago = factura.MetodoPago,
-                            FechaPago = factura.FechaPago,
                             Comentario = factura.Comentario,
                             CreatedAt = factura.CreatedAt,
                             UpdatedAt = factura.UpdatedAt,
@@ -61,7 +58,7 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
-        public async  Task<IEnumerable<FacturaMesCasa>> GetAllForUserAsync(int id)
+        public async Task<IEnumerable<FacturaMesCasa>> GetAllForUserAsync(int id)
         {
             var idCasa = await _context.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
             return await _dbSet.Include(x => x.House).Include(x => x.FacturaMes).ThenInclude(x => x.FacturaMesHijos).Where(x => x.House.Id == idCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
@@ -94,7 +91,7 @@ namespace Condominio.Infrastructure.Repositories
                 _context.FacturaMes.Update(factura);
 
 
-              
+
                 await _context.SaveChangesAsync();
 
                 // ✅ CONFIRMAR TRANSACCIÓN
@@ -112,6 +109,83 @@ namespace Condominio.Infrastructure.Repositories
 
                 return false; // Falló
             }
+        }
+
+
+        public async Task<bool> RegistrarPagoFactura(Payments pago)
+        {
+            try
+            {
+
+                var payment = new Payments
+                {
+                    FacturaMesCasaId = pago.FacturaMesCasaId,
+                    Monto = pago.Monto,
+                    MetodoPago = pago.MetodoPago,
+                    Referencia = pago.Referencia,
+                    Estado = "Pendiente"
+                };
+
+                await _context.Payments.AddAsync(payment);
+                await _context.SaveChangesAsync();
+
+                // ✅ Actualizar saldo de la factura
+                // ... (código anterior)
+
+                return true;
+
+            }
+            catch (Exception ex)
+            {
+
+                // Opcional: guardar el error en un log
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+
+                return false; // Falló
+            }
+        }
+
+        public async Task<IEnumerable<Payments>> GetPaymentsForUserAsync(int userId)
+        {
+            try
+            {
+                // 1. Obtener la casa del usuario
+                var houseId = await _context.Users
+                    .Where(u => u.Id == userId)
+                    .Select(u => u.HouseId)
+                    .FirstOrDefaultAsync();
+
+                if (houseId == null || houseId == 0)
+                    return new List<Payments>();
+
+                // 2. Obtener todos los pagos de esa casa
+                // Un pago puede estar asociado a FacturaMesCasa o CuotaEspecialCasa
+                // Ambos tienen HouseId
+
+                var payments = await _context.Payments
+                    .Include(p => p.FacturaMesCasa)
+                        .ThenInclude(f => f.FacturaMes)
+                    .Include(p => p.FacturaMesCasa)
+                        .ThenInclude(f => f.House)
+                    .Include(p => p.CuotaEspecialCasa)
+                        .ThenInclude(c => c.CuotaEspecial)
+                    .Include(p => p.CuotaEspecialCasa)
+                        .ThenInclude(c => c.House)
+                    .Where(p =>
+                        (p.FacturaMesCasa != null && p.FacturaMesCasa.HouseId == houseId) ||
+                        (p.CuotaEspecialCasa != null && p.CuotaEspecialCasa.HouseId == houseId)
+                    )
+                    .OrderByDescending(p => p.FechaPago)
+                    .ToListAsync();
+
+                return payments;
+
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
         }
 
     }

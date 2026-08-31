@@ -16,17 +16,14 @@ namespace Condominio.Domain.Entities
 
 
         public decimal MontoTotal { get; set; }
+        public decimal MontoPagado { get; set; }
+        public decimal SaldoPendiente { get; set; }
 
 
         public string Estado { get; set; } = "Pendiente"; // 'En Revisión', 'Confirmada'
 
-        public string? Referencia { get; set; }
-
-        public string? MetodoPago { get; set; }
-
-        public DateTime? FechaPago { get; set; }
-
         public string? Comentario { get; set; }
+
 
         public FacturaMes FacturaMes { get; set; }
 
@@ -36,9 +33,10 @@ namespace Condominio.Domain.Entities
         [NotMapped]
         public Users? User { get; set; } // ✅ RELACIÓN CON USUARIO (DUEÑO DE LA CASA)
 
-        public decimal? MontoBs { get; set; } 
+        public decimal? MontoBs { get; set; }
 
 
+        public ICollection<Payments>? Payments { get; set; } 
 
         [NotMapped]
         public string NombreMes => ObtenerNombreMes(FacturaMes?.Mes ?? 0);

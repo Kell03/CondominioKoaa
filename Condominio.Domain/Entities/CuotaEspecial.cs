@@ -31,7 +31,6 @@ namespace Condominio.Domain.Entities
 
         public bool Enviado { get; set; } = false;
 
-
         // ✅ NAVEGACIÓN
         public ICollection<CuotaEspecialCasa> CuotaEspecialCasas { get; set; } = new List<CuotaEspecialCasa>();
 

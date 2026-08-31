@@ -12,24 +12,23 @@ namespace Condominio.Web.Components.Pages
     {
 
         RadzenDataGrid<FacturaMesCasa> grid;
-
         IList<FacturaMesCasa> selectedEmployees;
         FacturaMesCasa selectedItem = new FacturaMesCasa();
-
         private bool isAdmin = false;
-
         private ApiMoneda monedaData;
-
         private IEnumerable<FacturaMes> FacturasMes;
         private IEnumerable<Houses> HouseList;
-
-
+        Payments Pago = new Payments();
+        private IEnumerable<Payments> PagosList;
         private List<string> MetodosPago = new List<string>
         {
         "Pago Movil"
         };
-
         private IQueryable<FacturaMesCasa> items;
+
+
+
+
 
         protected override async Task OnInitializedAsync()
         {
@@ -112,11 +111,8 @@ namespace Condominio.Web.Components.Pages
 
         private async Task EditUser(FacturaMesCasa item)
         {
-            if (!isAdmin && item.Estado != "Pendiente")
-            {
-                return;
-            }
-
+            Pago = new Payments();
+            await LoadPagos();
 
             if (item.MontoBs == null || item.MontoBs == 0)
             {
@@ -151,6 +147,33 @@ namespace Condominio.Web.Components.Pages
 
 
         }
+
+
+        #region Pagos 
+
+        private async Task SavePago()
+        {
+
+            Pago.FacturaMesCasaId = selectedItem.Id;
+            await FacturaMesCasaRepository.RegistrarPagoFactura(Pago);
+            await FacturaMesCasaRepository.SaveChangesAsync();
+            // Si tienes SaveChanges en el repositorio
+            await LoadPagos(); // Recargar la lista
+            Pago = new Payments();
+
+            StateHasChanged();
+
+
+        }
+
+        private async Task LoadPagos()
+        {
+            PagosList = await FacturaMesCasaRepository.GetPaymentsForUserAsync(AppState.CurrentUser.Id);
+        }
+
+
+        #endregion
+
 
         private async Task SaveNewItem()
         {
