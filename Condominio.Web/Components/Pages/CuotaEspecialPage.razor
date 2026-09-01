@@ -21,16 +21,7 @@
                           Style="margin-bottom: 0.5rem;"
                           Click="@(() => AddItem())" />
 
-            @if (items == null)
-            {
-                <p>Cargando usuarios...</p>
-            }
-            else if (!items.Any())
-            {
-                <p>No hay usuarios registrados.</p>
-            }
-            else
-            {
+    
 
                 <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
                                 Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
@@ -88,10 +79,20 @@
                         </RadzenDataGridColumn>
 
                     </Columns>
+
+                    <EmptyTemplate>
+                        <div style="padding: 20px; text-align: center; color: #6c757d;">
+                            <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                            <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                No hay Cuotas Especiales registradas
+                            </RadzenText>
+
+                        </div>
+                    </EmptyTemplate>
                 </RadzenDataGrid>
 
 
-            }
+            
         </RadzenTabsItem>
         <RadzenTabsItem Text="Formulario">
 
@@ -154,7 +155,7 @@
                     </RadzenStack>
 
 
-                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Form" Style="width: 100%; max-width: 400px;" />
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" Style="width: 100%; max-width: 400px;" />
                 </RadzenStack>
             </RadzenTemplateForm>
 

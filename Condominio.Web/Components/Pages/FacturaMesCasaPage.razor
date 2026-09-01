@@ -28,16 +28,7 @@
 
          
 
-            @if (items == null)
-            {
-                <p>Cargando Recibos...</p>
-            }
-            else if (!items.Any())
-            {
-                <p>No hay recibos registrados.</p>
-            }
-            else
-            {
+        
                 <RadzenButton Text="Agregar"
                               Icon="add_circle"
                               ButtonStyle="ButtonStyle.Primary"
@@ -189,6 +180,16 @@
                         
                     
                     </Columns>
+
+                <EmptyTemplate>
+                    <div style="padding: 20px; text-align: center; color: #6c757d;">
+                        <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                        <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                            No hay Facturas registrados
+                        </RadzenText>
+
+                    </div>
+                </EmptyTemplate>
                 </RadzenDataGrid>
 
 
@@ -197,7 +198,7 @@
 
              
 
-            }
+            
         </RadzenTabsItem>
         <RadzenTabsItem Text="Formulario" Disabled="true">
 
