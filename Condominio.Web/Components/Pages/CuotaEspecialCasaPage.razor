@@ -221,34 +221,33 @@
                         </RadzenColumn>
                     </RadzenRow>
                 </RadzenCard>
+                <RadzenTemplateForm TItem="Payments"
+                                    Data="@Pago"
+                                    Submit="@SavePago"
+                                    style="margin-bottom:10px">
 
-             
-                <RadzenTemplateForm Data=@selectedItem style="margin-bottom:10px"  @onsubmit="SavePago">
                     <RadzenStack Gap="1rem">
 
-                        <RadzenRow  Gap="1rem">
+                        <RadzenRow Gap="1rem">
 
+                            <!-- MÉTODO DE PAGO -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
                                     <RadzenLabel Component="MPRequiredInput">
                                         Metodo de Pago <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
-
                                     <RadzenDropDown @bind-Value="@Pago.MetodoPago"
                                                     Data="@MetodosPago"
                                                     Style="width: 100%;"
                                                     Name="MPRequiredInput" />
-
                                     <RadzenRequiredValidator Component="MPRequiredInput" Text="El método de pago es requerido" />
                                 </RadzenStack>
                             </RadzenColumn>
 
+                            <!-- TASA -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="MontoTotalLabel">
-                                        Tasa
-                                    </RadzenLabel>
-
+                                    <RadzenLabel Component="MontoTotalLabel">Tasa</RadzenLabel>
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <RadzenText TextStyle="TextStyle.Body1"
                                                     Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; cursor: default;">
@@ -258,87 +257,79 @@
                                 </RadzenStack>
                             </RadzenColumn>
 
-
+                            <!-- MONTO TOTAL -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="MontoTotalLabel">
+                                    <RadzenLabel Component="MontoRequiredInput">
                                         Monto Total <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
-
-                                    <RadzenNumeric Value="@Pago.Monto"
-                                                   ValueChanged="@((decimal? value) => OnMontoChanged(value))"
+                                    <RadzenNumeric @bind-Value="@Pago.Monto"
                                                    Style="width: 100%;"
                                                    Format="N2"
                                                    Min="0"
-                                                   Step="0.01" />
+                                                   Step="0.01"
+                                                   Name="MontoRequiredInput" />
+                                    <RadzenRequiredValidator Component="MontoRequiredInput" Text="El monto es requerido" />
+                                    <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
+                                                                 Component="MontoRequiredInput"
+                                                                 Text="El monto debe ser mayor a 0" />
                                 </RadzenStack>
                             </RadzenColumn>
 
+                            <!-- MONTO BS -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
                                     <RadzenLabel Component="MontoTotalLabel">
                                         Monto Total Bs <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
-
                                     <RadzenNumeric @bind-Value="@Pago.MontoBs"
                                                    Style="width: 100%;"
                                                    Format="N2"
                                                    Min="0"
                                                    Step="0.01"
-                                                   ReadOnly="true" />  <!-- ✅ SOLO LECTURA -->
+                                                   ReadOnly="true" />
                                 </RadzenStack>
                             </RadzenColumn>
 
-
-                        
-
-
-
+                            <!-- REFERENCIA -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="NameRequiredInput">
-                                        Referencia
+                                    <RadzenLabel Component="ReferenciaRequiredInput">
+                                        Referencia <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
-                                    <RadzenTextBox Name="NameRequiredInput"
+                                    <RadzenTextBox Name="ReferenciaRequiredInput"
                                                    @bind-Value="@Pago.Referencia"
                                                    Style="width: 100%;" />
+                                    <RadzenRequiredValidator Component="ReferenciaRequiredInput" Text="La referencia es requerida" />
                                 </RadzenStack>
                             </RadzenColumn>
 
-
-
+                            <!-- FECHA DE PAGO -->
                             <RadzenColumn Size="12" SizeSM="6">
-
-                            
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Text="Fecha Pago" Component="RadzenDatePickerBindValue" />
+                                    <RadzenLabel Text="Fecha Pago" Component="FechaPagoRequiredInput">
+                                        Fecha Pago <span style="color: var(--rz-danger);">*</span>
+                                    </RadzenLabel>
                                     <RadzenDatePicker @bind-Value="@Pago.FechaPago"
-                                                      Name="RadzenDatePickerBindValue"
+                                                      Name="FechaPagoRequiredInput"
                                                       ShowCalendarWeek="true"
                                                       DateFormat="yyyy-MM-dd"
                                                       ShowTime="false"
                                                       Style="width: 100%;" />
+                                    <RadzenRequiredValidator Component="FechaPagoRequiredInput" Text="La fecha de pago es requerida" />
                                 </RadzenStack>
-
                             </RadzenColumn>
 
-
-
+                            <!-- COMENTARIO -->
                             <RadzenColumn Size="12" SizeSM="12">
-
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="NameRequiredInput">
-                                        Comentario
-                                    </RadzenLabel>
-                                    <RadzenTextBox Name="NameRequiredInput" @bind-Value=@Pago.Comentario Style="width: 100%; " />
+                                    <RadzenLabel Component="NameRequiredInput">Comentario</RadzenLabel>
+                                    <RadzenTextBox Name="NameRequiredInput" @bind-Value=@Pago.Comentario Style="width: 100%;" />
                                 </RadzenStack>
-
-
                             </RadzenColumn>
                         </RadzenRow>
 
-
-                        <!-- ✅ BOTÓN GUARDAR -->
+                        <!-- BOTÓN GUARDAR -->
                         <RadzenStack Orientation="Orientation.Horizontal"
                                      JustifyContent="JustifyContent.Center"
                                      Gap="1rem"
@@ -357,6 +348,8 @@
 
                     </RadzenStack>
                 </RadzenTemplateForm>
+
+
             }
 
            
