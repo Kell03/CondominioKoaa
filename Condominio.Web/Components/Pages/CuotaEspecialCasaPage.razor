@@ -25,122 +25,122 @@
                           Icon="add_circle"
                           ButtonStyle="ButtonStyle.Primary"
                           Style="margin-bottom: 0.5rem;"
-                          Click="@(() => CreateNewItem())" 
+                          Click="@(() => CreateNewItem())"
                           Visible="@isAdmin" />
 
          
 
-                <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
-                                Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
-                                RowSelect="@((CuotaEspecialCasa item) => EditUser(item))">
-                    <Columns>
+            <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                            Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
+                            RowSelect="@((CuotaEspecialCasa item) => EditUser(item))">
+                <Columns>
 
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="120px">
-                            <Template Context="cuota">
-                                @cuota.House.Number
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="120px">
+                        <Template Context="cuota">
+                            @cuota.House.Number
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa"
-                                              Title="Propietario"
-                                              Width="130px"
-                                              Property="User.Name"
-                                              Visible="@isAdmin">
-                            <Template Context="cuotaCasa">
-                                @cuotaCasa.User?.Name
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa"
+                                          Title="Propietario"
+                                          Width="130px"
+                                          Property="User.Name"
+                                          Visible="@isAdmin">
+                        <Template Context="cuotaCasa">
+                            @cuotaCasa.User?.Name
+                        </Template>
+                    </RadzenDataGridColumn>
 
 
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Motivo" Width="150px">
-                            <Template Context="cuota">
-                                @cuota.CuotaEspecial?.Motivo
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Monto" Width="120px">
-                            <Template Context="cuota">
-                                @cuota.MontoTotal $
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Pagado" Width="120px">
-                            <Template Context="cuota">
-                                @cuota.MontoPagado $
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Pendiente" Width="120px">
-                            <Template Context="cuota">
-                                @cuota.SaldoPendiente $
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Mes" Width="140px">
-                            <Template Context="cuota">
-                                @cuota.CuotaEspecial.NombreMes
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Año" Width="140px">
-                            <Template Context="cuota">
-                                @cuota.CuotaEspecial.Year
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Motivo" Width="150px">
+                        <Template Context="cuota">
+                            @cuota.CuotaEspecial?.Motivo
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Monto" Width="120px">
+                        <Template Context="cuota">
+                            @cuota.MontoTotal $
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Pagado" Width="120px">
+                        <Template Context="cuota">
+                            @cuota.MontoPagado $
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Pendiente" Width="120px">
+                        <Template Context="cuota">
+                            @cuota.SaldoPendiente $
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Mes" Width="140px">
+                        <Template Context="cuota">
+                            @cuota.CuotaEspecial.NombreMes
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Año" Width="140px">
+                        <Template Context="cuota">
+                            @cuota.CuotaEspecial.Year
+                        </Template>
+                    </RadzenDataGridColumn>
 
                       
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa"
-                                              Property="Estado"
-                                              Title="Estado"
-                                              Width="140px">
-                            <Template Context="cuotaCasa">
-                                @if (cuotaCasa.Estado == "Pendiente")
-                                {
-                                    <RadzenBadge Style="background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px;">
-                                        Pendiente
-                                    </RadzenBadge>
-                                }
-                                else if (cuotaCasa.Estado == "En Revision")
-                                {
-                                    <RadzenBadge Style="background: #6c757d; color: #fff; padding: 4px 8px; border-radius: 4px;">
-                                        En Revisión
-                                    </RadzenBadge>
-                                }
-                                else if (cuotaCasa.Estado == "Confirmada")
-                                {
-                                    <RadzenBadge Style="background: #28a745; color: #fff; padding: 4px 8px; border-radius: 4px;">
-                                        Confirmada
-                                    </RadzenBadge>
-                                }
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa"
+                                          Property="Estado"
+                                          Title="Estado"
+                                          Width="140px">
+                        <Template Context="cuotaCasa">
+                            @if (cuotaCasa.Estado == "Pendiente")
+                            {
+                                <span style="background: #f8d7da; color: #721c24; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
+                                     Pendiente
+                                </span>
+                            }
+                            else if (cuotaCasa.Estado == "En Revision")
+                            {
+                                <span style="background: #e9ecef; color: #6c757d; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
+                                     En Revisión
+                                </span>
+                            }
+                            else if (cuotaCasa.Estado == "Confirmada")
+                            {
+                                <span style="background: #d4edda; color: #155724; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
+                                     Confirmada
+                                </span>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center" Visible="@isAdmin">
-                            <Template Context="cuotaCasa">
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center" Visible="@isAdmin">
+                        <Template Context="cuotaCasa">
 
-                                <RadzenButton Icon="visibility"
-                                              ButtonStyle="ButtonStyle.Secondary"
-                                              Size="ButtonSize.Small"
-                                              Tooltip="Ver detalles"
-                                              Click="@(() => AddPagosList(cuotaCasa))"
-                                              @onclick:stopPropagation="true" />
+                            <RadzenButton Icon="visibility"
+                                          ButtonStyle="ButtonStyle.Secondary"
+                                          Size="ButtonSize.Small"
+                                          Tooltip="Ver detalles"
+                                          Click="@(() => AddPagosList(cuotaCasa))"
+                                          @onclick:stopPropagation="true" />
 
 
-                            </Template>
-                        </RadzenDataGridColumn>
+                        </Template>
+                    </RadzenDataGridColumn>
 
                    
 
-                    </Columns>
+                </Columns>
 
 
 
 
-                    <EmptyTemplate>
-                        <div style="padding: 20px; text-align: center; color: #6c757d;">
-                            <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
-                            <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
-                                No hay Cuotas registradas
-                            </RadzenText>
+                <EmptyTemplate>
+                    <div style="padding: 20px; text-align: center; color: #6c757d;">
+                        <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                        <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                            No hay Cuotas registradas
+                        </RadzenText>
 
-                        </div>
-                    </EmptyTemplate>
-                </RadzenDataGrid>
+                    </div>
+                </EmptyTemplate>
+            </RadzenDataGrid>
 
 
             

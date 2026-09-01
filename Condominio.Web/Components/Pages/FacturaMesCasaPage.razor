@@ -29,157 +29,157 @@
          
 
         
-                <RadzenButton Text="Agregar"
-                              Icon="add_circle"
-                              ButtonStyle="ButtonStyle.Primary"
-                              Style="margin-bottom: 0.5rem;"
-                              Click="@(() => CreateNewItem())"
-                              Visible="@isAdmin" />
+            <RadzenButton Text="Agregar"
+                          Icon="add_circle"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Style="margin-bottom: 0.5rem;"
+                          Click="@(() => CreateNewItem())"
+                          Visible="@isAdmin" />
 
 
                 
-                <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
-                                Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
-                                RowSelect="@((FacturaMesCasa item) => EditUser(item))">
-                    <Template Context="order">
-                        <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0;">
+            <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
+                            Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
+                            RowSelect="@((FacturaMesCasa item) => EditUser(item))">
+                <Template Context="order">
+                    <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0;">
 
-                            <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
-                                Detalle de Factura #@order.FacturaMes.Id
-                            </RadzenText>
-                            <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Style="background: #b8c6d9; border-radius: 6px;" Data="@order.FacturaMes.FacturaMesHijos">
-                                <Columns>
-                                    <RadzenDataGridColumn Property="FacturaMesCasa.FacturaMes.FacturaMesHijos.Motivo" Title="Motivo" />
-                                    <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="120px">
-                                        <Template Context="item">
-                                            @($"{item.Monto} $")
-                                        </Template>
-                                    </RadzenDataGridColumn>
+                        <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
+                            Detalle de Factura #@order.FacturaMes.Id
+                        </RadzenText>
+                        <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Style="background: #b8c6d9; border-radius: 6px;" Data="@order.FacturaMes.FacturaMesHijos">
+                            <Columns>
+                                <RadzenDataGridColumn Property="FacturaMesCasa.FacturaMes.FacturaMesHijos.Motivo" Title="Motivo" />
+                                <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="120px">
+                                    <Template Context="item">
+                                        @($"{item.Monto} $")
+                                    </Template>
+                                </RadzenDataGridColumn>
 
-                                </Columns>
-                            </RadzenDataGrid>
-                            <RadzenText TextStyle="TextStyle.Body1" Style="margin-top: 10px; font-weight: bold; text-align: right; color: #333; border-top: 1px solid #ddd; padding-top: 8px;">
-                                Total: @order.FacturaMes.FacturaMesHijos.Sum(h => h.Monto) $
-                            </RadzenText>
-                        </RadzenCard>
+                            </Columns>
+                        </RadzenDataGrid>
+                        <RadzenText TextStyle="TextStyle.Body1" Style="margin-top: 10px; font-weight: bold; text-align: right; color: #333; border-top: 1px solid #ddd; padding-top: 8px;">
+                            Total: @order.FacturaMes.FacturaMesHijos.Sum(h => h.Monto) $
+                        </RadzenText>
+                    </RadzenCard>
 
-                    </Template>
-                    <Columns>
+                </Template>
+                <Columns>
 
                     
-                        <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Nro Casa" Width="160px">
-                            <Template Context="FacturaMesCasa">
-                                @FacturaMesCasa.House.Number
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Nro Casa" Width="160px">
+                        <Template Context="FacturaMesCasa">
+                            @FacturaMesCasa.House.Number
+                        </Template>
+                    </RadzenDataGridColumn>
 
 
                         
-                        <RadzenDataGridColumn TItem="FacturaMesCasa"
-                                              Title="Propietario"
-                                              Width="160px"
-                                              Property="User.Name"
-                                              Visible="@isAdmin">
-                            <Template Context="facturaCasa">
-                                @facturaCasa.User?.Name
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                          Title="Propietario"
+                                          Width="160px"
+                                          Property="User.Name"
+                                          Visible="@isAdmin">
+                        <Template Context="facturaCasa">
+                            @facturaCasa.User?.Name
+                        </Template>
+                    </RadzenDataGridColumn>
 
 
                         
      
                        
-                        <RadzenDataGridColumn TItem="FacturaMesCasa"
-                                              Property="@nameof(FacturaMesCasa.MontoTotal)"
-                                              Title="Monto"
-                                              Width="120px">
-                            <Template Context="facturaCasa">
-                                @facturaCasa.MontoTotal $
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                          Property="@nameof(FacturaMesCasa.MontoTotal)"
+                                          Title="Monto"
+                                          Width="120px">
+                        <Template Context="facturaCasa">
+                            @facturaCasa.MontoTotal $
+                        </Template>
+                    </RadzenDataGridColumn>
 
 
-                        <RadzenDataGridColumn TItem="FacturaMesCasa"
-                                              Property="@nameof(FacturaMesCasa.MontoPagado)"
-                                              Title="Pagado"
-                                              Width="140px">
-                            <Template Context="facturaCasa">
-                                @facturaCasa.MontoPagado $
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                          Property="@nameof(FacturaMesCasa.MontoPagado)"
+                                          Title="Pagado"
+                                          Width="140px">
+                        <Template Context="facturaCasa">
+                            @facturaCasa.MontoPagado $
+                        </Template>
+                    </RadzenDataGridColumn>
 
 
-                        <RadzenDataGridColumn TItem="FacturaMesCasa"
-                                              Property="@nameof(FacturaMesCasa.SaldoPendiente)"
-                                              Title="Pendiente"
-                                              Width="140px">
-                            <Template Context="facturaCasa">
-                                @facturaCasa.SaldoPendiente $
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="FacturaMesCasa"
-                                              Property="@nameof(FacturaMesCasa.NombreMes)"
-                                              Title="Mes"
-                                              Width="auto">
-                            <Template Context="facturaCasa">
-                                @facturaCasa.NombreMes
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                          Property="@nameof(FacturaMesCasa.SaldoPendiente)"
+                                          Title="Pendiente"
+                                          Width="140px">
+                        <Template Context="facturaCasa">
+                            @facturaCasa.SaldoPendiente $
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                          Property="@nameof(FacturaMesCasa.NombreMes)"
+                                          Title="Mes"
+                                          Width="auto">
+                        <Template Context="facturaCasa">
+                            @facturaCasa.NombreMes
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="FacturaMesCasa"
-                                              Property="@nameof(FacturaMesCasa.FacturaMes.Year)"
-                                              Title="Año"
-                                              Width="auto">
-                            <Template Context="facturaCasa">
-                                @facturaCasa.FacturaMes.Year
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                          Property="@nameof(FacturaMesCasa.FacturaMes.Year)"
+                                          Title="Año"
+                                          Width="auto">
+                        <Template Context="facturaCasa">
+                            @facturaCasa.FacturaMes.Year
+                        </Template>
+                    </RadzenDataGridColumn>
 
                     
-                        <RadzenDataGridColumn TItem="FacturaMesCasa"
-                                              Property="Estado"
-                                              Title="Estado"
-                                              Width="140px">
-                            <Template Context="facturaCasa">
-                                @if (facturaCasa.Estado == "Pendiente")
-                                {
-                                    <RadzenBadge Style="background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px;">
-                                        Pendiente
-                                    </RadzenBadge>
-                                }
-                                else if (facturaCasa.Estado == "En Revision")
-                                {
-                                    <RadzenBadge Style="background: #6c757d; color: #fff; padding: 4px 8px; border-radius: 4px;">
-                                        En Revision
-                                    </RadzenBadge>
-                                }
-                                else if (facturaCasa.Estado == "Confirmada")
-                                {
-                                    <RadzenBadge Style="background: #28a745; color: #fff; padding: 4px 8px; border-radius: 4px;">
-                                        Confirmada
-                                    </RadzenBadge>
-                                }
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                          Property="Estado"
+                                          Title="Estado"
+                                          Width="140px">
+                        <Template Context="facturaCasa">
+                            @if (facturaCasa.Estado == "Pendiente")
+                            {
+                                <span style="background: #f8d7da; color: #721c24; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
+                                    ⏳ Pendiente
+                                </span>
+                            }
+                            else if (facturaCasa.Estado == "En Revision")
+                            {
+                                <span style="background: #e9ecef; color: #6c757d; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
+                                    🔄 En Revisión
+                                </span>
+                            }
+                            else if (facturaCasa.Estado == "Confirmada")
+                            {
+                                <span style="background: #d4edda; color: #155724; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
+                                    ✅ Confirmada
+                                </span>
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="FacturaMesCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center" Visible="@isAdmin">
-                            <Template Context="factura">
+                    <RadzenDataGridColumn TItem="FacturaMesCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center" Visible="@isAdmin">
+                        <Template Context="factura">
 
 
-                                    <RadzenButton Icon="visibility"
-                                                  ButtonStyle="ButtonStyle.Secondary"
-                                                  Size="ButtonSize.Small"
-                                                  Tooltip="Ver detalles"
-                                                  Click="@(() => AddPagosList(factura))"
-                                                  @onclick:stopPropagation="true" />
+                            <RadzenButton Icon="visibility"
+                                          ButtonStyle="ButtonStyle.Secondary"
+                                          Size="ButtonSize.Small"
+                                          Tooltip="Ver detalles"
+                                          Click="@(() => AddPagosList(factura))"
+                                          @onclick:stopPropagation="true" />
+
                             
-
-                            </Template>
-                        </RadzenDataGridColumn>
+                        </Template>
+                    </RadzenDataGridColumn>
 
                         
                     
-                    </Columns>
+                </Columns>
 
                 <EmptyTemplate>
                     <div style="padding: 20px; text-align: center; color: #6c757d;">
@@ -190,7 +190,7 @@
 
                     </div>
                 </EmptyTemplate>
-                </RadzenDataGrid>
+            </RadzenDataGrid>
 
 
 
@@ -202,7 +202,7 @@
         </RadzenTabsItem>
         <RadzenTabsItem Text="Formulario" Disabled="true">
 
-            @if(selectedItem.SaldoPendiente > 0)
+            @if (selectedItem.SaldoPendiente > 0)
             {
                 <h3>Registro de Pagos</h3>
 
@@ -341,8 +341,8 @@
                     </RadzenStack>
                 </RadzenTemplateForm>
             }
-           
 
+           
 
 
 
