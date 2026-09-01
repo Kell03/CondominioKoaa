@@ -32,7 +32,7 @@
 
             <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
                             Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
-                            RowSelect="@((CuotaEspecialCasa item) => EditUser(item))">
+                           >
                 <Columns>
 
                     <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="120px">
@@ -95,7 +95,7 @@
                                      Pendiente
                                 </span>
                             }
-                            else if (cuotaCasa.Estado == "En Revision")
+                            else if (cuotaCasa.Estado == "Pago Parcial")
                             {
                                 <span style="background: #e9ecef; color: #6c757d; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
                                      En Revisión
@@ -110,15 +110,42 @@
                         </Template>
                     </RadzenDataGridColumn>
 
-                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center" Visible="@isAdmin">
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center" >
                         <Template Context="cuotaCasa">
+
+
+                            @if (cuotaCasa.SaldoPendiente <= 0)
+                            {
+                                <RadzenButton Text="Ver"
+                                              Icon="visibility"
+                                              ButtonStyle="ButtonStyle.Success"
+                                              Size="ButtonSize.Small"
+                                              Tooltip="Ver pago"
+                                              Click="@(() => EditUser(cuotaCasa))"
+                                              @onclick:stopPropagation="true"
+                                              Visible="@(!isAdmin)" />
+                            }
+                            else
+                            {
+
+                                <RadzenButton Text="Pagar"
+                                              Icon="payment"
+                                              ButtonStyle="ButtonStyle.Secondary"
+                                              Size="ButtonSize.Small"
+                                              Tooltip="Realizar pago"
+                                              Click="@(() => EditUser(cuotaCasa))"
+                                              @onclick:stopPropagation="true"
+                                              Visible="@(!isAdmin)" />
+
+                            }
 
                             <RadzenButton Icon="visibility"
                                           ButtonStyle="ButtonStyle.Secondary"
                                           Size="ButtonSize.Small"
                                           Tooltip="Ver detalles"
                                           Click="@(() => AddPagosList(cuotaCasa))"
-                                          @onclick:stopPropagation="true" />
+                                          @onclick:stopPropagation="true" 
+                                          Visible="@isAdmin" />
 
 
                         </Template>
@@ -149,12 +176,57 @@
 
             @if (selectedItem.SaldoPendiente > 0)
             {
-                <h3>Registro de Pagos</h3>
 
-                <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SavePago">
-                    <RadzenStack Gap="1.5rem">
+                <!-- ✅ CARD 1: INFORMACIÓN DE PAGO MÓVIL -->
+                <RadzenCard Style="background: #f8f9fa; border-left: 4px solid #17a2b8; margin-bottom: 15px; padding: 15px;">
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; font-weight: 500;">
+                             Pago Móvil
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
+                            <strong>C.I:</strong> xx.xxx.xxx
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
+                            <strong>Teléfono:</strong> xxxx-xxx.xx.xx
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
+                            <strong>Banco:</strong> Banco de Venezuela
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
 
-                        <RadzenRow class="rz-text-align-center rz-border-info-light" Gap="1rem">
+                <!-- ✅ CARD 2: SALDO PENDIENTE -->
+                <RadzenCard Style="background: #f8f9fa; border-left: 4px solid #6c757d; margin-bottom: 10px; padding: 15px;">
+                    <RadzenRow Gap="0.5rem">
+                        <!-- TÍTULO -->
+                        <RadzenColumn Size="12" SizeSM="6">
+                            <RadzenText TextStyle="TextStyle.H5" Style="color: #495057; margin: 0; font-size: clamp(16px, 2vw, 24px);">
+                                Saldo Pendiente
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin: 0; font-size: clamp(12px, 1.5vw, 14px);">
+                                Monto restante por pagar
+                            </RadzenText>
+                        </RadzenColumn>
+
+                        <!-- MONTO -->
+                        <RadzenColumn Size="12" SizeSM="6">
+                            <RadzenStack Orientation="Orientation.Horizontal"
+                                         AlignItems="AlignItems.Center"
+                                         Style="width: 100%;">
+                                <RadzenText TextStyle="TextStyle.H2"
+                                            Style="color: #495057; font-weight: bold; margin: 0; font-size: clamp(24px, 3vw, 32px);">
+                                    @selectedItem.SaldoPendiente.ToString("N2") $
+                                </RadzenText>
+                            </RadzenStack>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenCard>
+
+             
+                <RadzenTemplateForm Data=@selectedItem style="margin-bottom:10px"  @onsubmit="SavePago">
+                    <RadzenStack Gap="1rem">
+
+                        <RadzenRow  Gap="1rem">
 
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">

@@ -79,17 +79,6 @@ namespace Condominio.Web.Components.Pages
 
 
 
-        private async Task CreateNewItem()
-        {
-            await LoadFacturas();
-            await LoadHouses();
-            selectedItem = new FacturaMesCasa();
-            selectedIndex = 2;
-            StateHasChanged();
-            await Task.CompletedTask;
-        }
-
-
         private async Task LoadFacturas()
         {
             FacturasMes = await FacturaMesRepository.GetAllAsync();

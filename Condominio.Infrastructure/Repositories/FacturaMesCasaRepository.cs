@@ -247,7 +247,7 @@ namespace Condominio.Infrastructure.Repositories
 
                 factura.MontoRecaudado += payment.Monto;
 
-                facturaMesCasa.Estado = facturaMesCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pendiente";
+                facturaMesCasa.Estado = facturaMesCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pago Parcial";
 
                 payment.Estado = "Confirmada";
 
