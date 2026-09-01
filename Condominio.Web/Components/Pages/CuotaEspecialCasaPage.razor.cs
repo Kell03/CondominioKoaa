@@ -11,11 +11,9 @@ namespace Condominio.Web.Components.Pages
 
         IList<CuotaEspecialCasa> selectedEmployees;
         CuotaEspecialCasa selectedItem = new CuotaEspecialCasa();
-        private List<int> years = new List<int>();
         private IEnumerable<CuotaEspecial> CuotasEspeciales;
         private IEnumerable<Houses> HouseList;
         private bool isAdmin = false;
-        private ApiMoneda monedaData;
 
         IEnumerable<CuotaEspecialCasa> Cuotas;
 

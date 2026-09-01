@@ -1,4 +1,5 @@
-﻿using Condominio.Domain.Entities;
+﻿using Condominio.Application.Services;
+using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
@@ -12,6 +13,7 @@ namespace Condominio.Web.Components.Pages
 
         IList<Users> selectedEmployees;
         Users selectedUser = new Users();
+        private bool isAdmin = false;
 
 
         private List<string> roles = new List<string>
@@ -36,6 +38,9 @@ namespace Condominio.Web.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
+
+            await CheckAdminRole();
+
             await LoadUsers();
 
             House = await HouseRepository.GetAllAsync();
@@ -45,12 +50,37 @@ namespace Condominio.Web.Components.Pages
         private async Task LoadUsers()
         {
             // Usas el método específico si existe
-            var userList = await UserRepository.GetAllAsync();
-            selectedEmployees = new List<Users>() { userList.FirstOrDefault() };
+            var user = AppState.CurrentUser.Role;
+            if(isAdmin)
+            {
+                var userList = await UserRepository.GetAllAsync();
+                selectedEmployees = new List<Users>() { userList.FirstOrDefault() };
 
-            users = userList.AsQueryable();
+                users = userList.AsQueryable();
+            }
+            else
+            {
+                var userList = await UserRepository.GetAllByUserAsync(AppState.CurrentUser.Id);
+                selectedEmployees = new List<Users>() { userList.FirstOrDefault() };
+                users = userList.AsQueryable();
+            }
         }
 
+
+
+        private async Task CheckAdminRole()
+        {
+
+            var role = AppState.CurrentUser.Role;
+            if (role == "Administrador")
+            {
+                isAdmin = true;
+            }
+            else
+            {
+                isAdmin = false;
+            }
+        }
 
         private async Task SaveItem()
         {

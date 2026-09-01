@@ -16,6 +16,11 @@ namespace Condominio.Infrastructure.Repositories
             return await _dbSet.Include(u => u.House).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 
+        public  async Task<IEnumerable<Users>> GetAllByUserAsync(int id)
+        {
+            return await _dbSet.Where(x => x.Id == id).Include(u => u.House).OrderByDescending(x => x.CreatedAt).ToListAsync();
+        }
+
 
         public override async Task AddAsync(Users entity)
         {

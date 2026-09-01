@@ -1,12 +1,15 @@
 ﻿@page "/users"
 @attribute [Authorize]
+@using Condominio.Application.Services
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
 @using Microsoft.AspNetCore.Authorization
-@inject IGenericRepository<Users> UserRepository
+@inject UserRepository UserRepository
 @inject IGenericRepository<Houses> HouseRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
+@inject AppState AppState
 @rendermode InteractiveServer
 
 <RadzenTabs @bind-SelectedIndex=@selectedIndex>
@@ -18,7 +21,8 @@
                           Icon="add_circle"
                           ButtonStyle="ButtonStyle.Primary"
                           Style="margin-bottom: 0.5rem;"
-                          Click="@(() => AddUser())" />
+                          Click="@(() => AddUser())"
+                          Visible="@isAdmin"/>
 
            
                 
@@ -55,7 +59,7 @@
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="Users" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                    <RadzenDataGridColumn TItem="Users" Title="Opciones" Width="120px" TextAlign="TextAlign.Center" Visible="@isAdmin">
                             <Template Context="user">
 
                                 <RadzenButton Icon="delete"
@@ -83,7 +87,7 @@
                 </RadzenDataGrid>
 
 
-            }
+            
         </RadzenTabsItem>
         <RadzenTabsItem Text="Formulario">
 
