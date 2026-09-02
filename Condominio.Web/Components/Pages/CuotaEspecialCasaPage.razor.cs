@@ -135,6 +135,7 @@ namespace Condominio.Web.Components.Pages
             // Si tienes SaveChanges en el repositorio
             await LoadPagos((int)Pago.CuotaEspecialCasaId); // Recargar la lista
             Pago = new Payments();
+            Pago.Tasa = rates?.EUR;
 
             StateHasChanged();
 

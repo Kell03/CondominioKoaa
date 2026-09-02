@@ -31,8 +31,7 @@
          
 
             <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
-                            Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
-                           >
+                            Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees>
                 <Columns>
 
                     <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="120px">
@@ -92,25 +91,25 @@
                             @if (cuotaCasa.Estado == "Pendiente")
                             {
                                 <span style="background: #f8d7da; color: #721c24; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
-                                     Pendiente
+                                    Pendiente
                                 </span>
                             }
                             else if (cuotaCasa.Estado == "Pago Parcial")
                             {
                                 <span style="background: #e9ecef; color: #6c757d; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
-                                     En Revisión
+                                    En Revisión
                                 </span>
                             }
                             else if (cuotaCasa.Estado == "Confirmada")
                             {
                                 <span style="background: #d4edda; color: #155724; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
-                                     Confirmada
+                                    Confirmada
                                 </span>
                             }
                         </Template>
                     </RadzenDataGridColumn>
 
-                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center" >
+                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
                         <Template Context="cuotaCasa">
 
 
@@ -144,7 +143,7 @@
                                           Size="ButtonSize.Small"
                                           Tooltip="Ver detalles"
                                           Click="@(() => AddPagosList(cuotaCasa))"
-                                          @onclick:stopPropagation="true" 
+                                          @onclick:stopPropagation="true"
                                           Visible="@isAdmin" />
 
 
@@ -181,7 +180,7 @@
                 <RadzenCard Style="background: #f8f9fa; border-left: 4px solid #17a2b8; margin-bottom: 15px; padding: 15px;">
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
                         <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; font-weight: 500;">
-                             Pago Móvil
+                            Pago Móvil
                         </RadzenText>
                         <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
                             <strong>C.I:</strong> xx.xxx.xxx
@@ -263,12 +262,18 @@
                                     <RadzenLabel Component="MontoRequiredInput">
                                         Monto Total <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
-                                    <RadzenNumeric @bind-Value="@Pago.Monto"
+                                    <RadzenNumeric TValue="decimal?"
+                                                   Value="@Pago.Monto"
+                                                   ValueChanged="@((decimal? value) => OnMontoChanged(value))"
                                                    Style="width: 100%;"
                                                    Format="N2"
                                                    Min="0"
-                                                   Step="0.01"
+                                                   Step="0.01"/>
+
+                                    <RadzenNumeric @bind-Value="@Pago.Monto"
+                                                   Style="display: none;"
                                                    Name="MontoRequiredInput" />
+
                                     <RadzenRequiredValidator Component="MontoRequiredInput" Text="El monto es requerido" />
                                     <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
                                                                  Component="MontoRequiredInput"

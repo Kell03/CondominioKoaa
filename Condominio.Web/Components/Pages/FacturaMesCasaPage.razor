@@ -235,6 +235,9 @@
                         <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
                             <strong>Banco:</strong> Banco de Venezuela
                         </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
+                            <strong>Tasa:</strong>   @Pago.Tasa?.ToString() Bs
+                        </RadzenText>
                     </RadzenStack>
                 </RadzenCard>
 
@@ -242,7 +245,7 @@
                 <RadzenCard Style="background: #f8f9fa; border-left: 4px solid #6c757d; margin-bottom: 10px; padding: 15px;">
                     <RadzenRow Gap="0.5rem">
                         <!-- TÍTULO -->
-                        <RadzenColumn Size="12" SizeSM="6">
+                        <RadzenColumn Size="12" SizeSM="3">
                             <RadzenText TextStyle="TextStyle.H5" Style="color: #495057; margin: 0; font-size: clamp(16px, 2vw, 24px);">
                                 Saldo Pendiente
                             </RadzenText>
@@ -252,7 +255,7 @@
                         </RadzenColumn>
 
                         <!-- MONTO -->
-                        <RadzenColumn Size="12" SizeSM="6">
+                        <RadzenColumn Size="12" SizeSM="3">
                             <RadzenStack Orientation="Orientation.Horizontal"
                                          AlignItems="AlignItems.Center"
                                          Style="width: 100%;">
@@ -260,6 +263,22 @@
                                             Style="color: #495057; font-weight: bold; margin: 0; font-size: clamp(24px, 3vw, 32px);">
                                     @selectedItem.SaldoPendiente.ToString("N2") $
                                 </RadzenText>
+                            </RadzenStack>
+                        </RadzenColumn>
+
+
+                        <RadzenColumn Size="12" SizeSM="3">
+                            <RadzenStack Orientation="Orientation.Horizontal"
+                                         AlignItems="AlignItems.Center"
+                                         JustifyContent="JustifyContent.End"
+                                         Style="width: 100%;">
+
+                                <RadzenText TextStyle="TextStyle.H2"
+                                            Style="color: #495057; font-weight: bold; margin: 0; font-size: clamp(24px, 3vw, 32px);">
+                                    @(((Pago.Tasa ?? 1) * selectedItem.SaldoPendiente).ToString("N2", new System.Globalization.CultureInfo("es-ES"))) Bs
+                                </RadzenText>
+
+                               
                             </RadzenStack>
                         </RadzenColumn>
                     </RadzenRow>
@@ -289,53 +308,6 @@
                                 </RadzenStack>
                             </RadzenColumn>
 
-                            <!-- TASA -->
-                            <RadzenColumn Size="12" SizeSM="6">
-                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="MontoTotalLabel">Tasa</RadzenLabel>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <RadzenText TextStyle="TextStyle.Body1"
-                                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; cursor: default;">
-                                            @Pago.Tasa?.ToString() Bs
-                                        </RadzenText>
-                                    </div>
-                                </RadzenStack>
-                            </RadzenColumn>
-
-                            <!-- MONTO TOTAL -->
-                            <RadzenColumn Size="12" SizeSM="6">
-                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="MontoRequiredInput">
-                                        Monto Total <span style="color: var(--rz-danger);">*</span>
-                                    </RadzenLabel>
-                                    <RadzenNumeric @bind-Value="@Pago.Monto"
-                                                   Style="width: 100%;"
-                                                   Format="N2"
-                                                   Min="0"
-                                                   Step="0.01"
-                                                   Name="MontoRequiredInput" />
-                                    <RadzenRequiredValidator Component="MontoRequiredInput" Text="El monto es requerido" />
-                                    <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
-                                                                 Component="MontoRequiredInput"
-                                                                 Text="El monto debe ser mayor a 0" />
-                                </RadzenStack>
-                            </RadzenColumn>
-
-                            <!-- MONTO BS -->
-                            <RadzenColumn Size="12" SizeSM="6">
-                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="MontoTotalLabel">
-                                        Monto Total Bs <span style="color: var(--rz-danger);">*</span>
-                                    </RadzenLabel>
-                                    <RadzenNumeric @bind-Value="@Pago.MontoBs"
-                                                   Style="width: 100%;"
-                                                   Format="N2"
-                                                   Min="0"
-                                                   Step="0.01"
-                                                   ReadOnly="true" />
-                                </RadzenStack>
-                            </RadzenColumn>
-
                             <!-- REFERENCIA -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
@@ -348,6 +320,60 @@
                                     <RadzenRequiredValidator Component="ReferenciaRequiredInput" Text="La referencia es requerida" />
                                 </RadzenStack>
                             </RadzenColumn>
+
+                            <!-- MONTO TOTAL -->
+                            <RadzenColumn Size="12" SizeSM="6">
+                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                    <RadzenLabel Component="MontoRequiredInput">
+                                        Monto $ <span style="color: var(--rz-danger);">*</span>
+                                    </RadzenLabel>
+                                    <RadzenNumeric Value="@Pago.Monto"
+                                                   ValueChanged="@((decimal? value) => OnMontoChanged(value))"
+                                                   Style="width: 100%;"
+                                                   Format="N2"
+                                                   Culture="@(new System.Globalization.CultureInfo("es-ES"))"
+                                                   Min="0"
+                                                   Step="0.01" />
+
+                                    <RadzenNumeric @bind-Value="@Pago.Monto"
+                                                   Style="display: none;"
+                                                   Name="MontoRequiredInput" />
+                                    <RadzenRequiredValidator Component="MontoRequiredInput" Text="El monto es requerido" />
+                                    <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
+                                                                 Component="MontoRequiredInput"
+                                                                 Text="El monto debe ser mayor a 0" />
+                                </RadzenStack>
+                            </RadzenColumn>
+
+                            <!-- MONTO BS -->
+                            <RadzenColumn Size="12" SizeSM="6">
+                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                    <RadzenLabel Component="MontoTotalLabel">
+                                        Monto Bs <span style="color: var(--rz-danger);">*</span>
+                                    </RadzenLabel>
+
+
+
+                                    <RadzenNumeric Value="@Pago.MontoBs"
+                                                   Style="width: 100%;"
+                                                   Format="N2"
+                                                   Min="0"
+                                                   Step="0.01"
+                                                   Name="MontoRequiredInput"
+                                                   Culture="@(new System.Globalization.CultureInfo("es-ES"))"
+                                                   Change="@((decimal? value) => OnMontoBsChanged(value))" />
+
+                                    <RadzenNumeric @bind-Value="@Pago.MontoBs"
+                                                   Style="display: none;"
+                                                   Name="MontoBsRequiredInput" />
+                                    <RadzenRequiredValidator Component="MontoRequiredInput" Text="El monto bs es requerido" />
+                                    <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
+                                                                 Component="MontoRequiredInput"
+                                                                 Text="El monto bs debe ser mayor a 0" />
+                                </RadzenStack>
+                            </RadzenColumn>
+
+                            
 
                             <!-- FECHA DE PAGO -->
                             <RadzenColumn Size="12" SizeSM="6">

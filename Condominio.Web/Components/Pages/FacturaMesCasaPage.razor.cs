@@ -134,6 +134,7 @@ namespace Condominio.Web.Components.Pages
             // Si tienes SaveChanges en el repositorio
             await LoadPagos((int)Pago.FacturaMesCasaId); // Recargar la lista
             Pago = new Payments();
+            Pago.Tasa = rates.EUR;
 
             StateHasChanged();
 
@@ -153,6 +154,22 @@ namespace Condominio.Web.Components.Pages
             {
                 Pago.MontoBs = Math.Round(value.Value * (decimal)Pago.Tasa, 2);
                 Pago.Monto = (decimal)value;
+            }
+            else
+            {
+                Pago.MontoBs = null;
+            }
+            StateHasChanged();
+        }
+
+        private void OnMontoBsChanged(decimal? value)
+        {
+
+
+            if (value.HasValue && value.Value > 0 && Pago.Tasa > 0)
+            {
+                Pago.Monto = Math.Round(value.Value / (decimal)Pago.Tasa, 2);
+                Pago.MontoBs = (decimal)value;
             }
             else
             {
