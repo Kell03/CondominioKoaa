@@ -42,7 +42,7 @@
                     </RadzenDataGridColumn>
                     <RadzenDataGridColumn Property="@nameof(CuotaEspecial.NombreMes)" Title="Mes" Width="100px" />
                     <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Year)" Title="Año" Width="100px" />
-                    <RadzenDataGridColumn TItem="CuotaEspecial" Property="Enviado" Title="Enviado" Width="120px">
+                    <RadzenDataGridColumn TItem="CuotaEspecial" Property="Enviado" Title="Enviar" Width="120px">
                         <Template Context="cuota">
                             @if (cuota.Enviado)
                             {
