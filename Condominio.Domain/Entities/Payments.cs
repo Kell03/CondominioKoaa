@@ -14,7 +14,7 @@ namespace Condominio.Domain.Entities
         public int? CuotaEspecialCasaId { get; set; }
 
         // ✅ DATOS DEL PAGO
-        public decimal Monto { get; set; } 
+        public decimal Monto { get; set; }  
         public decimal? Tasa { get; set; }
         public decimal? MontoBs { get; set; } = null;
         public string? Referencia { get; set; }
@@ -29,5 +29,31 @@ namespace Condominio.Domain.Entities
 
         [ForeignKey(nameof(CuotaEspecialCasaId))]
         public CuotaEspecialCasa? CuotaEspecialCasa { get; set; }
+
+        [NotMapped]
+        public string MontoBsFormateado
+        {
+            get
+            {
+                if (MontoBs.HasValue && MontoBs.Value > 0)
+                {
+                    return MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                }
+                return "0,00";
+            }
+        }
+
+        [NotMapped]
+        public string MontoFormateado
+        {
+            get
+            {
+                if ( Monto > 0)
+                {
+                    return Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                }
+                return "0,00";
+            }
+        }
     }
 }

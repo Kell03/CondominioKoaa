@@ -327,17 +327,20 @@
                                     <RadzenLabel Component="MontoRequiredInput">
                                         Monto $ <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
-                                    <RadzenNumeric Value="@Pago.Monto"
-                                                   ValueChanged="@((decimal? value) => OnMontoChanged(value))"
-                                                   Style="width: 100%;"
-                                                   Format="N2"
-                                                   Culture="@(new System.Globalization.CultureInfo("es-ES"))"
-                                                   Min="0"
-                                                   Step="0.01" />
+                                   
+                                    <input type="text"
+                                           value="@_montoUsdStr"
+                                           @oninput="@((ChangeEventArgs e) => OnInputUsdChanged(e.Value?.ToString()))"
+                                           onkeypress="return (event.charCode == 0 || (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 44 || event.charCode == 46)"
+                                           style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                                           name="MontoRequiredUsdInput"
+                                           placeholder="0,00"
+                                           inputmode="decimal" />
 
                                     <RadzenNumeric @bind-Value="@Pago.Monto"
                                                    Style="display: none;"
                                                    Name="MontoRequiredInput" />
+
                                     <RadzenRequiredValidator Component="MontoRequiredInput" Text="El monto es requerido" />
                                     <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
                                                                  Component="MontoRequiredInput"
@@ -348,30 +351,30 @@
                             <!-- MONTO BS -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="MontoTotalLabel">
+                                    <RadzenLabel Component="MontoRequiredBsInput">
                                         Monto Bs <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
 
-
-
-                                    <RadzenNumeric Value="@Pago.MontoBs"
-                                                   Style="width: 100%;"
-                                                   Format="N2"
-                                                   Min="0"
-                                                   Step="0.01"
-                                                   Name="MontoRequiredInput"
-                                                   Culture="@(new System.Globalization.CultureInfo("es-ES"))"
-                                                   Change="@((decimal? value) => OnMontoBsChanged(value))" />
+                                    <input type="text"
+                                           value="@_montoBsStr"
+                                           @oninput="@((ChangeEventArgs e) => OnInputChanged(e.Value?.ToString()))"
+                                           onkeypress="return (event.charCode == 0 || (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 44 || event.charCode == 46)"
+                                           style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                                           name="MontoRequiredBsInput"
+                                           placeholder="0,00"
+                                           inputmode="decimal" />
 
                                     <RadzenNumeric @bind-Value="@Pago.MontoBs"
                                                    Style="display: none;"
-                                                   Name="MontoBsRequiredInput" />
-                                    <RadzenRequiredValidator Component="MontoRequiredInput" Text="El monto bs es requerido" />
+                                                   Name="MontoRequiredBsInput" />
+
+                                    <RadzenRequiredValidator Component="MontoRequiredBsInput" Text="El monto bs es requerido" />
                                     <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
-                                                                 Component="MontoRequiredInput"
+                                                                 Component="MontoRequiredBsInput"
                                                                  Text="El monto bs debe ser mayor a 0" />
                                 </RadzenStack>
                             </RadzenColumn>
+
 
                             
 
@@ -437,7 +440,7 @@
                                           Title="Monto"
                                           Width="100px">
                         <Template Context="pago">
-                            @pago.Monto $
+                            @pago.MontoFormateado $
                         </Template>
                     </RadzenDataGridColumn>
 
@@ -446,7 +449,7 @@
                                           Title="Monto Bs"
                                           Width="120px">
                         <Template Context="pago">
-                            @pago.MontoBs Bs
+                            @pago.MontoBsFormateado Bs
                         </Template>
                     </RadzenDataGridColumn>
 

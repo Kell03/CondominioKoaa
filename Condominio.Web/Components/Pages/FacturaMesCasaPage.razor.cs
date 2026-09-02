@@ -3,6 +3,7 @@ using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
 using Condominio.Web.Components.Dialogs;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Radzen;
 using Radzen.Blazor;
 using System.Globalization;
@@ -26,6 +27,11 @@ namespace Condominio.Web.Components.Pages
         };
         private IQueryable<FacturaMesCasa> items;
         private BcvRates rates;
+
+        private string _montoBsStr = "0,00";
+        private string _montoUsdStr = "0,00";
+        private bool _isFormatting = false;
+        private bool _isFormattingusd = false;
 
 
 
@@ -76,19 +82,6 @@ namespace Condominio.Web.Components.Pages
             }
         }
 
-
-
-
-        private async Task LoadFacturas()
-        {
-            FacturasMes = await FacturaMesRepository.GetAllAsync();
-        }
-
-
-        private async Task LoadHouses()
-        {
-            HouseList = await HousesRepository.GetAllAsync();
-        }
         private async Task CheckAdminRole()
         {
 
@@ -135,6 +128,10 @@ namespace Condominio.Web.Components.Pages
             await LoadPagos((int)Pago.FacturaMesCasaId); // Recargar la lista
             Pago = new Payments();
             Pago.Tasa = rates.EUR;
+            Pago.Monto = 0;
+            Pago.MontoBs = 0;
+            _montoUsdStr = "0,00";
+            _montoUsdStr = "0,00";
 
             StateHasChanged();
 
@@ -146,38 +143,106 @@ namespace Condominio.Web.Components.Pages
             PagosList = await FacturaMesCasaRepository.GetPaymentsForUserAsync(AppState.CurrentUser.Id, idFacturaMes);
         }
 
-
-
-        private void OnMontoChanged(decimal? value)
+        private void OnInputUsdChanged(string value)
         {
-            if (value.HasValue && value.Value > 0 && Pago.Tasa > 0)
-            {
-                Pago.MontoBs = Math.Round(value.Value * (decimal)Pago.Tasa, 2);
-                Pago.Monto = (decimal)value;
-            }
-            else
-            {
-                Pago.MontoBs = null;
-            }
-            StateHasChanged();
-        }
+            if (_isFormattingusd) return;
+            _isFormattingusd = true;
 
-        private void OnMontoBsChanged(decimal? value)
+            try
+            {
+                // ✅ FILTRAR: SOLO NÚMEROS, COMA Y PUNTO
+                var filtered = new string(value?.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray() ?? Array.Empty<char>());
+                _montoUsdStr = filtered;
+
+                var numeros = new string(_montoUsdStr.Where(char.IsDigit).ToArray());
+
+                if (string.IsNullOrEmpty(numeros))
+                {
+                    _montoUsdStr = "0,00";
+                    Pago.Monto = 0;
+                    Pago.MontoBs = 0;
+                    StateHasChanged();
+                    return;
+                }
+
+                var valorNumerico = decimal.Parse(numeros) / 100;
+
+                if (valorNumerico > 0 && Pago.Tasa > 0)
+                {
+                    Pago.Monto = Math.Round(valorNumerico, 2);
+                    Pago.MontoBs = Math.Round(valorNumerico * (decimal)Pago.Tasa, 2);
+                    _montoUsdStr = Pago.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                    _montoBsStr = Pago.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                }
+                else
+                {
+                    Pago.Monto = 0;
+                    Pago.MontoBs = 0;
+                    _montoUsdStr = "0,00";
+                }
+
+                StateHasChanged();
+            }
+            finally
+            {
+                _isFormattingusd = false;
+            }
+        }
+        private void OnInputChanged(string value)
         {
+            if (_isFormatting) return;
+            _isFormatting = true;
 
+            try
+            {
+                // ✅ SI CONTIENE LETRAS, IGNORAR
+                if (value != null && value.Any(c => char.IsLetter(c)))
+                {
+                    StateHasChanged();
+                    return;
+                }
 
-            if (value.HasValue && value.Value > 0 && Pago.Tasa > 0)
-            {
-                Pago.Monto = Math.Round(value.Value / (decimal)Pago.Tasa, 2);
-                Pago.MontoBs = (decimal)value;
+                // ✅ FILTRAR: SOLO NÚMEROS, COMA Y PUNTO
+                var filtered = new string(value?.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray() ?? Array.Empty<char>());
+                _montoBsStr = filtered;
+
+                // ✅ LIMPIAR: SOLO NÚMEROS
+                var numeros = new string(_montoBsStr.Where(char.IsDigit).ToArray());
+
+                if (string.IsNullOrEmpty(numeros))
+                {
+                    _montoBsStr = "0,00";
+                    Pago.MontoBs = 0;
+                    Pago.Monto = 0;
+                    StateHasChanged();
+                    return;
+                }
+
+                // ✅ DIVIDIR ENTRE 100 (1 → 0.01)
+                var valorNumerico = decimal.Parse(numeros) / 100;
+
+                if (valorNumerico > 0 && Pago.Tasa > 0)
+                {
+                    Pago.Monto = Math.Round(valorNumerico / (decimal)Pago.Tasa, 2);
+                    Pago.MontoBs = Math.Round(valorNumerico, 2);
+                    _montoBsStr = Pago.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                    _montoUsdStr = Pago.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                }
+                else
+                {
+                    Pago.Monto = 0;
+                    Pago.MontoBs = 0;
+                    _montoBsStr = "0,00";
+                    _montoUsdStr = "0,00";
+                }
+
+                StateHasChanged();
             }
-            else
+            finally
             {
-                Pago.MontoBs = null;
+                _isFormatting = false;
             }
-            StateHasChanged();
         }
-
 
 
         private async Task AddPagosList(FacturaMesCasa factura)
