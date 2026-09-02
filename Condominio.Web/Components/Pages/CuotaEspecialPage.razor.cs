@@ -19,6 +19,7 @@ namespace Condominio.Web.Components.Pages
 
         private IQueryable<CuotaEspecial> items;
 
+
         protected override async Task OnInitializedAsync()
         {
             await LoadData();

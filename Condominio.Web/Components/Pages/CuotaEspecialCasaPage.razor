@@ -191,6 +191,9 @@
                         <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
                             <strong>Banco:</strong> Banco de Venezuela
                         </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
+                            <strong>Tasa:</strong>   @Pago.Tasa?.ToString() Bs
+                        </RadzenText>
                     </RadzenStack>
                 </RadzenCard>
 
@@ -243,32 +246,35 @@
                                 </RadzenStack>
                             </RadzenColumn>
 
-                            <!-- TASA -->
+                            <!-- REFERENCIA -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="MontoTotalLabel">Tasa</RadzenLabel>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <RadzenText TextStyle="TextStyle.Body1"
-                                                    Style="padding: 8px 12px; background: #f5f5f5; border-radius: 4px; border: 1px solid #ddd; width: 100%; cursor: default;">
-                                            @Pago.Tasa?.ToString() Bs
-                                        </RadzenText>
-                                    </div>
+                                    <RadzenLabel Component="ReferenciaRequiredInput">
+                                        Referencia <span style="color: var(--rz-danger);">*</span>
+                                    </RadzenLabel>
+                                    <RadzenTextBox Name="ReferenciaRequiredInput"
+                                                   @bind-Value="@Pago.Referencia"
+                                                   Style="width: 100%;" />
+                                    <RadzenRequiredValidator Component="ReferenciaRequiredInput" Text="La referencia es requerida" />
                                 </RadzenStack>
                             </RadzenColumn>
 
-                            <!-- MONTO TOTAL -->
+
+                            <!-- MONTO USD -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
                                     <RadzenLabel Component="MontoRequiredInput">
-                                        Monto Total <span style="color: var(--rz-danger);">*</span>
+                                        Monto $ <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
-                                    <RadzenNumeric TValue="decimal?"
-                                                   Value="@Pago.Monto"
-                                                   ValueChanged="@((decimal? value) => OnMontoChanged(value))"
-                                                   Style="width: 100%;"
-                                                   Format="N2"
-                                                   Min="0"
-                                                   Step="0.01"/>
+
+                                    <input type="text"
+                                           value="@_montoUsdStr"
+                                           @oninput="@((ChangeEventArgs e) => OnInputUsdChanged(e.Value?.ToString()))"
+                                           onkeypress="return (event.charCode == 0 || (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 44 || event.charCode == 46)"
+                                           style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                                           name="MontoRequiredUsdInput"
+                                           placeholder="0,00"
+                                           inputmode="decimal" />
 
                                     <RadzenNumeric @bind-Value="@Pago.Monto"
                                                    Style="display: none;"
@@ -284,28 +290,27 @@
                             <!-- MONTO BS -->
                             <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="MontoTotalLabel">
-                                        Monto Total Bs <span style="color: var(--rz-danger);">*</span>
+                                    <RadzenLabel Component="MontoRequiredBsInput">
+                                        Monto Bs <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
-                                    <RadzenNumeric @bind-Value="@Pago.MontoBs"
-                                                   Style="width: 100%;"
-                                                   Format="N2"
-                                                   Min="0"
-                                                   Step="0.01"
-                                                   ReadOnly="true" />
-                                </RadzenStack>
-                            </RadzenColumn>
 
-                            <!-- REFERENCIA -->
-                            <RadzenColumn Size="12" SizeSM="6">
-                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                    <RadzenLabel Component="ReferenciaRequiredInput">
-                                        Referencia <span style="color: var(--rz-danger);">*</span>
-                                    </RadzenLabel>
-                                    <RadzenTextBox Name="ReferenciaRequiredInput"
-                                                   @bind-Value="@Pago.Referencia"
-                                                   Style="width: 100%;" />
-                                    <RadzenRequiredValidator Component="ReferenciaRequiredInput" Text="La referencia es requerida" />
+                                    <input type="text"
+                                           value="@_montoBsStr"
+                                           @oninput="@((ChangeEventArgs e) => OnInputChanged(e.Value?.ToString()))"
+                                           onkeypress="return (event.charCode == 0 || (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 44 || event.charCode == 46)"
+                                           style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                                           name="MontoRequiredBsInput"
+                                           placeholder="0,00"
+                                           inputmode="decimal" />
+
+                                    <RadzenNumeric @bind-Value="@Pago.MontoBs"
+                                                   Style="display: none;"
+                                                   Name="MontoRequiredBsInput" />
+
+                                    <RadzenRequiredValidator Component="MontoRequiredBsInput" Text="El monto bs es requerido" />
+                                    <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
+                                                                 Component="MontoRequiredBsInput"
+                                                                 Text="El monto bs debe ser mayor a 0" />
                                 </RadzenStack>
                             </RadzenColumn>
 
@@ -372,7 +377,7 @@
                                           Title="Monto"
                                           Width="100px">
                         <Template Context="pago">
-                            @pago.Monto $
+                            @pago.MontoFormateado $
                         </Template>
                     </RadzenDataGridColumn>
 
@@ -381,7 +386,7 @@
                                           Title="Monto Bs"
                                           Width="120px">
                         <Template Context="pago">
-                            @pago.MontoBs Bs
+                            @pago.MontoBsFormateado Bs
                         </Template>
                     </RadzenDataGridColumn>
 

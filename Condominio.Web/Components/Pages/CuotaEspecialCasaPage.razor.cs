@@ -26,7 +26,10 @@ namespace Condominio.Web.Components.Pages
         "Pago Movil"
         };
         private BcvRates rates;
-
+        private string _montoBsStr = "0,00";
+        private string _montoUsdStr = "0,00";
+        private bool _isFormatting = false;
+        private bool _isFormattingusd = false;
         protected override async Task OnInitializedAsync()
         {
             await CheckAdminRole();
@@ -149,19 +152,107 @@ namespace Condominio.Web.Components.Pages
 
 
 
-        private void OnMontoChanged(decimal? value)
+        private void OnInputUsdChanged(string value)
         {
-            if (value.HasValue && value.Value > 0 && Pago.Tasa > 0)
+            if (_isFormattingusd) return;
+            _isFormattingusd = true;
+
+            try
             {
-                Pago.MontoBs = Math.Round(value.Value * (decimal)Pago.Tasa, 2);
-                Pago.Monto = (decimal)value;
+                // ✅ FILTRAR: SOLO NÚMEROS, COMA Y PUNTO
+                var filtered = new string(value?.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray() ?? Array.Empty<char>());
+                _montoUsdStr = filtered;
+
+                var numeros = new string(_montoUsdStr.Where(char.IsDigit).ToArray());
+
+                if (string.IsNullOrEmpty(numeros))
+                {
+                    _montoUsdStr = "0,00";
+                    Pago.Monto = 0;
+                    Pago.MontoBs = 0;
+                    StateHasChanged();
+                    return;
+                }
+
+                var valorNumerico = decimal.Parse(numeros) / 100;
+
+                if (valorNumerico > 0 && Pago.Tasa > 0)
+                {
+                    Pago.Monto = Math.Round(valorNumerico, 2);
+                    Pago.MontoBs = Math.Round(valorNumerico * (decimal)Pago.Tasa, 2);
+                    _montoUsdStr = Pago.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                    _montoBsStr = Pago.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                }
+                else
+                {
+                    Pago.Monto = 0;
+                    Pago.MontoBs = 0;
+                    _montoUsdStr = "0,00";
+                }
+
+                StateHasChanged();
             }
-            else
+            finally
             {
-                Pago.MontoBs = null;
+                _isFormattingusd = false;
             }
-            StateHasChanged();
         }
+        private void OnInputChanged(string value)
+        {
+            if (_isFormatting) return;
+            _isFormatting = true;
+
+            try
+            {
+                // ✅ SI CONTIENE LETRAS, IGNORAR
+                if (value != null && value.Any(c => char.IsLetter(c)))
+                {
+                    StateHasChanged();
+                    return;
+                }
+
+                // ✅ FILTRAR: SOLO NÚMEROS, COMA Y PUNTO
+                var filtered = new string(value?.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray() ?? Array.Empty<char>());
+                _montoBsStr = filtered;
+
+                // ✅ LIMPIAR: SOLO NÚMEROS
+                var numeros = new string(_montoBsStr.Where(char.IsDigit).ToArray());
+
+                if (string.IsNullOrEmpty(numeros))
+                {
+                    _montoBsStr = "0,00";
+                    Pago.MontoBs = 0;
+                    Pago.Monto = 0;
+                    StateHasChanged();
+                    return;
+                }
+
+                // ✅ DIVIDIR ENTRE 100 (1 → 0.01)
+                var valorNumerico = decimal.Parse(numeros) / 100;
+
+                if (valorNumerico > 0 && Pago.Tasa > 0)
+                {
+                    Pago.Monto = Math.Round(valorNumerico / (decimal)Pago.Tasa, 2);
+                    Pago.MontoBs = Math.Round(valorNumerico, 2);
+                    _montoBsStr = Pago.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                    _montoUsdStr = Pago.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                }
+                else
+                {
+                    Pago.Monto = 0;
+                    Pago.MontoBs = 0;
+                    _montoBsStr = "0,00";
+                    _montoUsdStr = "0,00";
+                }
+
+                StateHasChanged();
+            }
+            finally
+            {
+                _isFormatting = false;
+            }
+        }
+
 
 
         private async Task AddPagosList(CuotaEspecialCasa cuota)

@@ -267,20 +267,7 @@
                         </RadzenColumn>
 
 
-                        <RadzenColumn Size="12" SizeSM="3">
-                            <RadzenStack Orientation="Orientation.Horizontal"
-                                         AlignItems="AlignItems.Center"
-                                         JustifyContent="JustifyContent.End"
-                                         Style="width: 100%;">
-
-                                <RadzenText TextStyle="TextStyle.H2"
-                                            Style="color: #495057; font-weight: bold; margin: 0; font-size: clamp(24px, 3vw, 32px);">
-                                    @(((Pago.Tasa ?? 1) * selectedItem.SaldoPendiente).ToString("N2", new System.Globalization.CultureInfo("es-ES"))) Bs
-                                </RadzenText>
-
-                               
-                            </RadzenStack>
-                        </RadzenColumn>
+                       
                     </RadzenRow>
                 </RadzenCard>
 
