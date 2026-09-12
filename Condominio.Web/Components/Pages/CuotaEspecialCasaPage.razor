@@ -137,16 +137,38 @@
                                               Visible="@(!isAdmin)" />
 
                             }
+                            @if (isAdmin)
+                            {
+                                <div style="position: relative; display: inline-block;">
+                                    <RadzenButton Icon="visibility"
+                                                  ButtonStyle="ButtonStyle.Secondary"
+                                                  Size="ButtonSize.Small"
+                                                  Tooltip="Ver detalles"
+                                                  Click="@(() => AddPagosList(cuotaCasa))"
+                                                  @onclick:stopPropagation="true" />
 
-                            <RadzenButton Icon="visibility"
-                                          ButtonStyle="ButtonStyle.Secondary"
-                                          Size="ButtonSize.Small"
-                                          Tooltip="Ver detalles"
-                                          Click="@(() => AddPagosList(cuotaCasa))"
-                                          @onclick:stopPropagation="true"
-                                          Visible="@isAdmin" />
-
-
+                                    @if (cuotaCasa.Payments?.Any(x => x.Estado == "Pendiente") == true)
+                                    {
+                                        <!-- ✅ USAR SPAN EN LUGAR DE RADZENBADGE -->
+                                        <span style="position: absolute;
+                                            top: -8px;
+                                            right: -8px;
+                                            background: #dc3545;
+                                            color: white;
+                                            font-size: 10px;
+                                            font-weight: bold;
+                                            padding: 2px 6px;
+                                            border-radius: 10px;
+                                            min-width: 18px;
+                                            text-align: center;
+                                            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                                            line-height: 1.4;
+                                            z-index: 1;">
+                                            @cuotaCasa.Payments.Count(x => x.Estado == "Pendiente")
+                                        </span>
+                                    }
+                                </div>
+                            }
                         </Template>
                     </RadzenDataGridColumn>
 

@@ -22,6 +22,7 @@ namespace Condominio.Infrastructure.Repositories
             var query = from item in _dbSet
                         join user in _context.Users on item.HouseId equals user.HouseId into ownerGroup
                         from owner in ownerGroup.DefaultIfEmpty()
+                        join payments in _context.Payments on item.Id equals payments.CuotaEspecialCasaId into paymentGroup
                         select new CuotaEspecialCasa
                         {
                             Id = item.Id,
@@ -40,6 +41,7 @@ namespace Condominio.Infrastructure.Repositories
                             UpdatedAt = item.UpdatedAt,
                             House = item.House,
                             CuotaEspecial = item.CuotaEspecial,
+                            Payments = paymentGroup.ToList(),
                             User = owner  // ✅ ASIGNACIÓN DIRECTA
                         };
 
@@ -54,7 +56,7 @@ namespace Condominio.Infrastructure.Repositories
             _context.ChangeTracker.Clear();
 
             var idCasa = await _context.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
-            return await _dbSet.Include(x => x.House).Where(x => x.House.Id == idCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            return await _dbSet.Include(x => x.House).Include(x => x.CuotaEspecial).Where(x => x.House.Id == idCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 
 

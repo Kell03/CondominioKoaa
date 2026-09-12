@@ -181,15 +181,38 @@
                             }
 
                             
-                            <RadzenButton Icon="visibility"
-                                          ButtonStyle="ButtonStyle.Secondary"
-                                          Size="ButtonSize.Small"
-                                          Tooltip="Ver detalles"
-                                          Click="@(() => AddPagosList(factura))"
-                                          @onclick:stopPropagation="true"
-                                          Visible="@isAdmin" />
+                            @if (isAdmin)
+                            {
+                                <div style="position: relative; display: inline-block;">
+                                    <RadzenButton Icon="visibility"
+                                                  ButtonStyle="ButtonStyle.Secondary"
+                                                  Size="ButtonSize.Small"
+                                                  Tooltip="Ver detalles"
+                                                  Click="@(() => AddPagosList(factura))"
+                                                  @onclick:stopPropagation="true" />
 
-                            
+                                    @if (factura.Payments?.Any(x => x.Estado == "Pendiente") == true)
+                                    {
+                                        <!-- ✅ USAR SPAN EN LUGAR DE RADZENBADGE -->
+                                        <span style="position: absolute;
+                                            top: -8px;
+                                            right: -8px;
+                                            background: #dc3545;
+                                            color: white;
+                                            font-size: 10px;
+                                            font-weight: bold;
+                                            padding: 2px 6px;
+                                            border-radius: 10px;
+                                            min-width: 18px;
+                                            text-align: center;
+                                            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                                            line-height: 1.4;
+                                            z-index: 1;">
+                                            @factura.Payments.Count(x => x.Estado == "Pendiente")
+                                        </span>
+                                    }
+                                </div>
+                            }
                         </Template>
                     </RadzenDataGridColumn>
 
@@ -224,7 +247,7 @@
                 <RadzenCard Style="background: #f8f9fa; border-left: 4px solid #17a2b8; margin-bottom: 15px; padding: 15px;">
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
                         <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; font-weight: 500;">
-                             Pago Móvil
+                            Pago Móvil
                         </RadzenText>
                         <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
                             <strong>C.I:</strong> xx.xxx.xxx
@@ -314,7 +337,7 @@
                                     <RadzenLabel Component="MontoRequiredInput">
                                         Monto $ <span style="color: var(--rz-danger);">*</span>
                                     </RadzenLabel>
-                                   
+
                                     <input type="text"
                                            value="@_montoUsdStr"
                                            @oninput="@((ChangeEventArgs e) => OnInputUsdChanged(e.Value?.ToString()))"
@@ -470,7 +493,7 @@
 @code {
     int selectedIndex = 0;
 
-    
+   
 
     
 }

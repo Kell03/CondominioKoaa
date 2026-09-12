@@ -21,6 +21,7 @@ namespace Condominio.Infrastructure.Repositories
                         join house in _context.Houses on factura.HouseId equals house.Id
                         join user in _context.Users on house.Id equals user.HouseId into ownerGroup
                         from owner in ownerGroup.DefaultIfEmpty()
+                        join payments in _context.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
                         select new FacturaMesCasa
                         {
                             Id = factura.Id,
@@ -36,6 +37,7 @@ namespace Condominio.Infrastructure.Repositories
                             UpdatedAt = factura.UpdatedAt,
                             House = house,
                             FacturaMes = factura.FacturaMes,
+                            Payments = paymentGroup.ToList(),
                             User = owner
                         };
 
