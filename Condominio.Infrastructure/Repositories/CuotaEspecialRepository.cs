@@ -16,6 +16,8 @@ namespace Condominio.Infrastructure.Repositories
 
         public override async Task<IEnumerable<CuotaEspecial>> GetAllAsync()
         {
+            _context.ChangeTracker.Clear();
+
             return await _dbSet.Include(x => x.CuotaEspecialCasas).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 

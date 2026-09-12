@@ -17,6 +17,8 @@ namespace Condominio.Infrastructure.Repositories
 
         public override async Task<IEnumerable<CuotaEspecialCasa>> GetAllAsync()
         {
+            _context.ChangeTracker.Clear();
+
             var query = from item in _dbSet
                         join user in _context.Users on item.HouseId equals user.HouseId into ownerGroup
                         from owner in ownerGroup.DefaultIfEmpty()
@@ -49,6 +51,8 @@ namespace Condominio.Infrastructure.Repositories
 
         public async Task<IEnumerable<CuotaEspecialCasa>> GetAllForUserAsync(int id)
         {
+            _context.ChangeTracker.Clear();
+
             var idCasa = await _context.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
             return await _dbSet.Include(x => x.House).Where(x => x.House.Id == idCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
@@ -141,6 +145,8 @@ namespace Condominio.Infrastructure.Repositories
         {
             try
             {
+                _context.ChangeTracker.Clear();
+
                 // 1. Obtener la casa del usuario
                 var houseId = await _context.Users
                     .Where(u => u.Id == userId)
@@ -180,6 +186,8 @@ namespace Condominio.Infrastructure.Repositories
         {
             try
             {
+                _context.ChangeTracker.Clear();
+
 
                 var payments = await _context.Payments
                     .Include(p => p.CuotaEspecialCasa)

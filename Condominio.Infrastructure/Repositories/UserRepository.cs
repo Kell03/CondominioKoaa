@@ -13,6 +13,8 @@ namespace Condominio.Infrastructure.Repositories
 
         public override async Task<IEnumerable<Users>> GetAllAsync()
         {
+            _context.ChangeTracker.Clear();
+
             return await _dbSet.Include(u => u.House).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 

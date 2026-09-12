@@ -14,6 +14,8 @@ namespace Condominio.Infrastructure.Repositories
 
         public override async Task<IEnumerable<FacturaMesCasa>> GetAllAsync()
         {
+            _context.ChangeTracker.Clear();
+
             // ✅ UNA SOLA CONSULTA CON JOIN (más eficiente)
             var query = from factura in _dbSet
                         join house in _context.Houses on factura.HouseId equals house.Id
@@ -62,6 +64,8 @@ namespace Condominio.Infrastructure.Repositories
 
         public async Task<IEnumerable<FacturaMesCasa>> GetAllForUserAsync(int id)
         {
+            _context.ChangeTracker.Clear();
+
             var idCasa = await _context.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
             return await _dbSet.Include(x => x.House).Include(x => x.FacturaMes).ThenInclude(x => x.FacturaMesHijos).Where(x => x.House.Id == idCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
@@ -153,6 +157,8 @@ namespace Condominio.Infrastructure.Repositories
         {
             try
             {
+                _context.ChangeTracker.Clear();
+
                 // 1. Obtener la casa del usuario
                 var houseId = await _context.Users
                     .Where(u => u.Id == userId)
@@ -192,7 +198,8 @@ namespace Condominio.Infrastructure.Repositories
         {
             try
             {
-               
+                _context.ChangeTracker.Clear();
+
                 var payments = await _context.Payments
                     .Include(p => p.FacturaMesCasa)
                         .ThenInclude(f => f.FacturaMes)
