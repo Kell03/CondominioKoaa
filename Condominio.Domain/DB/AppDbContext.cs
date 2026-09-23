@@ -23,6 +23,7 @@ namespace Condominio.Domain.DB
         public DbSet<CuotaEspecialCasa> CuotaEspecialCasa { get; set; }
         public DbSet<CuotaEspecial> CuotaEspecial { get; set; }
         public DbSet<Payments> Payments { get; set; }
+        public DbSet<ConfiguracionMoneda> ConfiguracionMoneda { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

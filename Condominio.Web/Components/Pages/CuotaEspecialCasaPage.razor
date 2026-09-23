@@ -1,4 +1,4 @@
-﻿@page "/cuotaespecialcasa"
+﻿@page "/recibocuotaespecial"
 @attribute [Authorize]
 @using Condominio.Application.Services
 @using Condominio.Domain.Entities
@@ -8,6 +8,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @inject CuotaEspecialCasaRepository CuotaEspecialCasaRepository
 @inject CuotaEspecialRepository CuotaEspecialRepository
+@inject ConfiguracionMonedaRepository MonedaRepository
 @inject IGenericRepository<Houses> HousesRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
@@ -214,7 +215,7 @@
                             <strong>Banco:</strong> Banco de Venezuela
                         </RadzenText>
                         <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
-                            <strong>Tasa:</strong>   @Pago.Tasa?.ToString() Bs
+                            <strong>Tasa:</strong>   @Pago.Tasa?.ToString() Bs (@Moneda)
                         </RadzenText>
                     </RadzenStack>
                 </RadzenCard>

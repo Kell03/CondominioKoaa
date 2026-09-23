@@ -1,0 +1,89 @@
+﻿@page "/configuracionMoneda"
+@attribute [Authorize]
+@using Condominio.Domain.Entities
+@using Condominio.Infrastructure.Repositories
+@using Microsoft.AspNetCore.Authorization
+@inject ConfiguracionMonedaRepository MonedaRepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@rendermode InteractiveServer
+
+
+<RadzenTabs @bind-SelectedIndex=@selectedIndex>
+    <Tabs>
+        <RadzenTabsItem Text="Lista">
+
+
+            <RadzenButton Text="Actualizar"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Style="margin-bottom: 0.5rem;"
+                          Click="@(() => AddUser())" />
+
+            @if (items == null)
+            {
+                <p>Cargando usuarios...</p>
+            }
+            else if (!items.Any())
+            {
+                <p>No hay usuarios registrados.</p>
+            }
+            else
+            {
+
+                <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
+                                RowSelect="@((ConfiguracionMoneda item) => EditUser(item))">
+                    <Columns>
+
+                        <RadzenDataGridColumn Property="@nameof(ConfiguracionMoneda.Moneda)" Title="Moneda" Width="160px" />
+                        <RadzenDataGridColumn Property="@nameof(ConfiguracionMoneda.FechaActualizacion)" Title="Fecha Actualizacion" Width="160px" />
+                      
+
+                    </Columns>
+                </RadzenDataGrid>
+
+
+            }
+        </RadzenTabsItem>
+        <RadzenTabsItem Text="Formulario">
+
+
+
+
+
+            <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SaveItem">
+                <RadzenStack Gap="1.5rem">
+
+
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                        <RadzenLabel Component="RoleRequiredInput">
+                            Moneda <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Requerido" Variant="Variant.Outlined" IsPill="true" class="rz-ml-1" />
+                        </RadzenLabel>
+
+                        <RadzenDropDown @bind-Value="@selectedItem.Moneda"
+                                        Data="@monedas"
+                                        Style="width: 100%; max-width: 400px;"
+                                        Name="RoleRequiredInput" />
+
+                        <RadzenRequiredValidator Component="RoleRequiredInput" Text="La moneda es requerida" />
+                    </RadzenStack>
+
+
+
+
+
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Form" Style="width: 100%; max-width: 400px;" />
+                </RadzenStack>
+            </RadzenTemplateForm>
+
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    int selectedIndex = 0;
+
+    
+    
+}

@@ -20,6 +20,7 @@ namespace Condominio.Web.Components.Pages
         private IEnumerable<FacturaMes> FacturasMes;
         private IEnumerable<Houses> HouseList;
         Payments Pago = new Payments();
+        string Moneda = "USD";
         private IEnumerable<Payments> PagosList;
         private List<string> MetodosPago = new List<string>
         {
@@ -68,7 +69,8 @@ namespace Condominio.Web.Components.Pages
                 }
 
                 items = itemList.AsQueryable();
-
+                var monedas = await MonedaRepository.GetAllAsync();
+                Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
                 selectedEmployees = itemList.Any()
                     ? new List<FacturaMesCasa> { itemList.First() }
                     : new List<FacturaMesCasa>();
@@ -105,7 +107,9 @@ namespace Condominio.Web.Components.Pages
                 return;
             }
             Pago = new Payments();
-            Pago.Tasa = rates?.EUR; 
+            var prop = rates.GetType().GetProperty(Moneda);
+            Pago.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+
             Pago.MontoBs = 0;
             await LoadPagos(item.Id);
             selectedItem = item;

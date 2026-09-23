@@ -26,6 +26,8 @@ namespace Condominio.Web.Components.Pages
         "Pago Movil"
         };
         private BcvRates rates;
+        string Moneda = "USD";
+
         private string _montoBsStr = "0,00";
         private string _montoUsdStr = "0,00";
         private bool _isFormatting = false;
@@ -60,6 +62,8 @@ namespace Condominio.Web.Components.Pages
 
                 items = itemList.AsQueryable();
 
+                var monedas = await MonedaRepository.GetAllAsync();
+                Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
                 selectedEmployees = itemList.Any()
                     ? new List<CuotaEspecialCasa> { itemList.First() }
                     : new List<CuotaEspecialCasa>();
@@ -118,7 +122,8 @@ namespace Condominio.Web.Components.Pages
                 return;
             }
 
-            Pago.Tasa = rates?.EUR;
+            var prop = rates.GetType().GetProperty(Moneda);
+            Pago.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
             Pago.MontoBs = 0;
             await LoadPagos(item.Id);
             selectedItem = item;

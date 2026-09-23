@@ -32,7 +32,15 @@ namespace Condominio.Infrastructure.Repositories
 
         public virtual async Task<IEnumerable<TEntity>> GetAllAsync()
         {
-            return await _dbSet.ToListAsync();
+            try
+            {
+                return await _dbSet.ToListAsync();
+            }
+            catch(Exception ex)
+            {
+               throw;
+            }
+            
         }
 
         public virtual void ClearTracker()

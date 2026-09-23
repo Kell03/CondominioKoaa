@@ -62,18 +62,31 @@
             @if (isAuthenticated)
             {
                 <RadzenPanelMenuItem Text="Home" Path="" Icon="home" />
-                <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box" />
-                
 
+                
                 @if (isAdmin)
                 {
-                    <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" />
-                    <RadzenPanelMenuItem Text="Cuota Especial" Path="cuotaespecial" Icon="receipt" />
-                    <RadzenPanelMenuItem Text="Facturas" Path="facturas" Icon="receipt" />
-                }
-                <RadzenPanelMenuItem Text="Recibo Cuota Especial" Path="cuotaespecialcasa" Icon="receipt" />
+                    <RadzenPanelMenuItem Text="Configuración" Icon="settings">
+                        <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" />
+                        <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box" />
+                        <RadzenPanelMenuItem Text="Configuración Moneda"
+                                             Path="configuracionMoneda"
+                                             Icon="currency_exchange" />
+                    </RadzenPanelMenuItem>
 
-                <RadzenPanelMenuItem Text="Recibos" Path="recibos" Icon="receipt" />
+                    <RadzenPanelMenuItem Text="Gestión de Facturación" Icon="request_quote">
+                        <RadzenPanelMenuItem Text="Facturas" Path="facturas" Icon="description" />
+                        <RadzenPanelMenuItem Text="Cuotas Especiales" Path="cuotaespecial" Icon="receipt_long" />
+                    </RadzenPanelMenuItem>
+                }
+              
+                <!-- ✅ SUBMENÚ RECIBOS -->
+                <RadzenPanelMenuItem Text="Recibos" Icon="receipt">
+
+                    <RadzenPanelMenuItem Text="Cuota Especial" Path="recibocuotaespecial" Icon="article" />
+
+                    <RadzenPanelMenuItem Text="Facturas" Path="recibofactura" Icon="description" />
+                </RadzenPanelMenuItem>
             }
         </RadzenPanelMenu>
 
