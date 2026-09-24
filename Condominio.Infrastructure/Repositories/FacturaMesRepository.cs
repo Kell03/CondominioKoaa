@@ -9,8 +9,14 @@ namespace Condominio.Infrastructure.Repositories
 {
     public class FacturaMesRepository : GenericRepository<FacturaMes>
     {
+        private readonly NotificacionRepository _notifRepo;
 
-        public FacturaMesRepository(AppDbContext context) : base(context) { }
+        public FacturaMesRepository(AppDbContext context, NotificacionRepository notifRepo) : base(context)
+        {
+            _notifRepo = notifRepo;
+        }
+
+
 
         public override async Task<IEnumerable<FacturaMes>> GetAllAsync()
         {
@@ -21,7 +27,7 @@ namespace Condominio.Infrastructure.Repositories
 
 
 
-        public  async Task DeleteWithHijos(FacturaMes entity)
+        public async Task DeleteWithHijos(FacturaMes entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
@@ -150,7 +156,27 @@ namespace Condominio.Infrastructure.Repositories
                         SaldoPendiente = montoPorCasa,
                         Estado = "Pendiente"
                     });
+
+
+                    var usuario = await _context.Users
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.HouseId == houseId);
+
+                    if (usuario != null)
+                    {
+                        await _notifRepo.AddAsync(new Notificacion
+                        {
+                            UserId = usuario.Id,
+                            Titulo = "Nueva factura",
+                            Mensaje = $"Factura de {factura.NombreMes} {factura.Year} disponible por ${montoPorCasa:N2}",
+                            Tipo = "Factura",
+                            ReferenciaId = factura.Id
+                        });
+                    }
+
                 }
+
+
 
                 // 5. INSERTAR TODOS DE UNA VEZ (UNA SOLA LLAMADA A BD)
                 await _context.FacturaMesCasa.AddRangeAsync(facturasCasas);
