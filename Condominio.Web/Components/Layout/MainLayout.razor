@@ -1,17 +1,109 @@
 ﻿@using Condominio.Application.Services
+@using Condominio.Domain.Entities
+@using Condominio.Infrastructure.Repositories
 @using Microsoft.AspNetCore.Components.Authorization
 @inherits LayoutComponentBase
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager NavigationManager
 @inject AuthService AuthService
+@inject NotificacionRepository NotificacionRepository
+
 @inject AppState AppState
 
 <RadzenLayout>
-    <!-- ✅ HEADER -->
-    <RadzenHeader>
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
-            <RadzenSidebarToggle Click="@(() => sidebar1Expanded = !sidebar1Expanded)" />
-            <RadzenLabel Text="Condominio" />
+
+    <RadzenHeader Style="padding: 0 10px;">
+        <RadzenStack Orientation="Orientation.Horizontal"
+                     AlignItems="AlignItems.Center"
+                     JustifyContent="JustifyContent.SpaceBetween"
+                     Style="width: 100%;">
+
+            <!-- IZQUIERDA: TOGGLE + TÍTULO -->
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+                <RadzenSidebarToggle Click="@(() => sidebar1Expanded = !sidebar1Expanded)" />
+                <RadzenLabel Text="Condominio" />
+            </RadzenStack>
+
+            <!-- ✅ DERECHA: CAMPANA -->
+            @if (isAuthenticated)
+            {
+                <div style="position: relative; display: inline-block;">
+                    <RadzenButton Icon="notifications"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Size="ButtonSize.Medium"
+                                  Style="color: white;"
+                                  Click="@TogglePanel" />
+
+                    @if (contadorNoLeidas > 0)
+                    {
+                        <span style="position: absolute; top: -5px; right: -5px;
+                            background: #dc3545; color: white;
+                            padding: 2px 6px; border-radius: 10px;
+                            font-size: 10px; font-weight: bold;
+                            min-width: 18px; text-align: center;
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                            @(contadorNoLeidas > 99 ? "99+" : contadorNoLeidas.ToString())
+                        </span>
+                    }
+
+                    @if (mostrarPanel)
+                    {
+                        <RadzenCard Style="position: absolute;
+                            top: 45px;
+                            right: 0;
+                            width: 350px;
+                            max-height: 400px;
+                            overflow-y: auto;
+                            z-index: 9999;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <RadzenText TextStyle="TextStyle.H6">🔔 Notificaciones</RadzenText>
+                                @if (contadorNoLeidas > 0)
+                                {
+                                    <RadzenButton Text="Marcar todas" ButtonStyle="ButtonStyle.Light"
+                                                  Size="ButtonSize.Small" Click="@MarcarTodasComoLeidas" />
+                                }
+                            </div>
+
+                            @if (notificaciones == null || !notificaciones.Any())
+                            {
+                                <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; text-align: center; padding: 20px;">
+                                    No tienes notificaciones
+                                </RadzenText>
+                            }
+                            else
+                            {
+                                @foreach (var notif in notificaciones)
+                                {
+                                    <div style="padding: 10px; border-bottom: 1px solid #eee;
+                                        @(notif.IsRead ? "" : "background: #f8f9fa; cursor: pointer;")"
+                                         @onclick="@(() => MarcarComoLeida(notif))">
+                                        <div style="display: flex; align-items: start; gap: 8px;">
+                                            <RadzenIcon Icon="@ObtenerIcono(notif.Tipo)"
+                                                        Style="@($"color: {ObtenerColor(notif.Tipo)}; font-size: 20px;")" />
+                                            <div style="flex: 1;">
+                                                <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 500; margin: 0;">
+                                                    @notif.Titulo
+                                                </RadzenText>
+                                                <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin: 0; font-size: 12px;">
+                                                    @notif.Mensaje
+                                                </RadzenText>
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="color: #999; font-size: 11px;">
+                                                    @notif.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                                                </RadzenText>
+                                            </div>
+                                            @if (!notif.IsRead)
+                                            {
+                                                <span style="width: 8px; height: 8px; background: #dc3545; border-radius: 50%;"></span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </RadzenCard>
+                    }
+                </div>
+            }
         </RadzenStack>
     </RadzenHeader>
 
@@ -79,7 +171,7 @@
                         <RadzenPanelMenuItem Text="Cuotas Especiales" Path="cuotaespecial" Icon="receipt_long" />
                     </RadzenPanelMenuItem>
                 }
-              
+
                 <!-- ✅ SUBMENÚ RECIBOS -->
                 <RadzenPanelMenuItem Text="Recibos" Icon="receipt">
 
@@ -116,6 +208,10 @@
     private bool isAdmin = false;
     private string userName = "";
 
+    private int contadorNoLeidas = 0;
+    private IEnumerable<Notificaciones> notificaciones;
+    private bool mostrarPanel = false;
+    private bool _cargado = false;
     protected override async Task OnInitializedAsync()
     {
         await UpdateAuthState();
@@ -138,4 +234,94 @@
         AppState.CurrentUser = null;
         NavigationManager.NavigateTo("/login", true);
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_cargado && isAuthenticated && AppState.CurrentUser != null)
+        {
+            _cargado = true;
+            await CargarContador();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CargarContador()
+    {
+        try
+        {
+            contadorNoLeidas = await NotificacionRepository.CountUnreadAsync(AppState.CurrentUser.Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al cargar contador: {ex.Message}");
+        }
+    }
+
+    private async Task TogglePanel()
+    {
+        mostrarPanel = !mostrarPanel;
+        if (mostrarPanel && AppState.CurrentUser != null)
+        {
+            // ✅ 1. CARGAR NOTIFICACIONES
+            notificaciones = await NotificacionRepository.GetByUserAsync(AppState.CurrentUser.Id);
+
+            // ✅ 2. MARCAR TODAS COMO LEÍDAS
+            await NotificacionRepository.MarcarTodasComoLeidasAsync(AppState.CurrentUser.Id);
+
+            // ✅ 3. ACTUALIZAR EL CONTADOR A 0
+            contadorNoLeidas = 0;
+
+            // ✅ 4. ACTUALIZAR EL ESTADO DE LAS NOTIFICACIONES EN MEMORIA
+            foreach (var notif in notificaciones)
+            {
+                notif.IsRead = true;
+            }
+
+            StateHasChanged();
+        }
+        StateHasChanged();
+    }
+
+    private async Task MarcarComoLeida(Notificaciones notif)
+    {
+        if (!notif.IsRead)
+        {
+            await NotificacionRepository.MarcarComoLeidaAsync(notif.Id);
+            notif.IsRead = true;
+            await CargarContador();
+            StateHasChanged();
+        }
+    }
+
+    private async Task MarcarTodasComoLeidas()
+    {
+        await NotificacionRepository.MarcarTodasComoLeidasAsync(AppState.CurrentUser.Id);
+        notificaciones = await NotificacionRepository.GetByUserAsync(AppState.CurrentUser.Id);
+        await CargarContador();
+        StateHasChanged();
+    }
+    private string ObtenerIcono(string tipo)
+    {
+        return tipo switch
+        {
+            "Factura" => "description",
+            "Pago" => "payment",
+            "Recordatorio" => "schedule",
+            "CuotaEspecial" => "receipt_long",
+            _ => "notifications"  // Por defecto
+        };
+    }
+
+    private string ObtenerColor(string tipo)
+    {
+        return tipo switch
+        {
+            "Factura" => "#007bff",        // Azul
+            "Pago" => "#28a745",           // Verde
+            "Recordatorio" => "#ffc107",   // Amarillo
+            "CuotaEspecial" => "#6f42c1",  // Morado
+            _ => "#6c757d"                 // Gris (por defecto)
+        };
+    }
+
 }

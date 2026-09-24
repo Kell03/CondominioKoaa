@@ -24,7 +24,7 @@ namespace Condominio.Domain.DB
         public DbSet<CuotaEspecial> CuotaEspecial { get; set; }
         public DbSet<Payments> Payments { get; set; }
         public DbSet<ConfiguracionMoneda> ConfiguracionMoneda { get; set; }
-        public DbSet<Notificacion> Notificacion { get; set; }
+        public DbSet<Notificaciones> Notificaciones { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -123,7 +123,7 @@ namespace Condominio.Domain.DB
                
             });
 
-            modelBuilder.Entity<Notificacion>(entity =>
+            modelBuilder.Entity<Notificaciones>(entity =>
             {
                 // ... configuración existente
 

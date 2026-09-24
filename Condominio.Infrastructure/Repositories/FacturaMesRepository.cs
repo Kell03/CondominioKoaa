@@ -164,7 +164,7 @@ namespace Condominio.Infrastructure.Repositories
 
                     if (usuario != null)
                     {
-                        await _notifRepo.AddAsync(new Notificacion
+                        await _context.Notificaciones.AddAsync(new Notificaciones
                         {
                             UserId = usuario.Id,
                             Titulo = "Nueva factura",

@@ -1,0 +1,162 @@
+﻿@using Condominio.Application.Services
+@using Condominio.Domain.Entities
+@using Condominio.Infrastructure.Repositories
+@inject NotificacionRepository NotificacionRepository
+@inject AppState AppState
+
+<div style="position: relative; display: inline-block;">
+    <RadzenButton Icon="notifications"
+                  ButtonStyle="ButtonStyle.Light"
+                  Size="ButtonSize.Medium"
+                  Style="color: white;"
+                  Click="@TogglePanel" />
+
+    @if (contadorNoLeidas > 0)
+    {
+        <span style="position: absolute; top: -5px; right: -5px;
+                     background: #dc3545; color: white;
+                     padding: 2px 6px; border-radius: 10px;
+                     font-size: 10px; font-weight: bold;
+                     min-width: 18px; text-align: center;
+                     box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+            @(contadorNoLeidas > 99 ? "99+" : contadorNoLeidas.ToString())
+        </span>
+    }
+</div>
+
+@if (mostrarPanel)
+{
+    <RadzenCard Style="position: absolute; top: 60px; right: 20px; 
+                       width: 350px; max-height: 400px; overflow-y: auto;
+                       z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <RadzenText TextStyle="TextStyle.H6">🔔 Notificaciones</RadzenText>
+            @if (contadorNoLeidas > 0)
+            {
+                <RadzenButton Text="Marcar todas" 
+                              ButtonStyle="ButtonStyle.Light" 
+                              Size="ButtonSize.Small"
+                              Click="@MarcarTodasComoLeidas" />
+            }
+        </div>
+
+        @if (notificaciones == null || !notificaciones.Any())
+        {
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; text-align: center; padding: 20px;">
+                No tienes notificaciones
+            </RadzenText>
+        }
+        else
+        {
+            @foreach (var notif in notificaciones)
+            {
+                <div style="padding: 10px; border-bottom: 1px solid #eee;
+                            @(notif.IsRead ? "" : "background: #f8f9fa; cursor: pointer;")"
+                     @onclick="@(() => MarcarComoLeida(notif))">
+                    <div style="display: flex; align-items: start; gap: 8px;">
+                        <RadzenIcon Icon="@ObtenerIcono(notif.Tipo)"
+                                    Style="@($"color: {ObtenerColor(notif.Tipo)}; font-size: 20px;")" />
+                        <div style="flex: 1;">
+                            <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 500; margin: 0;">
+                                @notif.Titulo
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin: 0; font-size: 12px;">
+                                @notif.Mensaje
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption" Style="color: #999; font-size: 11px;">
+                                @notif.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                            </RadzenText>
+                        </div>
+                        @if (!notif.IsRead)
+                        {
+                            <span style="width: 8px; height: 8px; background: #dc3545; border-radius: 50%;"></span>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </RadzenCard>
+}
+
+@code {
+    private int contadorNoLeidas = 0;
+    private IEnumerable<Notificaciones> notificaciones;
+    private bool mostrarPanel = false;
+
+
+    private bool _cargado = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_cargado && AppState.CurrentUser != null)
+        {
+            _cargado = true;
+            await Task.Delay(500);
+            await CargarContador();
+            StateHasChanged();
+        }
+    }
+  
+    
+
+    private async Task CargarContador()
+    {
+        contadorNoLeidas = await NotificacionRepository.CountUnreadAsync(AppState.CurrentUser.Id);
+    }
+
+    private async Task TogglePanel()
+    {
+        mostrarPanel = !mostrarPanel;
+
+        if (mostrarPanel)
+        {
+            notificaciones = await NotificacionRepository.GetByUserAsync(AppState.CurrentUser.Id);
+            await CargarContador();
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task MarcarComoLeida(Notificaciones notif)
+    {
+        if (!notif.IsRead)
+        {
+            await NotificacionRepository.MarcarComoLeidaAsync(notif.Id);
+            notif.IsRead = true;
+            await CargarContador();
+            StateHasChanged();
+        }
+    }
+
+    private async Task MarcarTodasComoLeidas()
+    {
+        await NotificacionRepository.MarcarTodasComoLeidasAsync(AppState.CurrentUser.Id);
+        notificaciones = await NotificacionRepository.GetByUserAsync(AppState.CurrentUser.Id);
+        await CargarContador();
+        StateHasChanged();
+    }
+
+    private string ObtenerIcono(string tipo)
+    {
+        return tipo switch
+        {
+            "Factura" => "description",
+            "Pago" => "payment",
+            "Recordatorio" => "schedule",
+            "CuotaEspecial" => "receipt_long",
+            _ => "notifications"
+        };
+    }
+
+    private string ObtenerColor(string tipo)
+    {
+        return tipo switch
+        {
+            "Factura" => "#007bff",
+            "Pago" => "#28a745",
+            "Recordatorio" => "#ffc107",
+            "CuotaEspecial" => "#6f42c1",
+            _ => "#6c757d"
+        };
+    }
+}

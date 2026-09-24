@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace Condominio.Domain.Entities
 {
-    public class Notificacion : BaseEntity
+    public class Notificaciones 
     {
+        public int Id { get; set; }
         public int UserId { get; set; }
         public string Titulo { get; set; }
         public string Mensaje { get; set; }

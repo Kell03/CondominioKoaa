@@ -9,27 +9,47 @@ using System.Threading.Tasks;
 
 namespace Condominio.Infrastructure.Repositories
 {
-    public class NotificacionRepository : GenericRepository<Notificacion>
+    public class NotificacionRepository : GenericRepository<Notificaciones>
     {
 
         public NotificacionRepository(AppDbContext context) : base(context) { }
 
-        public async Task<IEnumerable<Notificacion>> GetByUserAsync(int userId)
+        public async Task<IEnumerable<Notificaciones>> GetByUserAsync(int userId)
         {
-            return await _dbSet
-                .AsNoTracking()
-                .Where(n => n.UserId == userId)
-                .OrderByDescending(n => n.FechaCreacion)
-                .Take(50)  // Últimas 50
-                .ToListAsync();
+            try
+            {
+                return await _dbSet
+               .AsNoTracking()
+               .Where(n => n.UserId == userId)
+               .OrderByDescending(n => n.FechaCreacion)
+               .Take(50)  // Últimas 50
+               .ToListAsync();
+
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+           
         }
 
         // ✅ CONTAR NO LEÍDAS
         public async Task<int> CountUnreadAsync(int userId)
         {
-            return await _dbSet
+
+            try
+            {
+
+                return await _dbSet
                 .AsNoTracking()
                 .CountAsync(n => n.UserId == userId && !n.IsRead);
+
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+            
         }
 
         // ✅ MARCAR COMO LEÍDA
