@@ -1,11 +1,14 @@
 ﻿@page "/login"
 @layout EmptyLayout
 @using Condominio.Application.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject AuthService AuthService
 @inject NavigationManager NavigationManager
 @inject Radzen.NotificationService NotificationService
 @inject AppState AppState
 @rendermode InteractiveServer
+@inject HttpClient Http   // ← Esto inyecta un HttpClient, y se llama "Http"
+@inject AuthenticationStateProvider AuthProvider
 
 <RadzenCard Style="max-width: 400px; margin: 50px auto;">
     <RadzenText TextStyle="TextStyle.H3" Style="text-align: center;">

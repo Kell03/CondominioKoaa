@@ -19,10 +19,12 @@ namespace Condominio.Application.Services
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly CustomAuthStateProvider _authStateProvider;
 
-        public AuthService(UserRepository userRepository, CustomAuthStateProvider authStateProvider)
+        public AuthService(UserRepository userRepository, CustomAuthStateProvider authStateProvider, IHttpContextAccessor httpContextAccessor)
         {
             _userRepository = userRepository;
             _authStateProvider = authStateProvider;
+            _httpContextAccessor = httpContextAccessor;
+
         }
 
         // ✅ LOGIN: Valida y crea la cookie
@@ -35,15 +37,17 @@ namespace Condominio.Application.Services
                 if (user == null)
                     return null;
 
-                // 2. Obtener claims
-                var claims = _userRepository.GetUserClaims(user);
-
-                // 3. Crear identidad y principal
-                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var principal = new ClaimsPrincipal(identity);
-
-                _authStateProvider.NotifyUserAuthentication(principal);
-
+               // // 2. Obtener claims
+               // var claims = _userRepository.GetUserClaims(user);
+               //
+               // // 3. Crear identidad y principal
+               // var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+               // var principal = new ClaimsPrincipal(identity);
+               //
+               // await _httpContextAccessor.HttpContext.SignInAsync("CookieAuth", principal);
+               //
+               // _authStateProvider.NotifyUserAuthentication(principal);
+               //
 
                 return user;
 

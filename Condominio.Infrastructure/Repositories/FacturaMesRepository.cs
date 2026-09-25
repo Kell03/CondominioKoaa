@@ -1,5 +1,6 @@
 ﻿using Condominio.Domain.DB;
 using Condominio.Domain.Entities;
+using Condominio.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -10,10 +11,13 @@ namespace Condominio.Infrastructure.Repositories
     public class FacturaMesRepository : GenericRepository<FacturaMes>
     {
         private readonly NotificacionRepository _notifRepo;
+        private readonly INotificacionRealTimeService _notificacionService;
 
-        public FacturaMesRepository(AppDbContext context, NotificacionRepository notifRepo) : base(context)
+        public FacturaMesRepository(AppDbContext context, NotificacionRepository notifRepo, INotificacionRealTimeService notificacionService) : base(context)
         {
             _notifRepo = notifRepo;
+            _notificacionService = notificacionService;
+
         }
 
 
@@ -145,6 +149,7 @@ namespace Condominio.Infrastructure.Repositories
 
                 // 4. CREAR REGISTROS (TODOS CON EL MISMO MONTO)
                 var facturasCasas = new List<FacturaMesCasa>(totalCasas);
+                var listIdUsers = new List<int>();
 
                 foreach (var houseId in casasIds)
                 {
@@ -172,6 +177,7 @@ namespace Condominio.Infrastructure.Repositories
                             Tipo = "Factura",
                             ReferenciaId = factura.Id
                         });
+                        listIdUsers.Add(usuario.Id);
                     }
 
                 }
@@ -189,6 +195,11 @@ namespace Condominio.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
+
+                if (listIdUsers.Any())
+                {
+                    await _notificacionService.EnviarNotificacionMultipleAsync(listIdUsers);
+                }
 
                 Console.WriteLine($"✅ Factura {factura.Mes}/{factura.Year} distribuida entre {totalCasas} casas");
                 Console.WriteLine($"📊 Cada casa paga: ${montoPorCasa}");

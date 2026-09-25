@@ -1,5 +1,7 @@
-﻿@using Condominio.Application.Services
+﻿@using System.Security.Claims
+@using Condominio.Application.Services
 @using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
 @using Microsoft.AspNetCore.Components.Authorization
 @inherits LayoutComponentBase
@@ -7,8 +9,13 @@
 @inject NavigationManager NavigationManager
 @inject AuthService AuthService
 @inject NotificacionRepository NotificacionRepository
-
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
 @inject AppState AppState
+@inject ILogger<MainLayout> Logger
+@inject IHttpContextAccessor HttpContextAccessor
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceProvider Services
 
 <RadzenLayout>
 
@@ -207,6 +214,7 @@
     private bool isAuthenticated = false;
     private bool isAdmin = false;
     private string userName = "";
+    private HubConnection _hubConnection;
 
     private int contadorNoLeidas = 0;
     private IEnumerable<Notificaciones> notificaciones;
@@ -214,7 +222,66 @@
     private bool _cargado = false;
     protected override async Task OnInitializedAsync()
     {
+     
         await UpdateAuthState();
+
+        // ✅ AHORA SÍ: AppState ya está lleno → iniciamos SignalR
+        if (isAuthenticated && AppState.CurrentUser != null)
+        {
+            await IniciarSignalR();   // 👈 llamamos al método
+        }
+
+    }
+
+    private async Task IniciarSignalR()
+    {
+        try
+        {
+            await CargarContador();
+
+            // ✅ Sacar el userId de los claims (que sí funcionan)
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            var userIdStr = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr))
+            {
+                Console.WriteLine("❌ No hay userId en los claims");
+                return;
+            }
+
+            Console.WriteLine($"✅ UserId desde claims: {userIdStr}");
+
+            // ✅ Pasar el userId por query string en la URL del Hub
+            var hubUrl = NavigationManager.ToAbsoluteUri($"/notificacionHub?userId={userIdStr}");
+
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(hubUrl)
+                .WithAutomaticReconnect()
+                .Build();
+
+            _hubConnection.On("NuevaNotificacion", async () =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await CargarContador();
+                    StateHasChanged();
+                });
+            });
+
+            await _hubConnection.StartAsync();
+
+            Console.WriteLine("═══════════════════════════════════");
+            Console.WriteLine($"🔌 CLIENTE CONECTADO");
+            Console.WriteLine($"🔌 ConnectionId: '{_hubConnection.ConnectionId}'");
+            Console.WriteLine($"🔌 Estado: '{_hubConnection.State}'");
+            Console.WriteLine("═══════════════════════════════════");
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error SignalR: {ex.Message}");
+        }
     }
 
     private async Task UpdateAuthState()
@@ -222,12 +289,25 @@
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
+        Console.WriteLine("═══════════════════════════════════");
+        Console.WriteLine("🔍 UpdateAuthState");
+        Console.WriteLine($"👤 ¿Identity existe?: {user.Identity != null}");
+        Console.WriteLine($"👤 ¿IsAuthenticated?: {user.Identity?.IsAuthenticated}");
+        Console.WriteLine($"👤 Name: '{user.Identity?.Name}'");
+        Console.WriteLine($"👤 ¿Cuántos claims?: {user.Claims.Count()}");
+
+        foreach (var claim in user.Claims)
+        {
+            Console.WriteLine($"   → {claim.Type} = {claim.Value}");
+        }
+
+        Console.WriteLine("═══════════════════════════════════");
+
         isAuthenticated = user.Identity?.IsAuthenticated == true;
         isAdmin = user.IsInRole("Administrador");
         userName = user.Identity?.Name ?? "";
         StateHasChanged();
     }
-
     private async Task Logout()
     {
         await AuthService.Logout();
@@ -235,13 +315,13 @@
         NavigationManager.NavigateTo("/login", true);
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+ 
+
+    public async ValueTask DisposeAsync()
     {
-        if (firstRender && !_cargado && isAuthenticated && AppState.CurrentUser != null)
+        if (_hubConnection is not null)
         {
-            _cargado = true;
-            await CargarContador();
-            StateHasChanged();
+            await _hubConnection.DisposeAsync();
         }
     }
 

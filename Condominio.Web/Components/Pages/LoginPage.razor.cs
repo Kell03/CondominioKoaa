@@ -1,9 +1,11 @@
 ﻿using Condominio.Application.Services;
+using Condominio.Domain.Entities;
 using Radzen;
+using System.Security.Claims;
 
 namespace Condominio.Web.Components.Pages
 {
-    public partial  class LoginPage
+    public partial class LoginPage
     {
 
         private string email = "";
@@ -24,24 +26,42 @@ namespace Condominio.Web.Components.Pages
 
             try
             {
-                var user = await AuthService.Login(email, password);
-                AppState.CurrentUser = user;
 
-                if (user != null)
+
+                //NavigationManager.NavigateTo("/");
+
+
+                var response = await Http.PostAsJsonAsync("/api/loginendpoint", new { Email = email, Password = password });
+                if (response.IsSuccessStatusCode)
                 {
-                    NotificationService.Notify(new NotificationMessage
+                    var userData = await response.Content.ReadFromJsonAsync<Users>();
+                    AppState.CurrentUser = new Users
                     {
-                        Severity = NotificationSeverity.Success,
-                        Summary = "Bienvenido",
-                        Detail = $"Hola {user.Name}!",
-                        Duration = 4000
-                    });
+                        Id = userData.Id,
+                        Name = userData.Name,
+                        Email = userData.Email,
+                        Role = userData.Role
+                    };
 
+
+                    var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, userData.Id.ToString()),
+        new Claim(ClaimTypes.Name, userData.Name),
+        new Claim(ClaimTypes.Email, userData.Email),
+        new Claim(ClaimTypes.Role, userData.Role)
+    };
+
+                    var identity = new ClaimsIdentity(claims, "CookieAuth");
+                    var principal = new ClaimsPrincipal(identity);
+
+
+                    if (AuthProvider is CustomAuthStateProvider custom)
+                    {
+                        custom.NotifyUserAuthentication(principal);
+                    }
                     NavigationManager.NavigateTo("/");
-                }
-                else
-                {
-                    errorMessage = "Email o contraseña incorrectos";
+
                 }
             }
             catch (Exception ex)
