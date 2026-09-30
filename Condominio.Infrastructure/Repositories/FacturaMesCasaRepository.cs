@@ -1,5 +1,6 @@
 ﻿using Condominio.Domain.DB;
 using Condominio.Domain.Entities;
+using Condominio.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -9,8 +10,15 @@ namespace Condominio.Infrastructure.Repositories
 {
     public class FacturaMesCasaRepository : GenericRepository<FacturaMesCasa>
     {
+        private readonly NotificacionRepository _notifRepo;
+        private readonly INotificacionRealTimeService _notificacionService;
 
-        public FacturaMesCasaRepository(AppDbContext context) : base(context) { }
+        public FacturaMesCasaRepository(AppDbContext context, NotificacionRepository notifRepo, INotificacionRealTimeService notificacionService) : base(context)
+        {
+            _notifRepo = notifRepo;
+            _notificacionService = notificacionService;
+
+        }
 
         public override async Task<IEnumerable<FacturaMesCasa>> GetAllAsync()
         {
@@ -97,8 +105,6 @@ namespace Condominio.Infrastructure.Repositories
                 _context.FacturaMesCasa.Update(item);
 
                 _context.FacturaMes.Update(factura);
-
-
 
                 await _context.SaveChangesAsync();
 
@@ -258,6 +264,21 @@ namespace Condominio.Infrastructure.Repositories
 
                 facturaMesCasa.Estado = facturaMesCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pago Parcial";
 
+                string mensaje = "";
+                string titulo = "";
+
+                if (facturaMesCasa.Estado == "Pago Parcial")
+                {
+                    mensaje = $"Pago parcial confirmado · {factura.NombreMes} {factura.Year} · Ref: {payment.Referencia}";
+                    titulo = $"Factura: Pago Parcial";
+                }
+                else
+                {
+                    mensaje = $"Pago confirmado · {factura.NombreMes} {factura.Year} · Ref: {payment.Referencia}";
+                    titulo = $"Factura: Pago Confirmado";
+
+                }
+
                 payment.Estado = "Confirmada";
 
 
@@ -266,10 +287,26 @@ namespace Condominio.Infrastructure.Repositories
 
                 _context.FacturaMes.Update(factura);
 
+                var usuario = await _context.Users
+        .AsNoTracking()
+        .FirstOrDefaultAsync(u => u.HouseId == facturaMesCasa.HouseId);
+
+                await _context.Notificaciones.AddAsync(new Notificaciones
+                {
+                    UserId = usuario.Id,
+                    Titulo = titulo,
+                    Mensaje = mensaje,
+                    Tipo = "Payments",
+                    ReferenciaId = payment.Id
+                });
+
                 await _context.SaveChangesAsync();
 
                 // ✅ CONFIRMAR TRANSACCIÓN
                 await transaction.CommitAsync();
+
+
+                await _notificacionService.EnviarNotificacionAsync(usuario.Id);
 
                 return true; // Éxito
             }

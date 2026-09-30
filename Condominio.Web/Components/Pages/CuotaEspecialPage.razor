@@ -25,7 +25,7 @@
 
             <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
                             Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
-                            RowSelect="@((CuotaEspecial item) => EditUser(item))">
+                            RowSelect="@((CuotaEspecial item) => EditUser(item))">                            
                 <Columns>
 
                     <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Motivo)" Title="Motivo" Width="160px" />
@@ -55,13 +55,15 @@
                             else
                             {
 
-                                <RadzenButton Text="Enviar a Todos"
-                                              Icon="send"
-                                              ButtonStyle="ButtonStyle.Primary"
-                                              Size="ButtonSize.Small"
-                                              Click="@(() => ConfirmSend(cuota))" />
+                                <div @onclick:stopPropagation="true">
+                                    <RadzenButton Text="Enviar a Todos"
+                                                  Icon="send"
+                                                  ButtonStyle="ButtonStyle.Primary"
+                                                  Size="ButtonSize.Small"
+                                                  Click="@(() => ConfirmSend(cuota))" />
+                                </div>
                             }
-                            
+
                         </Template>
                     </RadzenDataGridColumn>
 

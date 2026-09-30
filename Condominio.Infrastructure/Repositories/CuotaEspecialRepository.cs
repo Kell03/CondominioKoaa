@@ -1,5 +1,6 @@
 ﻿using Condominio.Domain.DB;
 using Condominio.Domain.Entities;
+using Condominio.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,15 @@ namespace Condominio.Infrastructure.Repositories
     public class CuotaEspecialRepository : GenericRepository<CuotaEspecial>
     {
 
-        public CuotaEspecialRepository(AppDbContext context) : base(context) { }
+        private readonly NotificacionRepository _notifRepo;
+        private readonly INotificacionRealTimeService _notificacionService;
+
+
+        public CuotaEspecialRepository(AppDbContext context, NotificacionRepository notifRepo, INotificacionRealTimeService notificacionService) : base(context) {
+            _notifRepo = notifRepo;
+            _notificacionService = notificacionService;
+
+        }
 
         public override async Task<IEnumerable<CuotaEspecial>> GetAllAsync()
         {
@@ -103,6 +112,7 @@ namespace Condominio.Infrastructure.Repositories
 
                 // 4. CREAR REGISTROS (TODOS CON EL MISMO MONTO)
                 var cuotasCasas = new List<CuotaEspecialCasa>(totalCasas);
+                var listIdUsers = new List<int>();
 
                 foreach (var houseId in casasIds)
                 {
@@ -116,8 +126,26 @@ namespace Condominio.Infrastructure.Repositories
                         SaldoPendiente = montoPorCasa,
                         Estado = "Pendiente",
                     });
-                }
 
+                    var usuario = await _context.Users
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.HouseId == houseId);
+
+                    if (usuario != null)
+                    {
+                        await _context.Notificaciones.AddAsync(new Notificaciones
+                        {
+                            UserId = usuario.Id,
+                            Titulo = "Nueva Cuota Especial",
+                            Mensaje = $"Cuota Especial de {cuota.NombreMes} {cuota.Year} disponible por ${montoPorCasa:N2}",
+                            Tipo = "Cuota Especial",
+                            ReferenciaId = cuota.Id
+                        });
+                        listIdUsers.Add(usuario.Id);
+                    }
+
+                }
+             
                 // 5. INSERTAR TODOS DE UNA VEZ (UNA SOLA LLAMADA A BD)
                 await _context.CuotaEspecialCasa.AddRangeAsync(cuotasCasas);
 
@@ -131,7 +159,12 @@ namespace Condominio.Infrastructure.Repositories
 
                 await transaction.CommitAsync();
 
-             }
+                if (listIdUsers.Any())
+                {
+                    await _notificacionService.EnviarNotificacionMultipleAsync(listIdUsers);
+                }
+
+            }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
