@@ -4,100 +4,273 @@
 @inject DialogService DialogService
 @page "/facturaimagenes"
 
-<h3>Subir Factura</h3>
+<h3>Facturas</h3>
 
-<div>
-    <label>Mes:</label>
-    <InputSelect @bind-Value="mes">
-        <option value="1">Enero</option>
-        <option value="2">Febrero</option>
-        <option value="3">Marzo</option>
-        <option value="4">Abril</option>
-        <option value="5">Mayo</option>
-        <option value="6">Junio</option>
-        <option value="7">Julio</option>
-        <option value="8">Agosto</option>
-        <option value="9">Septiembre</option>
-        <option value="10">Octubre</option>
-        <option value="11">Noviembre</option>
-        <option value="12">Diciembre</option>
-    </InputSelect>
-</div>
+<RadzenTabs>
+    <Tabs>
+        <RadzenTabsItem Text="Subir Factura" Icon="cloud_upload">
+            <div style="padding: 20px;">
+                <RadzenTemplateForm TItem="FacturaFormModel" Data="@form" Submit="@Guardar">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <RadzenFormField Text="Mes" Style="width: 100%;">
+                                <RadzenDropDown @bind-Value="form.Mes"
+                                                Data="@Meses"
+                                                TextProperty="Text"
+                                                ValueProperty="Value"
+                                                Style="width: 100%;" />
+                            </RadzenFormField>
+                        </div>
 
-<div>
-    <label>Año:</label>
-    <InputNumber @bind-Value="anio" />
-</div>
+                        <div class="col-md-6">
+                            <RadzenFormField Text="Año" Style="width: 100%;">
+                                <RadzenNumeric @bind-Value="form.Anio" Style="width: 100%;" />
+                            </RadzenFormField>
+                        </div>
+                    </div>
 
-<div>
-    <label>Comentario (opcional):</label>
-    <InputText @bind-Value="comentario" />
-</div>
+                    <div class="row" style="margin-top: 15px;">
+                        <div class="col-md-12">
+                            <RadzenFormField Text="Comentario (opcional)" Style="width: 100%;">
+                                <RadzenTextBox @bind-Value="form.Comentario" Style="width: 100%;" />
+                            </RadzenFormField>
+                        </div>
+                    </div>
 
-<div>
-    <label>Factura:</label>
-    <InputFile OnChange="HandleFileSelected" accept="image/*" />
-</div>
+                    <div class="row" style="margin-top: 15px;">
+                        <div class="col-md-12">
+                            <RadzenFormField Text="Factura" Style="width: 100%;">
+                                <InputFile OnChange="OnFileChange" accept="image/*" style="width: 100%;" />
+                            </RadzenFormField>
+                        </div>
+                    </div>
 
-@if (!string.IsNullOrEmpty(urlFacturaSeleccionada))
-{
-    <div style="margin-top: 20px;">
-        <h4>Vista previa</h4>
-        <img src="@urlFacturaSeleccionada" style="max-width: 100%; max-height: 600px;" />
-    </div>
-}
+                    @if (!string.IsNullOrEmpty(urlVistaPrevia))
+                    {
+                        <div style="margin-top: 20px;">
+                            <h4>Vista previa</h4>
+                            <img src="@urlVistaPrevia" style="max-width: 100%; max-height: 600px;" />
+                        </div>
+                    }
 
-@if (!string.IsNullOrEmpty(mensaje))
-{
-    <p>@mensaje</p>
-}
+                    @if (!string.IsNullOrEmpty(mensaje))
+                    {
+                        <p style="margin-top: 15px;">@mensaje</p>
+                    }
 
-<RadzenDataGrid Data="@facturas"
-                TItem="ImagenesFacturas"
-                AllowPaging="true"
-                PageSize="10"
-                AllowSorting="true"
-                RowClick="@(args => VerFactura(args.Data))"
-                Style="cursor: pointer;">
-    <Columns>
-        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Mes" Title="Mes" Width="100px" />
-        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Anio" Title="Año" Width="100px" />
-        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Comentario" Title="Comentario" />
-        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="NombreOriginal" Title="Archivo" />
-        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="FechaSubida" Title="Fecha" FormatString="{0:dd/MM/yyyy HH:mm}" />
+                    <!-- ✅ NUEVO: botones Guardar y Cancelar -->
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <RadzenButton ButtonType="ButtonType.Submit"
+                                      Text="Guardar"
+                                      Icon="save"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Disabled="@(!archivoListo)" />
+                        <RadzenButton Text="Cancelar"
+                                      Icon="cancel"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Click="@LimpiarFormulario" />
+                    </div>
+                </RadzenTemplateForm>
+            </div>
+        </RadzenTabsItem>
 
-        <RadzenDataGridColumn TItem="ImagenesFacturas" Title="Acciones" Width="120px" Sortable="false" Filterable="false">
-            <Template Context="factura">
-                <RadzenButton Icon="delete"
-                              ButtonStyle="ButtonStyle.Danger"
-                              Size="ButtonSize.Small"
-                              Click="@(args => ConfirmarEliminar(factura))"
-                              ClickStopPropagation="true" />
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
+        <RadzenTabsItem Text="Lista de Facturas" Icon="list">
+            <div style="padding: 20px;">
+                <div class="row">
+                    <!-- IZQUIERDA: Lista -->
+                    <div class="col-md-7">
+                        <RadzenDataGrid Data="@facturas"
+                                        TItem="ImagenesFacturas"
+                                        AllowPaging="true"
+                                        PageSize="10"
+                                        AllowSorting="true">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Mes" Title="Mes" Width="80px" />
+                                <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Anio" Title="Año" Width="80px" />
+                                <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Comentario" Title="Comentario" />
+                                <RadzenDataGridColumn TItem="ImagenesFacturas" Property="FechaSubida" Title="Fecha" FormatString="{0:dd/MM/yyyy HH:mm}" />
+
+                                <RadzenDataGridColumn TItem="ImagenesFacturas" Title="Acciones" Width="180px" Sortable="false" Filterable="false">
+                                    <Template Context="factura">
+                                        <RadzenButton Icon="visibility"
+                                                      ButtonStyle="ButtonStyle.Info"
+                                                      Size="ButtonSize.Small"
+                                                      Text="Ver"
+                                                      Click="@(args => VerFactura(factura))"
+                                                      style="margin-right: 5px;" />
+                                        <RadzenButton Icon="delete"
+                                                      ButtonStyle="ButtonStyle.Danger"
+                                                      Size="ButtonSize.Small"
+                                                      Click="@(args => ConfirmarEliminar(factura))" />
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
+                    </div>
+
+                    <!-- DERECHA: Visor de imagen -->
+                    <div class="col-md-5">
+                        @if (!string.IsNullOrEmpty(urlFacturaSeleccionada))
+                        {
+                            <RadzenCard>
+                                <h4>Vista previa</h4>
+                                <img src="@urlFacturaSeleccionada" style="max-width: 100%; max-height: 70vh;" />
+                                <div style="margin-top: 10px;">
+                                    <RadzenButton Text="Cerrar"
+                                                  Icon="close"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Size="ButtonSize.Small"
+                                                  Click="@(() => urlFacturaSeleccionada = null)" />
+                                </div>
+                            </RadzenCard>
+                        }
+                        else
+                        {
+                            <RadzenCard>
+                                <p style="color: #888; text-align: center;">
+                                    Selecciona una factura y pulsa <b>Ver</b> para previsualizarla aquí.
+                                </p>
+                            </RadzenCard>
+                        }
+                    </div>
+                </div>
+            </div>
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
 
 @code {
 
     private List<ImagenesFacturas> facturas = new();
     private string? urlFacturaSeleccionada;
-    private int mes = DateTime.Now.Month;
-    private int anio = DateTime.Now.Year;
-    private string? comentario;
+    private string? urlVistaPrevia;
     private string mensaje = "";
+
+    // --- Formulario ---
+    private FacturaFormModel form = new();
+
+    // ✅ NUEVO: variables para guardar el archivo en memoria
+    private byte[]? archivoBytes;
+    private string? archivoContentType;
+    private string? nombreArchivo;
+    private bool archivoListo = false;
+
+    private List<MesItem> Meses = new()
+    {
+        new() { Value = 1,  Text = "Enero" },
+        new() { Value = 2,  Text = "Febrero" },
+        new() { Value = 3,  Text = "Marzo" },
+        new() { Value = 4,  Text = "Abril" },
+        new() { Value = 5,  Text = "Mayo" },
+        new() { Value = 6,  Text = "Junio" },
+        new() { Value = 7,  Text = "Julio" },
+        new() { Value = 8,  Text = "Agosto" },
+        new() { Value = 9,  Text = "Septiembre" },
+        new() { Value = 10, Text = "Octubre" },
+        new() { Value = 11, Text = "Noviembre" },
+        new() { Value = 12, Text = "Diciembre" }
+    };
 
     protected override async Task OnInitializedAsync()
     {
+        form.Mes = DateTime.Now.Month;
+        form.Anio = DateTime.Now.Year;
         facturas = await FacturaService.ObtenerTodasAsync();
     }
 
+    private async Task OnFileChange(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        const long maxSize = 10 * 1024 * 1024;
+
+        if (file.Size > maxSize)
+        {
+            mensaje = "El archivo es demasiado grande (máx 10 MB)";
+            LimpiarArchivo();
+            return;
+        }
+
+        if (!file.ContentType.StartsWith("image/"))
+        {
+            mensaje = "Solo se permiten imágenes";
+            LimpiarArchivo();
+            return;
+        }
+
+        using var ms = new MemoryStream();
+        await file.OpenReadStream(maxSize).CopyToAsync(ms);
+        archivoBytes = ms.ToArray();
+        archivoContentType = file.ContentType;
+        nombreArchivo = file.Name;
+
+        urlVistaPrevia = $"data:{file.ContentType};base64,{Convert.ToBase64String(archivoBytes)}";
+        archivoListo = true;
+        mensaje = "";
+    }
+
+    // ✅ NUEVO: aquí SÍ se sube, solo al pulsar Guardar
+    private async Task Guardar()
+    {
+        if (!archivoListo || archivoBytes == null || archivoContentType == null)
+        {
+            mensaje = "Selecciona una imagen primero";
+            return;
+        }
+
+        try
+        {
+            using var stream = new MemoryStream(archivoBytes);
+
+            var id = await FacturaService.SubirFacturaAsync(
+                stream,
+                nombreArchivo ?? "factura",
+                archivoContentType,
+                archivoBytes.Length,
+                form.Mes,
+                form.Anio,
+                form.Comentario);
+
+            mensaje = $"Factura subida correctamente (ID: {id})";
+
+            LimpiarFormulario();
+            facturas = await FacturaService.ObtenerTodasAsync();
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error: {ex.Message}";
+        }
+    }
+
+    // ✅ NUEVO: limpia el formulario completo
+    private void LimpiarFormulario()
+    {
+        form = new FacturaFormModel
+        {
+            Mes = DateTime.Now.Month,
+            Anio = DateTime.Now.Year
+        };
+        LimpiarArchivo();
+    }
+
+    // ✅ NUEVO: limpia solo el archivo seleccionado
+    private void LimpiarArchivo()
+    {
+        nombreArchivo = null;
+        urlVistaPrevia = null;
+        archivoBytes = null;
+        archivoContentType = null;
+        archivoListo = false;
+    }
+
+    // --- Ver ---
     private async Task VerFactura(ImagenesFacturas factura)
     {
         urlFacturaSeleccionada = await FacturaService.ObtenerUrlFacturaAsync(factura.Id);
     }
 
-    // ✅ NUEVO: confirmación + eliminar
+    // --- Eliminar con confirmación ---
     private async Task ConfirmarEliminar(ImagenesFacturas factura)
     {
         var confirmado = await DialogService.Confirm(
@@ -115,12 +288,9 @@
         {
             await FacturaService.EliminarFacturaAsync(factura.Id);
 
-            // ✅ Recargar la lista desde la BD
             facturas = await FacturaService.ObtenerTodasAsync();
-            urlFacturaSeleccionada = null; // limpiar vista previa por si era la eliminada
+            urlFacturaSeleccionada = null;
             mensaje = "Factura eliminada correctamente";
-
-            StateHasChanged(); // opcional, para forzar el render
         }
         catch (Exception ex)
         {
@@ -128,39 +298,17 @@
         }
     }
 
-    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    // --- Modelos auxiliares ---
+    public class FacturaFormModel
     {
-        var file = e.File;
-        if (file == null) return;
+        public int Mes { get; set; }
+        public int Anio { get; set; }
+        public string? Comentario { get; set; }
+    }
 
-        const long maxSize = 10 * 1024 * 1024;
-        if (file.Size > maxSize)
-        {
-            mensaje = "El archivo es demasiado grande (máx 10 MB)";
-            return;
-        }
-
-        if (!file.ContentType.StartsWith("image/"))
-        {
-            mensaje = "Solo se permiten imágenes";
-            return;
-        }
-
-        try
-        {
-            using var stream = file.OpenReadStream(maxSize);
-            var id = await FacturaService.SubirFacturaAsync(
-                stream, file.Name, file.ContentType, file.Size,
-                mes, anio, comentario);
-
-            mensaje = $"Factura subida correctamente (ID: {id})";
-
-            // Recargar la lista para que aparezca la nueva
-            facturas = await FacturaService.ObtenerTodasAsync();
-        }
-        catch (Exception ex)
-        {
-            mensaje = $"Error: {ex.Message}";
-        }
+    public class MesItem
+    {
+        public int Value { get; set; }
+        public string Text { get; set; } = "";
     }
 }
