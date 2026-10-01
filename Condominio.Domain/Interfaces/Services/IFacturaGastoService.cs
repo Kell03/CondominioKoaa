@@ -22,5 +22,8 @@ namespace Condominio.Domain.Interfaces.Services
 
         Task<string> ObtenerUrlFacturaAsync(int facturaId);
 
+        Task EliminarFacturaAsync(int facturaId);
+
+
     }
 }

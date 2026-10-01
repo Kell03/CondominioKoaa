@@ -103,5 +103,33 @@ namespace Condominio.Infrastructure.Services
             return s3Client.GetPreSignedURL(request);
         }
 
+        public async Task EliminarAsync(string key)
+        {
+            var creds = await ObtenerCredencialesAsync();
+
+            var s3Config = new AmazonS3Config
+            {
+                ServiceURL = creds.Endpoint,
+                ForcePathStyle = true,
+                AuthenticationRegion = "auto"
+            };
+
+            var s3Client = new AmazonS3Client(
+                creds.AccessKeyId,
+                creds.SecretAccessKey,
+                creds.SessionToken,
+                s3Config
+            );
+
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = creds.Bucket,
+                Key = key
+            };
+
+            await s3Client.DeleteObjectAsync(deleteRequest);
+        }
+
+
     }
 }

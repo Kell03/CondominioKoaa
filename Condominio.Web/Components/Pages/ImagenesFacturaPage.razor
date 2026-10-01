@@ -1,6 +1,7 @@
 ﻿@using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Services
 @inject IFacturaGastoService FacturaService
+@inject DialogService DialogService
 @page "/facturaimagenes"
 
 <h3>Subir Factura</h3>
@@ -38,7 +39,6 @@
     <InputFile OnChange="HandleFileSelected" accept="image/*" />
 </div>
 
-
 @if (!string.IsNullOrEmpty(urlFacturaSeleccionada))
 {
     <div style="margin-top: 20px;">
@@ -47,15 +47,10 @@
     </div>
 }
 
-
-
-
 @if (!string.IsNullOrEmpty(mensaje))
 {
     <p>@mensaje</p>
 }
-
-
 
 <RadzenDataGrid Data="@facturas"
                 TItem="ImagenesFacturas"
@@ -70,6 +65,16 @@
         <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Comentario" Title="Comentario" />
         <RadzenDataGridColumn TItem="ImagenesFacturas" Property="NombreOriginal" Title="Archivo" />
         <RadzenDataGridColumn TItem="ImagenesFacturas" Property="FechaSubida" Title="Fecha" FormatString="{0:dd/MM/yyyy HH:mm}" />
+
+        <RadzenDataGridColumn TItem="ImagenesFacturas" Title="Acciones" Width="120px" Sortable="false" Filterable="false">
+            <Template Context="factura">
+                <RadzenButton Icon="delete"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Size="ButtonSize.Small"
+                              Click="@(args => ConfirmarEliminar(factura))"
+                              ClickStopPropagation="true" />
+            </Template>
+        </RadzenDataGridColumn>
     </Columns>
 </RadzenDataGrid>
 
@@ -92,7 +97,36 @@
         urlFacturaSeleccionada = await FacturaService.ObtenerUrlFacturaAsync(factura.Id);
     }
 
+    // ✅ NUEVO: confirmación + eliminar
+    private async Task ConfirmarEliminar(ImagenesFacturas factura)
+    {
+        var confirmado = await DialogService.Confirm(
+            $"¿Seguro que quieres eliminar la factura \"{factura.NombreOriginal}\"?",
+            "Confirmar eliminación",
+            new ConfirmOptions
+            {
+                OkButtonText = "Sí, eliminar",
+                CancelButtonText = "Cancelar"
+            });
 
+        if (confirmado != true) return;
+
+        try
+        {
+            await FacturaService.EliminarFacturaAsync(factura.Id);
+
+            // ✅ Recargar la lista desde la BD
+            facturas = await FacturaService.ObtenerTodasAsync();
+            urlFacturaSeleccionada = null; // limpiar vista previa por si era la eliminada
+            mensaje = "Factura eliminada correctamente";
+
+            StateHasChanged(); // opcional, para forzar el render
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error al eliminar: {ex.Message}";
+        }
+    }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -120,6 +154,9 @@
                 mes, anio, comentario);
 
             mensaje = $"Factura subida correctamente (ID: {id})";
+
+            // Recargar la lista para que aparezca la nueva
+            facturas = await FacturaService.ObtenerTodasAsync();
         }
         catch (Exception ex)
         {

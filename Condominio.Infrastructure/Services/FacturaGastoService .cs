@@ -58,5 +58,18 @@ namespace Condominio.Infrastructure.Services
 
             return await _blob.ObtenerUrlLecturaAsync(factura.RutaAlmacenamiento);
         }
+
+        public async Task EliminarFacturaAsync(int facturaId)
+        {
+            // 1. Buscar la factura en MySQL
+            var factura = await _repo.ObtenerPorIdAsync(facturaId);
+            if (factura == null) throw new Exception("Factura no encontrada");
+
+            // 2. Borrar el archivo de Upstash
+            await _blob.EliminarAsync(factura.RutaAlmacenamiento);
+
+            // 3. Borrar el registro de MySQL
+            await _repo.EliminarAsync(facturaId);
+        }
     }
 }
