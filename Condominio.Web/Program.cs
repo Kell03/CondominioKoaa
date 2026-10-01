@@ -66,6 +66,7 @@ builder.Services.AddScoped(sp => new HttpClient
 // ✅ SERVICIO
 builder.Services.AddScoped<BcvScraperService>();
 builder.Services.AddScoped<INotificacionRealTimeService, NotificacionRealTimeService>();
+builder.Services.AddHttpClient<UpstashBlobService>();
 
 // ✅ HTTPCLIENT
 builder.Services.AddHttpClient<BcvScraperService>(client =>

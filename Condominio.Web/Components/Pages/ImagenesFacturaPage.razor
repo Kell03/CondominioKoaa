@@ -1,0 +1,129 @@
+﻿@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Services
+@inject IFacturaGastoService FacturaService
+@page "/facturaimagenes"
+
+<h3>Subir Factura</h3>
+
+<div>
+    <label>Mes:</label>
+    <InputSelect @bind-Value="mes">
+        <option value="1">Enero</option>
+        <option value="2">Febrero</option>
+        <option value="3">Marzo</option>
+        <option value="4">Abril</option>
+        <option value="5">Mayo</option>
+        <option value="6">Junio</option>
+        <option value="7">Julio</option>
+        <option value="8">Agosto</option>
+        <option value="9">Septiembre</option>
+        <option value="10">Octubre</option>
+        <option value="11">Noviembre</option>
+        <option value="12">Diciembre</option>
+    </InputSelect>
+</div>
+
+<div>
+    <label>Año:</label>
+    <InputNumber @bind-Value="anio" />
+</div>
+
+<div>
+    <label>Comentario (opcional):</label>
+    <InputText @bind-Value="comentario" />
+</div>
+
+<div>
+    <label>Factura:</label>
+    <InputFile OnChange="HandleFileSelected" accept="image/*" />
+</div>
+
+
+@if (!string.IsNullOrEmpty(urlFacturaSeleccionada))
+{
+    <div style="margin-top: 20px;">
+        <h4>Vista previa</h4>
+        <img src="@urlFacturaSeleccionada" style="max-width: 100%; max-height: 600px;" />
+    </div>
+}
+
+
+
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <p>@mensaje</p>
+}
+
+
+
+<RadzenDataGrid Data="@facturas"
+                TItem="ImagenesFacturas"
+                AllowPaging="true"
+                PageSize="10"
+                AllowSorting="true"
+                RowClick="@(args => VerFactura(args.Data))"
+                Style="cursor: pointer;">
+    <Columns>
+        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Mes" Title="Mes" Width="100px" />
+        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Anio" Title="Año" Width="100px" />
+        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="Comentario" Title="Comentario" />
+        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="NombreOriginal" Title="Archivo" />
+        <RadzenDataGridColumn TItem="ImagenesFacturas" Property="FechaSubida" Title="Fecha" FormatString="{0:dd/MM/yyyy HH:mm}" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+
+    private List<ImagenesFacturas> facturas = new();
+    private string? urlFacturaSeleccionada;
+    private int mes = DateTime.Now.Month;
+    private int anio = DateTime.Now.Year;
+    private string? comentario;
+    private string mensaje = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        facturas = await FacturaService.ObtenerTodasAsync();
+    }
+
+    private async Task VerFactura(ImagenesFacturas factura)
+    {
+        urlFacturaSeleccionada = await FacturaService.ObtenerUrlFacturaAsync(factura.Id);
+    }
+
+
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        const long maxSize = 10 * 1024 * 1024;
+        if (file.Size > maxSize)
+        {
+            mensaje = "El archivo es demasiado grande (máx 10 MB)";
+            return;
+        }
+
+        if (!file.ContentType.StartsWith("image/"))
+        {
+            mensaje = "Solo se permiten imágenes";
+            return;
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream(maxSize);
+            var id = await FacturaService.SubirFacturaAsync(
+                stream, file.Name, file.ContentType, file.Size,
+                mes, anio, comentario);
+
+            mensaje = $"Factura subida correctamente (ID: {id})";
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error: {ex.Message}";
+        }
+    }
+}

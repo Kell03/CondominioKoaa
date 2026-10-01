@@ -25,6 +25,7 @@ namespace Condominio.Domain.DB
         public DbSet<Payments> Payments { get; set; }
         public DbSet<ConfiguracionMoneda> ConfiguracionMoneda { get; set; }
         public DbSet<Notificaciones> Notificaciones { get; set; }
+        public DbSet<ImagenesFacturas> ImagenesFacturas { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

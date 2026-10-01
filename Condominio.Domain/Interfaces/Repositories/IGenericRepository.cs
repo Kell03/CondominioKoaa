@@ -15,5 +15,6 @@ namespace Condominio.Domain.Interfaces.Repositories
         void Delete(TEntity entity);
         Task<int> SaveChangesAsync();
 
+
     }
 }

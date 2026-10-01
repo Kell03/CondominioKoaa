@@ -1,10 +1,12 @@
-﻿using Condominio.Domain.Interfaces.Repositories;
+﻿using Condominio.Domain.Entities;
+using Condominio.Domain.Interfaces.Repositories;
+using Condominio.Domain.Interfaces.Services;
 using Condominio.Infrastructure.Repositories;
+using Condominio.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Condominio.Domain.Entities;
 
 namespace Condominio.Infrastructure
 {
@@ -29,7 +31,11 @@ namespace Condominio.Infrastructure
 
             services.AddScoped<IGenericRepository<FacturaMesHijo>, FacturaMesHijoRepository>();
 
-          
+
+            services.AddScoped<IFacturaGastoRepository, FacturaGastoRepository>();
+
+            services.AddScoped<IFacturaGastoService, FacturaGastoService>();
+
             // Register application services here
             return services;
         }
