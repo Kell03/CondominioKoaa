@@ -7,7 +7,9 @@
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @rendermode InteractiveServer
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
 
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
 
 <RadzenTabs @bind-SelectedIndex=@selectedIndex>
     <Tabs>
@@ -108,7 +110,8 @@
         </RadzenTabsItem>
     </Tabs>
 </RadzenTabs>
-
+</div>
+</div>
 @code {
     int selectedIndex = 0;
 

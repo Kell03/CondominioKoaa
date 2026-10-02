@@ -16,8 +16,9 @@
 @inject IHttpContextAccessor HttpContextAccessor
 @using Microsoft.Extensions.DependencyInjection
 @inject IServiceProvider Services
+@inject IJSRuntime JSRuntime
 
-<RadzenLayout>
+<RadzenLayout FullHeight="true">
 
     <RadzenHeader Style="padding: 0 10px;">
         <RadzenStack Orientation="Orientation.Horizontal"
@@ -55,6 +56,8 @@
 
                     @if (mostrarPanel)
                     {
+
+
                         <RadzenCard Style="position: absolute;
                             top: 45px;
                             right: 0;
@@ -115,7 +118,9 @@
     </RadzenHeader>
 
     <!-- ✅ SIDEBAR CON USUARIO Y LOGOUT ARRIBA -->
-    <RadzenSidebar @bind-Expanded="@sidebar1Expanded">
+    <RadzenSidebar @bind-Expanded="@sidebar1Expanded"
+                   Responsive="false"
+                   Style="width: 280px;">
         <!-- ✅ SECCIÓN DE USUARIO (SIEMPRE VISIBLE) -->
         <div style="padding: 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">
             @if (isAuthenticated)
@@ -160,32 +165,32 @@
         <RadzenPanelMenu>
             @if (isAuthenticated)
             {
-                <RadzenPanelMenuItem Text="Home" Path="" Icon="home" />
+                <RadzenPanelMenuItem Text="Home" Path="" Icon="home" Click="@CerrarSidebarSiMobile" />
 
                 
                 @if (isAdmin)
                 {
                     <RadzenPanelMenuItem Text="Configuración" Icon="settings">
-                        <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" />
-                        <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box" />
+                        <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box"Click="@CerrarSidebarSiMobile" />
                         <RadzenPanelMenuItem Text="Configuración Moneda"
                                              Path="configuracionMoneda"
-                                             Icon="currency_exchange" />
+                                             Icon="currency_exchange" Click="@CerrarSidebarSiMobile"/>
                     </RadzenPanelMenuItem>
 
                     <RadzenPanelMenuItem Text="Gestión de Facturación" Icon="request_quote">
-                        <RadzenPanelMenuItem Text="Facturas" Path="facturas" Icon="description" />
-                        <RadzenPanelMenuItem Text="Cuotas Especiales" Path="cuotaespecial" Icon="receipt_long" />
-                        <RadzenPanelMenuItem Text="Imagenes Facturas" Path="facturaimagenes" Icon="receipt_long" />
+                        <RadzenPanelMenuItem Text="Facturas" Path="facturas" Icon="description" Click="@CerrarSidebarSiMobile"/>
+                        <RadzenPanelMenuItem Text="Cuotas Especiales" Path="cuotaespecial" Icon="receipt_long"Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Imagenes Facturas" Path="facturaimagenes" Icon="receipt_long"Click="@CerrarSidebarSiMobile" />
                     </RadzenPanelMenuItem>
                 }
 
                 <!-- ✅ SUBMENÚ RECIBOS -->
                 <RadzenPanelMenuItem Text="Recibos" Icon="receipt">
 
-                    <RadzenPanelMenuItem Text="Cuota Especial" Path="recibocuotaespecial" Icon="article" />
+                    <RadzenPanelMenuItem Text="Cuota Especial" Path="recibocuotaespecial" Icon="article" Click="@CerrarSidebarSiMobile" />
 
-                    <RadzenPanelMenuItem Text="Facturas" Path="recibofactura" Icon="description" />
+                    <RadzenPanelMenuItem Text="Facturas" Path="recibofactura" Icon="description" Click="@CerrarSidebarSiMobile" />
                 </RadzenPanelMenuItem>
             }
         </RadzenPanelMenu>
@@ -196,9 +201,18 @@
     </RadzenSidebar>
 
     <!-- ✅ BODY -->
-    <RadzenBody>
-        <div class="rz-p-4">
-            @Body
+    <RadzenBody id="radzen-body-principal" style="position: relative;">
+
+    
+
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+
+    <!-- Columna 1: Gráfico 1 -->
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+                <div class="rz-p-4">
+                    @Body
+                </div>
+        </div>
         </div>
     </RadzenBody>
 
@@ -206,12 +220,53 @@
     <RadzenFooter>
         Footer
     </RadzenFooter>
+
+    <style>
+            /* Botón cerrar: oculto por defecto */
+            .cerrar-sidebar-mobile {
+                display: none;
+            }
+
+            /* ===== SOLO MOBILE ===== */
+            @@media (max-width: 768px) {
+
+                .cerrar-sidebar-mobile {
+                    display: block;
+                }
+                /* Backdrop oscuro sobre el body */
+                body:has(.rz-sidebar-expanded) .rz-body::after {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    z-index: 999;
+                    pointer-events: none;
+                }
+                /* Evita scroll en el body cuando el sidebar está abierto */
+                body:has(.rz-sidebar-expanded) .rz-body {
+                    overflow: hidden;
+                }
+            }
+            <!--
+
+        ← AQUÍ cierra el @media, DESPUÉS de todo lo de mobile -->
+            /* ===== SOLO PC ===== */
+            @@media (min-width: 769px) {
+                .rz-sidebar {
+                    transform: translateX(0) !important;
+                }
+            }
+    </style>
 </RadzenLayout>
+
+
 
 <RadzenDialog />
 
+
+
 @code {
-    bool sidebar1Expanded = true;
+    bool sidebar1Expanded = false;
     private bool isAuthenticated = false;
     private bool isAdmin = false;
     private string userName = "";
@@ -221,9 +276,30 @@
     private IEnumerable<Notificaciones> notificaciones;
     private bool mostrarPanel = false;
     private bool _cargado = false;
+    private bool _esMobile = false;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var width = await JSRuntime.InvokeAsync<int>("eval", "window.innerWidth");
+                _esMobile = width < 768;
+                Console.WriteLine($"📱 Mobile: {_esMobile} ({width}px)");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al detectar mobile: {ex.Message}");
+            }
+        }
+    }
+
+
     protected override async Task OnInitializedAsync()
     {
-     
+
         await UpdateAuthState();
 
         // ✅ AHORA SÍ: AppState ya está lleno → iniciamos SignalR
@@ -405,4 +481,15 @@
         };
     }
 
+    private Task CerrarSidebarSiMobile()
+    {
+        if (_esMobile)
+        {
+            sidebar1Expanded = false;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
 }
+
+    
