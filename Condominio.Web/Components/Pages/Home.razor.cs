@@ -32,22 +32,26 @@ namespace Condominio.Web.Components.Pages
         IEnumerable<CuotaEspecial> cuotas = [];
         List<string> listaCuotas = [];
         string selectedCuota = "";
-       
 
-        protected override async Task OnInitializedAsync()
+        private bool yaCargo = false;
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            try
+            if (firstRender && !yaCargo)
             {
-                await base.OnInitializedAsync();
+                yaCargo = true;
 
-                await LoadData();
-                await LoadDataCuotas();
+                try
+                {
+                    await LoadData();
+                    await LoadDataCuotas();
+                    StateHasChanged();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error en OnAfterRenderAsync: {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                ;
-            }
-
         }
 
 
