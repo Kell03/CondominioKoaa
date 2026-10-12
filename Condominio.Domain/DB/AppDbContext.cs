@@ -26,6 +26,7 @@ namespace Condominio.Domain.DB
         public DbSet<ConfiguracionMoneda> ConfiguracionMoneda { get; set; }
         public DbSet<Notificaciones> Notificaciones { get; set; }
         public DbSet<ImagenesFacturas> ImagenesFacturas { get; set; }
+        public DbSet<Movimiento> Movimientos { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -133,6 +134,25 @@ namespace Condominio.Domain.DB
                     .WithMany()
                     .HasForeignKey(n => n.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+
+            modelBuilder.Entity<Movimiento>(entity =>
+            {
+                entity.HasOne(m => m.House)
+                      .WithMany()
+                      .HasForeignKey(m => m.IdCasa)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(m => m.Factura)
+                      .WithMany()
+                      .HasForeignKey(m => m.IdFactura)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(m => m.CuotaEspecial)
+                      .WithMany()
+                      .HasForeignKey(m => m.IdCuotaEspecial)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
 
