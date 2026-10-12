@@ -27,6 +27,7 @@ namespace Condominio.Domain.DB
         public DbSet<Notificaciones> Notificaciones { get; set; }
         public DbSet<ImagenesFacturas> ImagenesFacturas { get; set; }
         public DbSet<Movimientos> Movimientos { get; set; }
+        public DbSet<CategoriasGasto> CategoriasGasto { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

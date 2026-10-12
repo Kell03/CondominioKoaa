@@ -1,0 +1,112 @@
+﻿@page "/categorias"
+@attribute [Authorize]
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
+@using Microsoft.AspNetCore.Authorization
+@inject CategoriaRepository categoriaRepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@rendermode InteractiveServer
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+
+        <RadzenTabs @bind-SelectedIndex=@selectedIndex>
+            <Tabs>
+                <RadzenTabsItem Text="Lista">
+
+
+                    <RadzenButton Text="Agregar"
+                                  Icon="add_circle"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Style="margin-bottom: 0.5rem;"
+                                  Click="@(() => AddUser())" />
+
+  
+                    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                    Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
+                                    RowSelect="@((CategoriasGasto item) => EditUser(item))">
+                        <Columns>
+
+                            <RadzenDataGridColumn Property="@nameof(CategoriasGasto.Nombre)" Title="Nombre" Width="160px" />
+                            <RadzenDataGridColumn Property="@nameof(CategoriasGasto.Descripcion)" Title="Descripción" Width="200px" />
+                            <RadzenDataGridColumn TItem="CategoriasGasto" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                                <Template Context="item">
+
+                                    <RadzenButton Icon="delete"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Size="ButtonSize.Small"
+                                                  Tooltip="Eliminar Categoria"
+                                                  Click="@(() => ConfirmDelete(item))"
+                                                  @onclick:stopPropagation="true" />
+
+
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                        </Columns>
+
+
+                        <EmptyTemplate>
+                            <div style="padding: 20px; text-align: center; color: #6c757d;">
+                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                    No hay Casas registradas
+                                </RadzenText>
+
+                            </div>
+                        </EmptyTemplate>
+                    </RadzenDataGrid>
+
+
+            
+                </RadzenTabsItem>
+                <RadzenTabsItem Text="Formulario">
+
+
+
+
+
+                    <RadzenTemplateForm Data=@selectedItem class="rz-p-0 rz-p-md-12" @onsubmit="SaveItem">
+                        <RadzenStack Gap="1.5rem">
+
+
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="NumberRequiredInput">
+                                    Nombre <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Required" Variant="Variant.Outlined" IsPill="true" class="rz-ml-1" />
+                                </RadzenLabel>
+                                <RadzenTextBox Name="NumberRequiredInput" @bind-Value=@selectedItem.Nombre Style="width: 100%; max-width: 400px;" />
+                                <RadzenRequiredValidator Component="NumberRequiredInput" Text="Number is required" />
+                            </RadzenStack>
+
+
+
+
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="AddressComplementRequiredInput">
+                                    Descripción <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="Required" Variant="Variant.Outlined" IsPill="true" class="rz-ml-1" />
+                                </RadzenLabel>
+                                <RadzenTextBox Name="AddressComplementRequiredInput" @bind-Value=@selectedItem.Descripcion Style="width: 100%; max-width: 400px;" />
+                            </RadzenStack>
+
+
+
+
+
+
+                            <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" Style="width: 100%; max-width: 400px;" />
+                        </RadzenStack>
+                    </RadzenTemplateForm>
+
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+    </div>
+</div>
+@code {
+    int selectedIndex = 0;
+
+    
+    
+}
