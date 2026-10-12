@@ -25,7 +25,7 @@ namespace Condominio.Infrastructure.Repositories
 
 
 
-        public async Task SaveMoviemiento(decimal monto, TipoMovimiento tipo, int? idCasa, FacturaMes? factura, CuotaEspecial? cuota)
+        public async Task SaveMoviemiento(decimal monto, int? idCasa, FacturaMes? factura, CuotaEspecial? cuota)
         {
             try
             {
@@ -56,7 +56,6 @@ namespace Condominio.Infrastructure.Repositories
                 };
 
                 await _context.Movimientos.AddAsync(movimiento);
-                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
