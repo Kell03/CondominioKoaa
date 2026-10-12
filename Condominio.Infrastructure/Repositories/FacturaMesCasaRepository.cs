@@ -12,12 +12,17 @@ namespace Condominio.Infrastructure.Repositories
     {
         private readonly NotificacionRepository _notifRepo;
         private readonly INotificacionRealTimeService _notificacionService;
+        private readonly MovimientosRepository _movimientoRepo;   // ← NUEVO
 
-        public FacturaMesCasaRepository(AppDbContext context, NotificacionRepository notifRepo, INotificacionRealTimeService notificacionService) : base(context)
+        public FacturaMesCasaRepository(
+       AppDbContext context,
+       NotificacionRepository notifRepo,
+       INotificacionRealTimeService notificacionService,
+       MovimientosRepository movimientoRepo) : base(context)  // ← NUEVO
         {
             _notifRepo = notifRepo;
             _notificacionService = notificacionService;
-
+            _movimientoRepo = movimientoRepo;   // ← NUEVO
         }
 
         public override async Task<IEnumerable<FacturaMesCasa>> GetAllAsync()
@@ -202,7 +207,7 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
-        public async Task<IEnumerable<Payments>> GetPaymentsForInvoiceAsync( int idFacturaMes)
+        public async Task<IEnumerable<Payments>> GetPaymentsForInvoiceAsync(int idFacturaMes)
         {
             try
             {
@@ -253,11 +258,11 @@ namespace Condominio.Infrastructure.Repositories
                     throw new Exception("Factura no encontrada");
 
 
-               
+
                 // 2. ✅ SUMAR el monto recaudado (NO asignar)
                 facturaMesCasa.MontoPagado = facturaMesCasa.MontoPagado + payment.Monto;
 
-                
+
                 facturaMesCasa.SaldoPendiente = facturaMesCasa.MontoTotal - facturaMesCasa.MontoPagado;
 
                 factura.MontoRecaudado += payment.Monto;
@@ -286,6 +291,13 @@ namespace Condominio.Infrastructure.Repositories
                 _context.FacturaMesCasa.Update(facturaMesCasa);
 
                 _context.FacturaMes.Update(factura);
+
+                await _movimientoRepo.SaveMovimiento(
+                    monto: payment.Monto,
+                    idCasa: facturaMesCasa.HouseId,
+                    factura: factura,
+                    cuota: null
+                );
 
                 var usuario = await _context.Users
         .AsNoTracking()

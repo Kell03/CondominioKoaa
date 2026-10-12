@@ -99,12 +99,18 @@ namespace Condominio.Web.Components.Pages
 
         private async Task DeleteUser(CuotaEspecial item)
         {
-            CuotaEspecialRepository.Delete(item);
-            await CuotaEspecialRepository.SaveChangesAsync();
-            // Si tienes SaveChanges en el repositorio
-            await LoadData(); // Recargar la lista
-            StateHasChanged();
-
+            try
+            {
+                CuotaEspecialRepository.Delete(item);
+                await CuotaEspecialRepository.SaveChangesAsync();
+                // Si tienes SaveChanges en el repositorio
+                await LoadData(); // Recargar la lista
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
         }
 
 

@@ -1,5 +1,6 @@
 ﻿using Condominio.Domain.DB;
 using Condominio.Domain.Entities;
+using Condominio.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -13,8 +14,23 @@ namespace Condominio.Infrastructure.Repositories
     {
 
         public CuotaEspecialCasaRepository(AppDbContext context) : base(context) { }
+        private readonly INotificacionRealTimeService _notificacionService;
+        private readonly NotificacionRepository _notifRepo;
+
+        private readonly MovimientosRepository _movimientoRepo;   // ← NUEVO
 
 
+
+        public CuotaEspecialCasaRepository(
+      AppDbContext context,
+      NotificacionRepository notifRepo,
+      INotificacionRealTimeService notificacionService,
+      MovimientosRepository movimientoRepo) : base(context)  // ← NUEVO
+        {
+            _notifRepo = notifRepo;
+            _notificacionService = notificacionService;
+            _movimientoRepo = movimientoRepo;   // ← NUEVO
+        }
         public override async Task<IEnumerable<CuotaEspecialCasa>> GetAllAsync()
         {
             _context.ChangeTracker.Clear();

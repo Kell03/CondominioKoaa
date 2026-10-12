@@ -53,29 +53,38 @@ namespace Condominio.Web.Components.Dialogs
                 if (result == true)
                 {
                     await ConfirmPayment(item);
-                }
-            
-          
+                DialogService.Close();
+
+
+            }
+
+
 
 
         }
 
         private async Task ConfirmPayment(Payments payment)
         {
-                
-            if(Cuotas)
-            {
-                await CuotaEspecialCasaRepository.ConfirmPayment(payment);
-            }
-            else
-            {
-                await FacturaMesCasaRepository.ConfirmPayment(payment);
-            }
 
-            await LoadPagos();
-            StateHasChanged();
-            
+            try
+            {
+                if (Cuotas)
+                {
+                    await CuotaEspecialCasaRepository.ConfirmPayment(payment);
+                }
+                else
+                {
+                    await FacturaMesCasaRepository.ConfirmPayment(payment);
+                }
 
+                await LoadPagos();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                // Aquí podrías mostrar un mensaje al usuario
+            }
         }
 
 

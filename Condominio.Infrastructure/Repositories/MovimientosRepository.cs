@@ -25,11 +25,10 @@ namespace Condominio.Infrastructure.Repositories
 
 
 
-        public async Task SaveMoviemiento(decimal monto, int? idCasa, FacturaMes? factura, CuotaEspecial? cuota)
+        public async Task SaveMovimiento(decimal monto, int? idCasa, FacturaMes? factura, CuotaEspecial? cuota)
         {
             try
             {
-                _context.ChangeTracker.Clear();
 
 
                 TipoMovimiento tipo;

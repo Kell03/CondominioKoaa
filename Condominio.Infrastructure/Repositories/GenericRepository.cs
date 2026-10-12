@@ -133,6 +133,8 @@ namespace Condominio.Infrastructure.Repositories
 
         public virtual void Delete(TEntity entity)
         {
+            _context.ChangeTracker.Clear();
+
             _dbSet.Remove(entity);
         }
 
