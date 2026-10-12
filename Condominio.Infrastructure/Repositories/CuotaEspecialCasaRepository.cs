@@ -262,6 +262,24 @@ namespace Condominio.Infrastructure.Repositories
 
                 cuotaCasa.Estado = cuotaCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pendiente";
 
+
+                cuotaCasa.Estado = cuotaCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pendiente";
+
+                string mensaje = "";
+                string titulo = "";
+
+                if (cuotaCasa.Estado == "Pago Parcial")
+                {
+                    mensaje = $"Pago parcial confirmado · {cuota.Motivo} · Ref: {payment.Referencia}";
+                    titulo = $"Cuota Especial: Pago Parcial";
+                }
+                else
+                {
+                    mensaje = $"Pago confirmado ·  {cuota.Motivo} · Ref: {payment.Referencia}";
+                    titulo = $"Cuota Especial: Pago Confirmado";
+
+                }
+
                 payment.Estado = "Confirmada";
 
 
@@ -270,10 +288,34 @@ namespace Condominio.Infrastructure.Repositories
 
                 _context.CuotaEspecial.Update(cuota);
 
+
+                await _movimientoRepo.SaveMovimiento(
+                 monto: payment.Monto,
+                 idCasa: cuotaCasa.HouseId,
+                 cuota: cuota,
+                 factura: null
+             );
+
+                var usuario = await _context.Users
+        .AsNoTracking()
+        .FirstOrDefaultAsync(u => u.HouseId == cuotaCasa.HouseId);
+
+                await _context.Notificaciones.AddAsync(new Notificaciones
+                {
+                    UserId = usuario.Id,
+                    Titulo = titulo,
+                    Mensaje = mensaje,
+                    Tipo = "Payments",
+                    ReferenciaId = payment.Id
+                });
+
                 await _context.SaveChangesAsync();
 
                 // ✅ CONFIRMAR TRANSACCIÓN
                 await transaction.CommitAsync();
+
+                await _notificacionService.EnviarNotificacionAsync(usuario.Id);
+
 
                 return true; // Éxito
             }
