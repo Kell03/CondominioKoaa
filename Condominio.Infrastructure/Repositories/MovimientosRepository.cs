@@ -25,7 +25,7 @@ namespace Condominio.Infrastructure.Repositories
 
 
 
-        public async Task SaveMovimiento(decimal monto, int? idCasa, FacturaMes? factura, CuotaEspecial? cuota)
+        public async Task SaveMovimiento(decimal monto, decimal? montoBs, decimal? tasa, int? idCasa, FacturaMes? factura, CuotaEspecial? cuota)
         {
             try
             {
@@ -43,6 +43,8 @@ namespace Condominio.Infrastructure.Repositories
                     Fecha = DateTime.Now,
                     Tipo = tipo,
                     Monto = monto,
+                    MontoBs = montoBs,
+                    Tasa = tasa,
                     IdCasa = idCasa,
                     IdFactura = factura?.Id,
                     IdCuotaEspecial = cuota?.Id,

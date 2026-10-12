@@ -13,6 +13,8 @@ namespace Condominio.Domain.Entities
         public TipoMovimiento Tipo { get; set; }
         public string Descripcion { get; set; } = string.Empty;
         public decimal Monto { get; set; }
+        public decimal? MontoBs { get; set; }
+        public decimal? Tasa { get; set; }
         public int? IdCasa { get; set; }
         public int? IdFactura { get; set; }
         public int? IdCuotaEspecial { get; set; }

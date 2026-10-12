@@ -294,6 +294,8 @@ namespace Condominio.Infrastructure.Repositories
 
                 await _movimientoRepo.SaveMovimiento(
                     monto: payment.Monto,
+                    montoBs: payment.MontoBs,
+                    tasa: payment.Tasa,
                     idCasa: facturaMesCasa.HouseId,
                     factura: factura,
                     cuota: null
