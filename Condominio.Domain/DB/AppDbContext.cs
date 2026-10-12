@@ -26,7 +26,7 @@ namespace Condominio.Domain.DB
         public DbSet<ConfiguracionMoneda> ConfiguracionMoneda { get; set; }
         public DbSet<Notificaciones> Notificaciones { get; set; }
         public DbSet<ImagenesFacturas> ImagenesFacturas { get; set; }
-        public DbSet<Movimiento> Movimientos { get; set; }
+        public DbSet<Movimientos> Movimientos { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -137,7 +137,7 @@ namespace Condominio.Domain.DB
             });
 
 
-            modelBuilder.Entity<Movimiento>(entity =>
+            modelBuilder.Entity<Movimientos>(entity =>
             {
                 entity.HasOne(m => m.House)
                       .WithMany()

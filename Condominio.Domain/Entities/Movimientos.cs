@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Condominio.Domain.Entities
 {
-    public class Movimiento
+    public class Movimientos
     {
         public int Id { get; set; }
         public DateTime Fecha { get; set; }
