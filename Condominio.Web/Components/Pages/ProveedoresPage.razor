@@ -1,0 +1,154 @@
+﻿@page "/proveedores"
+@attribute [Authorize]
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
+@using Microsoft.AspNetCore.Authorization
+@inject ProveedorRepository proveedorRepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@rendermode InteractiveServer
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+
+        <RadzenTabs @bind-SelectedIndex=@selectedIndex>
+            <Tabs>
+                <RadzenTabsItem Text="Lista">
+
+                    <RadzenButton Text="Agregar"
+                                  Icon="add_circle"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Style="margin-bottom: 0.5rem;"
+                                  Click="@(() => AddProveedor())" />
+
+                    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false"
+                                    FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true"
+                                    PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                    Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or"
+                                    SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
+                                    RowSelect="@((Proveedor item) => EditProveedor(item))">
+                        <Columns>
+
+                            <RadzenDataGridColumn Property="@nameof(Proveedor.Nombre)" Title="Nombre" Width="180px" />
+                            <RadzenDataGridColumn Property="@nameof(Proveedor.NIT)" Title="Cédula" Width="120px" />
+                            <RadzenDataGridColumn Property="@nameof(Proveedor.Telefono)" Title="Teléfono" Width="130px" />
+                            <RadzenDataGridColumn Property="@nameof(Proveedor.Banco)" Title="Banco" Width="130px" />
+                            <RadzenDataGridColumn Property="@nameof(Proveedor.CuentaBancaria)" Title="Cuenta Bancaria" Width="180px" />
+                            <RadzenDataGridColumn TItem="Proveedor" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                                <Template Context="item">
+
+                                    <RadzenButton Icon="delete"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Size="ButtonSize.Small"
+                                                  Tooltip="Eliminar Proveedor"
+                                                  Click="@(() => ConfirmDelete(item))"
+                                                  @onclick:stopPropagation="true" />
+
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                        </Columns>
+
+                        <EmptyTemplate>
+                            <div style="padding: 20px; text-align: center; color: #6c757d;">
+                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                    No hay proveedores registrados
+                                </RadzenText>
+                            </div>
+                        </EmptyTemplate>
+                    </RadzenDataGrid>
+
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="Formulario">
+
+                    <RadzenTemplateForm TItem="Proveedor" Data=@selectedItem class="rz-p-0 rz-p-md-12" Submit="SaveItem">
+                        <RadzenStack Gap="1.5rem">
+
+                            <!-- Nombre -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="NombreRequiredInput">
+                                    Nombre  <span style="color: red;">*</span>
+                                </RadzenLabel>
+                                <RadzenTextBox Name="NombreRequiredInput" @bind-Value=@selectedItem.Nombre Style="width: 100%; max-width: 400px;" />
+                                <RadzenRequiredValidator Component="NombreRequiredInput" Text="El nombre es requerido" />
+                            </RadzenStack>
+
+                            <!-- NIT -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="NITInput">Cédula <span style="color: red;">*</span></RadzenLabel>
+                                <RadzenTextBox Name="NITInput" @bind-Value=@selectedItem.NIT Style="width: 100%; max-width: 400px;" />
+                                <RadzenRequiredValidator Component="NITInput" Text="La cédula es requerida" />
+                            </RadzenStack>
+
+                            <!-- Teléfono -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="TelefonoInput">Teléfono <span style="color: red;">*</span></RadzenLabel>
+                                <RadzenTextBox Name="TelefonoInput" @bind-Value=@selectedItem.Telefono Style="width: 100%; max-width: 400px;" />
+                                <RadzenRequiredValidator Component="TelefonoInput" Text="El teléfono es requerido" />
+                            </RadzenStack>
+
+                            <!-- Email -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="EmailInput">Email</RadzenLabel>
+                                <RadzenTextBox Name="EmailInput" @bind-Value=@selectedItem.Email Style="width: 100%; max-width: 400px;" />
+                            </RadzenStack>
+
+                            <!-- Dirección -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="DireccionInput">Dirección</RadzenLabel>
+                                <RadzenTextBox Name="DireccionInput" @bind-Value=@selectedItem.Direccion Style="width: 100%; max-width: 400px;" />
+                            </RadzenStack>
+
+                            <!-- Contacto -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="ContactoInput">Contacto</RadzenLabel>
+                                <RadzenTextBox Name="ContactoInput" @bind-Value=@selectedItem.Contacto Style="width: 100%; max-width: 400px;" />
+                            </RadzenStack>
+
+                            <!-- Banco -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="BancoInput">Banco <span style="color: red;">*</span></RadzenLabel>
+                                <RadzenTextBox Name="BancoInput" @bind-Value=@selectedItem.Banco Style="width: 100%; max-width: 400px;" />
+                                <RadzenRequiredValidator Component="BancoInput" Text="El banco es requerido" />
+                            </RadzenStack>
+
+                            <!-- Cuenta Bancaria -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="CuentaBancariaInput">
+                                    Cuenta Bancaria <span style="color: red;">*</span>
+                                </RadzenLabel>
+                                <RadzenTextBox Name="CuentaBancariaInput" @bind-Value=@selectedItem.CuentaBancaria Style="width: 100%; max-width: 400px;" />
+                                <RadzenRequiredValidator Component="CuentaBancariaInput" Text="La cuenta bancaria es requerida" />
+                            </RadzenStack>
+
+                            <!-- Notas -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="NotasInput">Notas</RadzenLabel>
+                                <RadzenTextArea Name="NotasInput" @bind-Value=@selectedItem.Notas
+                                                Rows="3" Style="width: 100%; max-width: 400px;" />
+                            </RadzenStack>
+
+                            <!-- Activo -->
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+                                <RadzenCheckBox @bind-Value=@selectedItem.Activo Name="ActivoInput" TriState="false" />
+                                <RadzenLabel Component="ActivoInput">Activo</RadzenLabel>
+                            </RadzenStack>
+
+                            <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" Style="width: 100%; max-width: 400px;" />
+                        </RadzenStack>
+                    </RadzenTemplateForm>
+
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+    </div>
+</div>
+@code {
+    int selectedIndex = 0;
+
+    
+    
+}

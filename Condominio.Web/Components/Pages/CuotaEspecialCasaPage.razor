@@ -21,14 +21,6 @@
     <Tabs>
         <RadzenTabsItem Text="Lista">
 
-
-            <RadzenButton Text="Agregar"
-                          Icon="add_circle"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Style="margin-bottom: 0.5rem;"
-                          Click="@(() => CreateNewItem())"
-                          Visible="@isAdmin" />
-
          
 
             <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"

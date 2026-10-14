@@ -5,6 +5,7 @@
 @using Condominio.Infrastructure.Repositories
 @using Microsoft.AspNetCore.Authorization
 @inject CategoriaRepository categoriaRepository
+@inject ProveedorRepository proveedorRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @rendermode InteractiveServer
@@ -92,6 +93,22 @@
 
 
 
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="ProveedorInput">Proveedor</RadzenLabel>
+                                <RadzenDropDown @bind-Value="selectedItem.IdProveedor"
+                                                TValue="int?"
+                                                Data="@proveedores"
+                                                TextProperty="Nombre"
+                                                ValueProperty="Id"
+                                                AllowFiltering="true"
+                                                AllowClear="true"
+                                                Placeholder="Buscar proveedor..."
+                                                Style="width: 100%; max-width: 400px;"
+                                                Name="ProveedorInput" />
+                            </RadzenStack>
+
+
+              
 
 
 

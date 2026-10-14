@@ -28,6 +28,7 @@ namespace Condominio.Domain.DB
         public DbSet<ImagenesFacturas> ImagenesFacturas { get; set; }
         public DbSet<Movimientos> Movimientos { get; set; }
         public DbSet<CategoriasGasto> CategoriasGasto { get; set; }
+        public DbSet<Proveedor> Proveedores { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -154,6 +155,15 @@ namespace Condominio.Domain.DB
                       .WithMany()
                       .HasForeignKey(m => m.IdCuotaEspecial)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+
+            modelBuilder.Entity<CategoriasGasto>(entity =>
+            {
+                entity.HasOne(c => c.Proveedor)
+                      .WithMany()
+                      .HasForeignKey(c => c.IdProveedor)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
         }
 

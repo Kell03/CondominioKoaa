@@ -15,6 +15,7 @@ namespace Condominio.Web.Components.Pages
         CategoriasGasto selectedItem = new CategoriasGasto();
 
 
+        private IList<Proveedor> proveedores;
 
         IEnumerable<CategoriasGasto> House;
 
@@ -25,6 +26,9 @@ namespace Condominio.Web.Components.Pages
             await LoadUsers();
 
             House = await categoriaRepository.GetAllAsync();
+            var itemList = await proveedorRepository.GetAllAsync();
+            proveedores = itemList.ToList();
+
 
         }
 
@@ -83,7 +87,7 @@ namespace Condominio.Web.Components.Pages
         private async Task ConfirmDelete(CategoriasGasto item)
         {
             var result = await DialogService.Confirm(
-                $"¿Estás seguro de eliminar la casa {item.Nombre}?",
+                $"¿Estás seguro de eliminar la categoria {item.Nombre}?",
                 "Confirmar eliminación",
                 new ConfirmOptions() { OkButtonText = "Sí", CancelButtonText = "No" }
             );
