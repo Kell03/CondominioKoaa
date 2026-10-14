@@ -21,6 +21,15 @@ namespace Condominio.Infrastructure.Repositories
 
 
 
+
+        public async Task<IEnumerable<FacturaMesHijo>> GetAllFByFacturaAsync(int id)
+        {
+            _context.ChangeTracker.Clear();
+
+            var lista = await _context.FacturaMesHijo.Where(x => x.FacturaMesId == id).ToListAsync();
+            return lista;
+        }
+
         public override async Task AddAsync(FacturaMesHijo entity)
         {
 

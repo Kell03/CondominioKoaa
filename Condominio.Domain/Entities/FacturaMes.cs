@@ -23,7 +23,9 @@ namespace Condominio.Domain.Entities
         public string NombreMes => ObtenerNombreMes(this.Mes);
 
         // ✅ PROPIEDAD CALCULADA PARA AÑO (OPCIONAL)
-     
+        // ✅ NUEVO: Nombre completo con año
+        [NotMapped]
+        public string NombreMesCompleto => $"{NombreMes} {Year}";
 
         private string ObtenerNombreMes(int mes)
         {

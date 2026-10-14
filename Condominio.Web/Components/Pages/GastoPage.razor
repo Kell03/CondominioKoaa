@@ -1,0 +1,199 @@
+﻿@page "/gastos"
+@attribute [Authorize]
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
+@using Microsoft.AspNetCore.Authorization
+@inject FacturaMesRepository facturaMesRepository
+@inject FacturaMesHijoRepository facturaMeHijoRepository
+@inject GastosRepository gastosRepository
+@inject CuotaEspecialRepository cuotaEspecialRepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@rendermode InteractiveServer
+
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+
+        <RadzenTabs @bind-SelectedIndex=@selectedIndex>
+            <Tabs>
+                <RadzenTabsItem Text="Lista">
+
+                    <RadzenButton Text="Agregar"
+                                  Icon="add_circle"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Style="margin-bottom: 0.5rem;"
+                                  Click="@(() => AddGasto())" />
+
+                    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false"
+                                    FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true"
+                                    PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                    Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or"
+                                    SelectionMode="DataGridSelectionMode.Single"
+                                    RowSelect="@((Gasto item) => EditGasto(item))">
+                        <Columns>
+
+                            <RadzenDataGridColumn Property="@nameof(Gasto.FechaPago)" Title="Fecha Pago" Width="150px" FormatString="{0:dd/MM/yyyy}" />
+                            <RadzenDataGridColumn Property="@nameof(Gasto.Monto)" Title="Monto" Width="130px" />
+                            <RadzenDataGridColumn Property="@nameof(Gasto.Comprobante)" Title="Comprobante" Width="180px" />
+                            <RadzenDataGridColumn Property="@nameof(Gasto.Notas)" Title="Notas" Width="200px" />
+                            <RadzenDataGridColumn TItem="Gasto" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                                <Template Context="item">
+
+                                    <RadzenButton Icon="delete"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Size="ButtonSize.Small"
+                                                  Tooltip="Eliminar Gasto"
+                                                  Click="@(() => ConfirmDelete(item))"
+                                                  @onclick:stopPropagation="true" />
+
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                        </Columns>
+
+                        <EmptyTemplate>
+                            <div style="padding: 20px; text-align: center; color: #6c757d;">
+                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                    No hay gastos registrados
+                                </RadzenText>
+                            </div>
+                        </EmptyTemplate>
+                    </RadzenDataGrid>
+
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="Formulario">
+
+                    <RadzenTemplateForm TItem="Gasto" Data=@selectedItem class="rz-p-0 rz-p-md-12" Submit="SaveItem">
+                        <RadzenStack Gap="1.5rem">
+
+                            <!-- ✅ SELECT DE ORIGEN (Factura o Cuota Especial) -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="OrigenInput">
+                                    Origen <span style="color: red;">*</span>
+                                </RadzenLabel>
+                                <RadzenSelectBar @bind-Value="origenSeleccionado"
+                                                 TValue="string"
+                                                 Change="@OnOrigenChanged"
+                                                 Name="OrigenInput">
+                                    <Items>
+                                        <RadzenSelectBarItem Text="Factura" Value="@("Factura")" />
+                                        <RadzenSelectBarItem Text="Cuota Especial" Value="@("Cuota")" />
+                                    </Items>
+                                </RadzenSelectBar>
+                            </RadzenStack>
+
+                            <!-- ✅ SELECT DE FACTURA (solo si origen = Factura) -->
+                            @if (origenSeleccionado == "Factura")
+                            {
+                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                    <RadzenLabel Component="FacturaInput">Factura <span style="color: red;">*</span></RadzenLabel>
+                                    <RadzenDropDown Name="FacturaInput"
+                                                    @bind-Value="facturaSeleccionada"
+                                                    TValue="int?"
+                                                    Data="@facturas"
+                                                    TextProperty="NombreMesCompleto"
+                                                    ValueProperty="Id"
+                                                    Change="@OnFacturaChanged"
+                                                    Placeholder="Selecciona una factura..."
+                                                    Style="width: 100%; max-width: 400px;" />
+                                </RadzenStack>
+
+                                                                                             
+                            
+
+                                <!-- ✅ LISTA DE DETALLES DE LA FACTURA (con checkboxes) -->
+                                @if (detallesFactura.Any())
+                                {
+                                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                        <RadzenLabel Component="DetalleInput">Detalle <span style="color: red;">*</span></RadzenLabel>
+                                        <RadzenDropDown Name="DetalleInput"
+                                                        @bind-Value="selectedItem.FacturaMesHijoId"
+                                                        TValue="int?"
+                                                        Data="@detallesFactura"
+                                                        TextProperty="Motivo"
+                                                        ValueProperty="Id"
+                                                        Placeholder="Selecciona un concepto..."
+                                                        Change="@OnDetalleChanged"
+                                                        Style="width: 100%; max-width: 400px;" />
+                                    </RadzenStack>
+                                }
+
+                            }
+
+                            <!-- ✅ SELECT DE CUOTA ESPECIAL (solo si origen = Cuota) -->
+                            @if (origenSeleccionado == "Cuota")
+                            {
+                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                    <RadzenLabel Component="CuotaInput">Cuota Especial <span style="color: red;">*</span></RadzenLabel>
+                                    <RadzenDropDown Name="CuotaInput"
+                                                    @bind-Value="selectedItem.CuotaEspecialId"
+                                                    TValue="int?"
+                                                    Data="@cuotasEspeciales"
+                                                    TextProperty="Motivo"
+                                                    ValueProperty="Id"
+                                                    Change="@OnCuotaChanged"
+                                                    Placeholder="Selecciona una cuota especial..."
+                                                    Style="width: 100%; max-width: 400px;" />
+                                </RadzenStack>
+                            }
+
+                            <!-- Monto -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="MontoInput">
+                                    Monto <span style="color: red;">*</span>
+                                </RadzenLabel>
+                                <RadzenNumeric Name="MontoInput"
+                                               @bind-Value="selectedItem.Monto"
+                                               TValue="decimal"
+                                               Style="width: 100%; max-width: 400px;" />
+                                <RadzenRequiredValidator Component="MontoInput" Text="El monto es requerido" />
+                            </RadzenStack>
+
+                            <!-- Fecha de Pago -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="FechaPagoInput">
+                                    Fecha de Pago <span style="color: red;">*</span>
+                                </RadzenLabel>
+                                <RadzenDatePicker Name="FechaPagoInput"
+                                                  @bind-Value="selectedItem.FechaPago"
+                                                  TValue="DateTime"
+                                                  Style="width: 100%; max-width: 400px;" />
+                                <RadzenRequiredValidator Component="FechaPagoInput" Text="La fecha es requerida" />
+                            </RadzenStack>
+
+                            <!-- Comprobante -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="ComprobanteInput">Comprobante</RadzenLabel>
+                                <RadzenTextBox Name="ComprobanteInput"
+                                               @bind-Value="selectedItem.Comprobante"
+                                               Style="width: 100%; max-width: 400px;" />
+                            </RadzenStack>
+
+                            <!-- Notas -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="NotasInput">Notas</RadzenLabel>
+                                <RadzenTextArea Name="NotasInput"
+                                                @bind-Value="selectedItem.Notas"
+                                                Rows="3"
+                                                Style="width: 100%; max-width: 400px;" />
+                            </RadzenStack>
+
+                            <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" Style="width: 100%; max-width: 400px;" />
+                        </RadzenStack>
+                    </RadzenTemplateForm>
+
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+    </div>
+</div>
+@code {
+    int selectedIndex = 0;
+
+    
+    
+}

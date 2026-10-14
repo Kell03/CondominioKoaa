@@ -24,6 +24,7 @@ namespace Condominio.Infrastructure
             services.AddScoped<NotificacionRepository>();
             services.AddScoped<ConfiguracionMonedaRepository>();
             services.AddScoped<FacturaMesRepository>();//para funciones especificas
+            services.AddScoped<FacturaMesHijoRepository>();
             services.AddScoped<FacturaMesCasaRepository>();
             services.AddScoped<CuotaEspecialRepository>();
             services.AddScoped<CuotaEspecialCasaRepository>();
@@ -31,6 +32,7 @@ namespace Condominio.Infrastructure
             services.AddScoped<MovimientosRepository>();
             services.AddScoped<CategoriaRepository>();
             services.AddScoped<ProveedorRepository>();
+            services.AddScoped<GastosRepository>();
 
             services.AddScoped<IGenericRepository<FacturaMesHijo>, FacturaMesHijoRepository>();
 
