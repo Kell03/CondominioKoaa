@@ -18,12 +18,14 @@ namespace Condominio.Domain.Entities
         public int? IdCasa { get; set; }
         public int? IdFactura { get; set; }
         public int? IdCuotaEspecial { get; set; }
+        public int? IdGasto { get; set; }           
         public DateTime CreatedAt { get; set; }
 
         // Navegación
         public Houses? House { get; set; }
         public FacturaMes? Factura { get; set; }
         public CuotaEspecial? CuotaEspecial { get; set; }
+        public Gasto? Gasto { get; set; }           
     }
 
     public enum TipoMovimiento : byte

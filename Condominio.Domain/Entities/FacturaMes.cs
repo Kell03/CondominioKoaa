@@ -16,7 +16,7 @@ namespace Condominio.Domain.Entities
 
         public decimal? MontoRecaudado { get; set; } = 0;// Nullable
 
-
+        public EstadoPagoFactura EstadoPago { get; set; } = EstadoPagoFactura.Pendiente;
         public ICollection<FacturaMesHijo>? FacturaMesHijos { get; set; } = new List<FacturaMesHijo>();
 
         [NotMapped]
@@ -32,5 +32,12 @@ namespace Condominio.Domain.Entities
             return mes >= 1 && mes <= 12 ? meses[mes - 1] : "Desconocido";
         }
 
+    }
+
+    public enum EstadoPagoFactura
+    {
+        Pendiente,
+        Parcial,
+        Pagada
     }
 }

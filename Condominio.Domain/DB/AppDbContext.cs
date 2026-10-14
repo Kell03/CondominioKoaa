@@ -29,6 +29,7 @@ namespace Condominio.Domain.DB
         public DbSet<Movimientos> Movimientos { get; set; }
         public DbSet<CategoriasGasto> CategoriasGasto { get; set; }
         public DbSet<Proveedor> Proveedores { get; set; }
+        public DbSet<Gasto> Gastos { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -53,6 +54,10 @@ namespace Condominio.Domain.DB
                       .WithOne(fmh => fmh.facturaMes)     // Un hijo pertenece a un FacturaMes
                       .HasForeignKey(fmh => fmh.FacturaMesId)  // Clave foránea
                       .OnDelete(DeleteBehavior.Cascade);  // Al eliminar FacturaMes, se eliminan los hijos
+
+                entity.Property(fm => fm.EstadoPago)
+                      .HasConversion<string>()
+                      .HasMaxLength(50);
             });
 
             modelBuilder.Entity<FacturaMesHijo>(entity =>
@@ -141,20 +146,22 @@ namespace Condominio.Domain.DB
 
             modelBuilder.Entity<Movimientos>(entity =>
             {
-                entity.HasOne(m => m.House)
-                      .WithMany()
-                      .HasForeignKey(m => m.IdCasa)
-                      .OnDelete(DeleteBehavior.Restrict);
+
 
                 entity.HasOne(m => m.Factura)
                       .WithMany()
                       .HasForeignKey(m => m.IdFactura)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(m => m.CuotaEspecial)
                       .WithMany()
                       .HasForeignKey(m => m.IdCuotaEspecial)
-                      .OnDelete(DeleteBehavior.Cascade);
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(m => m.Gasto)
+                      .WithMany()
+                      .HasForeignKey(m => m.IdGasto)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
 
@@ -165,6 +172,22 @@ namespace Condominio.Domain.DB
                       .HasForeignKey(c => c.IdProveedor)
                       .OnDelete(DeleteBehavior.Restrict);
             });
+
+            modelBuilder.Entity<Gasto>(entity =>
+            {
+                // ✅ RELACIÓN CON FacturaMesHijo (N → 1)
+                entity.HasOne(g => g.FacturaMesHijo)
+                      .WithMany()
+                      .HasForeignKey(g => g.FacturaMesHijoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                // ✅ RELACIÓN CON CuotaEspecial (N → 1)
+                entity.HasOne(g => g.CuotaEspecial)
+                      .WithMany()
+                      .HasForeignKey(g => g.CuotaEspecialId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
         }
 
     }

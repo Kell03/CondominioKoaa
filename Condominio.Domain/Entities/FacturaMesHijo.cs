@@ -10,5 +10,6 @@ namespace Condominio.Domain.Entities
         public FacturaMes facturaMes { get; set; } 
         public string Motivo { get; set; } = string.Empty;
         public double Monto { get; set; } = 0;
+        public bool Pagado { get; set; } = false;
     }
 }

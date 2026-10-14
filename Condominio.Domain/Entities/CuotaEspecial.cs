@@ -28,6 +28,7 @@ namespace Condominio.Domain.Entities
         public string Estado { get; set; } = "";
 
         public bool IsActive { get; set; } = true;
+        public bool Pagado { get; set; } = false;
 
         public bool Enviado { get; set; } = false;
 
