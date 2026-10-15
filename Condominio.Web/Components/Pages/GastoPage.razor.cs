@@ -1,4 +1,6 @@
+using Condominio.Application.Services;
 using Condominio.Domain.Entities;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Radzen;
 
 namespace Condominio.Web.Components.Pages
@@ -16,9 +18,15 @@ namespace Condominio.Web.Components.Pages
         List<string> origenes = new() { "Factura", "Cuota Especial" };
         string origenSeleccionado = "Factura";
         int? facturaSeleccionada = 0;
-
+        private string _montoUsdStr = "0,00";
+        private string _montoBsStr = "0,00";
+        private bool _isFormattingusd = false;
+        private bool _isFormatting = false;
 
         private IQueryable<Gasto> items;
+        private BcvRates rates;
+
+        string Moneda = "USD";
 
         protected override async Task OnInitializedAsync()
         {
@@ -29,7 +37,10 @@ namespace Condominio.Web.Components.Pages
             var listaFacutas = await facturaMesRepository.GetAllAsync();
             facturas = listaFacutas.ToList();
             cuotasEspeciales = ListacuotasEspeciales.ToList();
+            rates = await BcvScraper.GetRatesAsync();
 
+            var monedas = await MonedaRepository.GetAllAsync();
+            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
         }
 
         private async Task LoadUsers()
@@ -49,6 +60,7 @@ namespace Condominio.Web.Components.Pages
                 if (selectedItem.Id != 0)
                 {
                     selectedItem.UpdatedAt = DateTime.Now;
+
                     gastosRepository.Update(selectedItem);
                     await gastosRepository.SaveChangesAsync();
                     // Si tienes SaveChanges en el repositorio
@@ -141,6 +153,9 @@ namespace Condominio.Web.Components.Pages
             if (detalle != null)
             {
                 selectedItem.Monto = Convert.ToDecimal(detalle.Monto);
+                selectedItem.MontoBs = Math.Round((decimal)detalle.Monto * (decimal)selectedItem.Tasa, 2);
+                _montoUsdStr = selectedItem.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                _montoBsStr = selectedItem.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
             }
         }
 
@@ -157,6 +172,9 @@ namespace Condominio.Web.Components.Pages
             if (cuota != null)
             {
                 selectedItem.Monto = cuota.MontoTotal;
+                selectedItem.MontoBs = Math.Round(cuota.MontoTotal * (decimal)selectedItem.Tasa, 2);
+                _montoUsdStr = selectedItem.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                _montoBsStr = selectedItem.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
             }
         }
 
@@ -188,7 +206,11 @@ namespace Condominio.Web.Components.Pages
 
             try
             {
-                selectedItem = new Gasto();
+
+                 selectedItem = new Gasto();
+                var prop = rates.GetType().GetProperty(Moneda);
+                selectedItem.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+
                 selectedIndex = 1;
                 StateHasChanged();
                 await Task.CompletedTask;
@@ -199,6 +221,109 @@ namespace Condominio.Web.Components.Pages
                 Console.WriteLine($"Error al agregar el item: {ex.Message}");
             }
             
+        }
+
+
+        private void OnInputUsdChanged(string value)
+        {
+            if (_isFormattingusd) return;
+            _isFormattingusd = true;
+
+            try
+            {
+                // ✅ FILTRAR: SOLO NÚMEROS, COMA Y PUNTO
+                var filtered = new string(value?.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray() ?? Array.Empty<char>());
+                _montoUsdStr = filtered;
+
+                var numeros = new string(_montoUsdStr.Where(char.IsDigit).ToArray());
+
+                if (string.IsNullOrEmpty(numeros))
+                {
+                    _montoUsdStr = "0,00";
+                    selectedItem.Monto = 0;
+                    StateHasChanged();
+                    return;
+                }
+
+                var valorNumerico = decimal.Parse(numeros) / 100;
+
+                if (valorNumerico > 0 && selectedItem.Tasa > 0)
+                {
+                    selectedItem.Monto = Math.Round(valorNumerico, 2);
+                    selectedItem.MontoBs = Math.Round(valorNumerico * (decimal)selectedItem.Tasa, 2);
+                    _montoUsdStr = selectedItem.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                    _montoBsStr = selectedItem.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                }
+                else
+                {
+                    selectedItem.Monto = 0;
+                    selectedItem.MontoBs = 0;
+                    _montoUsdStr = "0,00";
+                }
+
+                StateHasChanged();
+            }
+            finally
+            {
+                _isFormattingusd = false;
+            }
+        }
+
+
+        private void OnInputChanged(string value)
+        {
+            if (_isFormatting) return;
+            _isFormatting = true;
+
+            try
+            {
+                // ✅ SI CONTIENE LETRAS, IGNORAR
+                if (value != null && value.Any(c => char.IsLetter(c)))
+                {
+                    StateHasChanged();
+                    return;
+                }
+
+                // ✅ FILTRAR: SOLO NÚMEROS, COMA Y PUNTO
+                var filtered = new string(value?.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray() ?? Array.Empty<char>());
+                _montoBsStr = filtered;
+
+                // ✅ LIMPIAR: SOLO NÚMEROS
+                var numeros = new string(_montoBsStr.Where(char.IsDigit).ToArray());
+
+                if (string.IsNullOrEmpty(numeros))
+                {
+                    _montoBsStr = "0,00";
+                    selectedItem.MontoBs = 0;
+                    selectedItem.Monto = 0;
+                    StateHasChanged();
+                    return;
+                }
+
+                // ✅ DIVIDIR ENTRE 100 (1 → 0.01)
+                var valorNumerico = decimal.Parse(numeros) / 100;
+
+                if (valorNumerico > 0 && selectedItem.Tasa > 0)
+                {
+                    selectedItem.Monto = Math.Round(valorNumerico / (decimal)selectedItem.Tasa, 2);
+                    selectedItem.MontoBs = Math.Round(valorNumerico, 2);
+                    _montoBsStr = selectedItem.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                    _montoUsdStr = selectedItem.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                }
+                else
+                {
+                    selectedItem.Monto = 0;
+                    selectedItem.MontoBs = 0;
+                    _montoBsStr = "0,00";
+                    _montoUsdStr = "0,00";
+                }
+
+                StateHasChanged();
+            }
+            finally
+            {
+                _isFormatting = false;
+            }
         }
 
     }

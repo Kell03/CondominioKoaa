@@ -1,5 +1,6 @@
 ﻿@page "/gastos"
 @attribute [Authorize]
+@using Condominio.Application.Services
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
@@ -10,6 +11,9 @@
 @inject CuotaEspecialRepository cuotaEspecialRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
+@inject BcvScraperService BcvScraper
+@inject ConfiguracionMonedaRepository MonedaRepository
+@inject AppState AppState
 @rendermode InteractiveServer
 
 <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
@@ -66,6 +70,11 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="Formulario">
+
+
+
+
+
 
                     <RadzenTemplateForm TItem="Gasto" Data=@selectedItem class="rz-p-0 rz-p-md-12" Submit="SaveItem">
                         <RadzenStack Gap="1.5rem">
@@ -141,17 +150,59 @@
                                 </RadzenStack>
                             }
 
-                            <!-- Monto -->
+
+
+
+
                             <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                <RadzenLabel Component="MontoInput">
-                                    Monto <span style="color: red;">*</span>
+                                <RadzenLabel Component="MontoRequiredInput">
+                                    Monto $ <span style="color: var(--rz-danger);">*</span>
                                 </RadzenLabel>
-                                <RadzenNumeric Name="MontoInput"
-                                               @bind-Value="selectedItem.Monto"
-                                               TValue="decimal"
-                                               Style="width: 100%; max-width: 400px;" />
-                                <RadzenRequiredValidator Component="MontoInput" Text="El monto es requerido" />
+
+                                <input type="text"
+                                       value="@_montoUsdStr"
+                                       @oninput="@((ChangeEventArgs e) => OnInputUsdChanged(e.Value?.ToString()))"
+                                       onkeypress="return (event.charCode == 0 || (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 44 || event.charCode == 46)"
+                                       style="width: 100%; max-width: 400px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;"
+                                       name="MontoRequiredUsdInput"
+                                       placeholder="0,00"
+                                       inputmode="decimal" />
+
+                                <RadzenNumeric @bind-Value="@selectedItem.Monto"
+                                               Style="display: none;"
+                                               Name="MontoRequiredInput" />
+
+                                <RadzenRequiredValidator Component="MontoRequiredInput" Text="El monto es requerido" />
+                                <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
+                                                             Component="MontoRequiredInput"
+                                                             Text="El monto debe ser mayor a 0" />
                             </RadzenStack>
+
+
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="MontoRequiredBsInput">
+                                    Monto Bs <span style="color: var(--rz-danger);">*</span>
+                                </RadzenLabel>
+
+                                <input type="text"
+                                       value="@_montoBsStr"
+                                       @oninput="@((ChangeEventArgs e) => OnInputChanged(e.Value?.ToString()))"
+                                       onkeypress="return (event.charCode == 0 || (event.charCode >= 48 && event.charCode <= 57) || event.charCode == 44 || event.charCode == 46)"
+                                       style="width: 100%; max-width: 400px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;"
+                                       name="MontoRequiredBsInput"
+                                       placeholder="0,00"
+                                       inputmode="decimal" />
+
+                                <RadzenNumeric @bind-Value="@selectedItem.MontoBs"
+                                               Style="display: none;"
+                                               Name="MontoRequiredBsInput" />
+
+                                <RadzenRequiredValidator Component="MontoRequiredBsInput" Text="El monto bs es requerido" />
+                                <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
+                                                             Component="MontoRequiredBsInput"
+                                                             Text="El monto bs debe ser mayor a 0" />
+                            </RadzenStack>
+
 
                             <!-- Fecha de Pago -->
                             <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
@@ -167,10 +218,13 @@
 
                             <!-- Comprobante -->
                             <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                <RadzenLabel Component="ComprobanteInput">Comprobante</RadzenLabel>
+                                <RadzenLabel Component="ComprobanteInput">Comprobante <span style="color: red;">*</span></RadzenLabel>
+
                                 <RadzenTextBox Name="ComprobanteInput"
                                                @bind-Value="selectedItem.Comprobante"
                                                Style="width: 100%; max-width: 400px;" />
+                                <RadzenRequiredValidator Component="ComprobanteInput" Text="El comprobante es requerido" />
+
                             </RadzenStack>
 
                             <!-- Notas -->
