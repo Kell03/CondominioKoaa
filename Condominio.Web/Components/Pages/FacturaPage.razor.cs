@@ -82,26 +82,30 @@ namespace Condominio.Web.Components.Pages
 
         private async Task AddUser()
         {
-            await LoadStateAsync();
+           // await LoadStateAsync();
+           //
+           // var result = await DialogService.OpenAsync<FacturaDialog>(
+           //     "Factura",         // título
+           //     null,              // parámetros
+           //     new DialogOptions()
+           // );
+           //
+           // if (result != null && (bool)result == true)
+           // {
+           //     await LoadData();  // Recargar los datos
+           //     StateHasChanged(); // Refrescar la UI
+           // }
 
-      
+            selectedIndex = 1;
 
-            var result = await DialogService.OpenAsync<FacturaDialog>(
-       "Factura",         // título
-       null,              // parámetros
-       new DialogOptions()
-   );
 
-            if (result != null && (bool)result == true)
-            {
-                await LoadData();  // Recargar los datos
-                StateHasChanged(); // Refrescar la UI
-            }
+
+          
 
         }
 
 
-       
+
 
         private async Task LoadData()
         {
@@ -116,7 +120,7 @@ namespace Condominio.Web.Components.Pages
             await Task.CompletedTask;
 
             var result = await JSRuntime.InvokeAsync<string>("window.localStorage.getItem", "DialogSettings");
-          
+
         }
 
 

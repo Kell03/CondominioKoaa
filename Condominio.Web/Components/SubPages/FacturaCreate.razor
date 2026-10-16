@@ -1,0 +1,234 @@
+﻿@page "/facturas/crear"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
+@inject FacturaMesRepository FacturaMesRepository
+@inject CategoriaRepository CategoriaRepository
+@inject ProveedorRepository ProveedorRepository
+@inject IGenericRepository<FacturaMesHijo> FacturaMesHijoRepository
+@layout EmptyLayout
+@inject NavigationManager NavigationManager
+
+<RadzenStack Gap="0.5rem" Style="width: 100%; max-width: min(800px, 100%); margin: 0 auto; padding: 16px; box-sizing: border-box;">
+    <RadzenButton Icon="arrow_back"
+                  ButtonStyle="ButtonStyle.Base"
+                  Variant="Variant.Text"
+                  Size="ButtonSize.Large"
+                  Click="@Volver"
+                  aria-label="Volver"
+                  Style="align-self: flex-start;" />
+
+
+
+    <RadzenTemplateForm TItem="FacturaMes" Data=@Item @onsubmit="SaveItem" Style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <RadzenStack Gap="1.5rem">
+
+            <!-- ✅ TÍTULO -->
+            <RadzenText TextStyle="TextStyle.H5" Style="margin: 0; color: #1a2a3a; font-weight: 600; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
+                Nueva Factura
+            </RadzenText>
+
+            <!-- ✅ FILA: MES Y AÑO EN LÍNEA -->
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         Wrap="FlexWrap.Wrap"
+                         JustifyContent="JustifyContent.Start"
+                         AlignItems="AlignItems.Center"
+                         Gap="1.5rem"
+                         Style="padding: 10px 0;">
+
+                <!-- Mes -->
+                <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem"
+                             Style="flex: 1 1 200px; min-width: 0;">
+                    <RadzenLabel Text="Mes" Component="MonthDropDown" Style="font-weight: 500; color: #333;" />
+                    <RadzenDropDown @bind-Value="@Item.Mes"
+                                    Data="@months"
+                                    TextProperty="Name"
+                                    ValueProperty="Value"
+                                    Style="width: 100%;"
+                                    Name="MonthDropDown" />
+                </RadzenStack>
+
+                <!-- Año -->
+                <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem"
+                             Style="flex: 1 1 200px; min-width: 0;">
+                    <RadzenLabel Text="Año" Component="YearDropDown" Style="font-weight: 500; color: #333;" />
+                    <RadzenTextBox @bind-Value="yearInput"
+                                   MaxLength="4"
+                                   Change="@(args => OnYearChanged(Item))"
+                                   Placeholder="Año"
+                                   Style="width: 100%;" />
+                </RadzenStack>
+
+            </RadzenStack>
+
+
+
+            <!-- ✅ PANEL DE EDICIÓN (arriba del grid) -->
+            @if (mostrarPanel)
+            {
+                <RadzenStack Gap="1rem"
+                             Style="padding: 16px; background: #e7f3ff; border: 1px solid #007bff; border-radius: 8px; margin-bottom: 16px;">
+
+                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; color: #007bff;">
+                        @(itemEditando.Id == 0 ? "Nuevo Item" : "Editar Item")
+                    </RadzenText>
+
+                    <!-- Categoría -->
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+                        <RadzenLabel Text="Categoría" Component="CatInput" />
+                        <RadzenDropDown @bind-Value="itemEditando.IdCategoria"
+                                        TValue="int?"
+                                        Data="@categorias"
+                                        TextProperty="Nombre"
+                                        ValueProperty="Id"
+                                        AllowFiltering="true"
+                                        AllowClear="true"
+                                        Placeholder="Buscar categoría..."
+                                        Style="width: 100%;"
+                                        Name="CatInput" />
+                        <RadzenRequiredValidator Text="Categoría es requerida"
+                                                 Component="CatInput"
+                                                 Popup="true" />
+                    </RadzenStack>
+
+                    <!-- Monto -->
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+                        <RadzenLabel Text="Monto" Component="MontoInput" />
+                        <RadzenNumeric @bind-Value="itemEditando.Monto"
+                                       TValue="double"
+                                       Style="width: 100%;"
+                                       Name="MontoInput" />
+                        <RadzenRequiredValidator Text="Monto es requerido"
+                                                 Component="MontoInput"
+                                                 Popup="true" />
+                    </RadzenStack>
+
+                    <!-- Motivo -->
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+                        <RadzenLabel Text="Motivo" Component="MotivoInput" />
+                        <RadzenTextBox @bind-Value="itemEditando.Motivo"
+                                       Style="width: 100%;"
+                                       Name="MotivoInput" />
+                        <RadzenRequiredValidator Text="Motivo es requerido"
+                                                 Component="MotivoInput"
+                                                 Popup="true" />
+                    </RadzenStack>
+
+                    <!-- Botones -->
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                        <RadzenButton Text="Guardar"
+                                      Icon="check"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Click="@GuardarItem" />
+                        <RadzenButton Text="Cancelar"
+                                      Icon="close"
+                                      ButtonStyle="ButtonStyle.Secondary"
+                                      Click="@CancelarEdicion" />
+                    </RadzenStack>
+                </RadzenStack>
+            }
+
+            <!-- ✅ BOTÓN AGREGAR -->
+            <RadzenButton Text="Agregar Monto"
+                          Icon="add_circle"
+                          ButtonStyle="ButtonStyle.Success"
+                          Click="@AgregarItem"
+                          Disabled="@mostrarPanel"
+                          Style="margin-bottom: 16px;" />
+
+            <!--GRID-->
+
+            <RadzenText>Total de items: @orders.Count</RadzenText>
+
+            <RadzenDataGrid Data="@orders" @ref="ordersGrid"
+                            TItem="FacturaMesHijo"
+                            AllowFiltering="true"
+                            AllowPaging="true"
+                            PageSize="5"
+                            AllowSorting="true"
+                            ColumnWidth="auto"
+                            Style="width: 100%;">
+                <Columns>
+
+                    <!-- Categoría -->
+                    <RadzenDataGridColumn Property="@nameof(FacturaMesHijo.IdCategoria)"
+                                          Title="Cat."
+                                          Width="55%"
+                                          MinWidth="120px">
+                        <Template Context="item">
+                                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+
+                            @(categorias.FirstOrDefault(c => c.Id == item.IdCategoria)?.Nombre ?? "-")
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <!-- Monto -->
+                    <RadzenDataGridColumn Property="@nameof(FacturaMesHijo.Monto)"
+                                          Title="$"
+                                          Width="25%"
+                                          MinWidth="80px"
+                                          TextAlign="TextAlign.Right">
+                        <Template Context="item">
+                            @($"{item.Monto:F2}")
+                        </Template>
+                    </RadzenDataGridColumn>
+
+
+
+
+                    <!-- Acciones -->
+                    <RadzenDataGridColumn Title=""
+                                          Filterable="false"
+                                          Sortable="false"
+                                          TextAlign="TextAlign.Center"
+                                          Width="20%">
+                        <Template Context="item">
+                            <RadzenButton Icon="edit"
+                                          ButtonStyle="ButtonStyle.Info"
+                                          Variant="Variant.Flat"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => EditarItem(item))"
+                                          @onclick:stopPropagation="true" />
+                            <RadzenButton Icon="delete"
+                                          ButtonStyle="ButtonStyle.Danger"
+                                          Variant="Variant.Flat"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => DeleteRow(item))"
+                                          @onclick:stopPropagation="true" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+
+                <EmptyTemplate>
+                    <div style="padding: 20px; text-align: center; color: #6c757d;">
+                        No hay items. Haz clic en "Agregar Monto" para comenzar.
+                    </div>
+                </EmptyTemplate>
+            </RadzenDataGrid>
+
+            <RadzenStack Orientation="Orientation.Horizontal"
+                         JustifyContent="JustifyContent.Start"
+                         Gap="1rem">
+                <RadzenButton ButtonType="ButtonType.Submit"
+                              Text="Guardar"
+                              Icon="save"
+                              ButtonStyle="ButtonStyle.Success" />
+
+            </RadzenStack>
+
+        </RadzenStack>
+    </RadzenTemplateForm>
+
+</RadzenStack>
+
+@code {
+    // ... tus variables existentes ...
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/facturas");
+    }
+}

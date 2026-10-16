@@ -10,6 +10,8 @@
 @rendermode InteractiveServer
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
 
 
 
@@ -33,7 +35,7 @@
                           Icon="add_circle"
                           ButtonStyle="ButtonStyle.Primary"
                           Style="margin-bottom: 0.5rem;"
-                          Click="@(() => AddUser())" />
+                          Click="@(() => NavigationManager.NavigateTo("/facturas/crear"))" />
 
             <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="3" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
                             Data="@Invoices" TItem="FacturaMes" RowExpand="RowExpand">
@@ -45,7 +47,16 @@
                         </RadzenText>
                         <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Style="background: #b8c6d9; border-radius: 6px;" Data="@order.FacturaMesHijos">
                             <Columns>
-                                <RadzenDataGridColumn Property="FacturaMes.FacturaMesHijos.Motivo" Title="Motivo" />
+                                <RadzenDataGridColumn Title="Categoria" Width="30%">
+                                    <Template Context="item">
+                                        @(item.CategoriaGasto?.Nombre ?? "-")
+                                    </Template>
+                                </RadzenDataGridColumn>      
+                                <RadzenDataGridColumn Title="Proveedor" Width="30%">
+                                    <Template Context="item">
+                                        @(item.CategoriaGasto?.Proveedor.Nombre ?? "-")
+                                    </Template>
+                                </RadzenDataGridColumn>
                                 <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="120px">
                                     <Template Context="item">
                                         @($"{item.Monto} $")

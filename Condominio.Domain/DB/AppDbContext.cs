@@ -67,6 +67,16 @@ namespace Condominio.Domain.DB
                       .WithMany(fm => fm.FacturaMesHijos)
                       .HasForeignKey(fmh => fmh.FacturaMesId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(fh => fh.CategoriaGasto)
+                      .WithMany()
+                      .HasForeignKey(fh => fh.IdCategoria)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(fh => fh.Proveedor)
+                      .WithMany()
+                      .HasForeignKey(fh => fh.IdProveedor)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<FacturaMesCasa>(entity =>

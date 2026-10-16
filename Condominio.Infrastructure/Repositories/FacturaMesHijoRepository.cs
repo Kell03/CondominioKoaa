@@ -16,7 +16,7 @@ namespace Condominio.Infrastructure.Repositories
         {
             _context.ChangeTracker.Clear();
 
-            return await _dbSet.Include(x => x.facturaMes).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            return await _dbSet.Include(x => x.facturaMes).Include(x => x.CategoriaGasto).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 
 
