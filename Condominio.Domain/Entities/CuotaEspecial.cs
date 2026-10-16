@@ -22,7 +22,7 @@ namespace Condominio.Domain.Entities
 
         public decimal MontoTotal { get; set; } = 0;
 
-    
+        public int? IdProveedor { get; set; }
         public decimal MontoRecaudado { get; set; } = 0;
 
         public string Estado { get; set; } = "";
@@ -34,6 +34,7 @@ namespace Condominio.Domain.Entities
 
         // ✅ NAVEGACIÓN
         public ICollection<CuotaEspecialCasa> CuotaEspecialCasas { get; set; } = new List<CuotaEspecialCasa>();
+        public Proveedor? Proveedor { get; set; }
 
         [NotMapped]
         public string NombreMes => ObtenerNombreMes(this.Mes);

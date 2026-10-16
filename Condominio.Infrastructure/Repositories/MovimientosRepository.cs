@@ -25,7 +25,7 @@ namespace Condominio.Infrastructure.Repositories
 
 
 
-        public async Task SaveMovimiento(decimal monto, decimal? montoBs, decimal? tasa, int? idCasa, FacturaMes? factura, CuotaEspecial? cuota)
+        public async Task SaveMovimiento(decimal monto, decimal? montoBs, decimal? tasa, FacturaMes? factura = null, CuotaEspecial? cuota = null, int? idCasa = null, Gasto? gasto = null)
         {
             try
             {
@@ -47,12 +47,13 @@ namespace Condominio.Infrastructure.Repositories
                     Tasa = tasa,
                     IdCasa = idCasa,
                     IdFactura = factura?.Id,
+                    IdGasto = gasto?.Id,
                     IdCuotaEspecial = cuota?.Id,
                     Descripcion = factura != null
                         ? $"Factura {factura.Mes}/{factura.Year}"
                         : cuota != null
                             ? cuota.Motivo
-                            : "Movimiento",
+                            : "Gasto",
                     CreatedAt = DateTime.Now
                 };
 

@@ -95,6 +95,7 @@ namespace Condominio.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
+
                 Console.WriteLine($"❌ Error en AddAsync: {ex.Message}");
                 throw;
             }

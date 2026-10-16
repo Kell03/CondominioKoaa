@@ -117,18 +117,17 @@
                                 <!-- ✅ LISTA DE DETALLES DE LA FACTURA (con checkboxes) -->
                                 @if (detallesFactura.Any())
                                 {
-                                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                        <RadzenLabel Component="DetalleInput">Detalle <span style="color: red;">*</span></RadzenLabel>
-                                        <RadzenDropDown Name="DetalleInput"
-                                                        @bind-Value="selectedItem.FacturaMesHijoId"
-                                                        TValue="int?"
-                                                        Data="@detallesFactura"
-                                                        TextProperty="Motivo"
-                                                        ValueProperty="Id"
-                                                        Placeholder="Selecciona un concepto..."
-                                                        Change="@OnDetalleChanged"
-                                                        Style="width: 100%; max-width: 400px;" />
-                                    </RadzenStack>
+                                    <RadzenDropDown @bind-Value="selectedItem.FacturaMesHijoId"
+                                                    TValue="int?"
+                                                    Data="@detallesFactura"
+                                                    ValueProperty="Id"
+                                                    Placeholder="Selecciona un concepto..."
+                                                    Change="@OnDetalleChanged"
+                                                    Style="width: 100%; max-width: 400px;">
+                                        <Template Context="detalle">
+                                            @($"{detalle.CategoriaGasto?.Nombre ?? detalle.Motivo} - {detalle.Monto:N2}")
+                                        </Template>
+                                    </RadzenDropDown>
                                 }
 
                             }

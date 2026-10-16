@@ -14,6 +14,7 @@ namespace Condominio.Web.Components.Pages
         private string? yearInput = DateTime.Now.Year.ToString();
         private int? selectedYear = DateTime.Now.Year;
 
+        private List<Proveedor> proveedores = new();
 
         IEnumerable<CuotaEspecial> Cuotas;
 
@@ -40,6 +41,9 @@ namespace Condominio.Web.Components.Pages
             selectedEmployees = new List<CuotaEspecial>() { itemList.FirstOrDefault() };
 
             items = itemList.AsQueryable();
+
+            var proveedorList = await ProveedorRepository.GetAllAsync();
+            proveedores = proveedorList.ToList();
         }
 
 

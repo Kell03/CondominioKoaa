@@ -29,7 +29,7 @@ namespace Condominio.Infrastructure.Repositories
             {
                 _context.ChangeTracker.Clear();
 
-                return await _dbSet.Include(x => x.CuotaEspecialCasas).OrderByDescending(x => x.CreatedAt).ToListAsync();
+                return await _dbSet.Include(x => x.CuotaEspecialCasas).Include(x => x.Proveedor).OrderByDescending(x => x.CreatedAt).ToListAsync();
             }
             catch(Exception ex)
             {

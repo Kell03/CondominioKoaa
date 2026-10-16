@@ -105,6 +105,11 @@ namespace Condominio.Domain.DB
                     .WithOne(cec => cec.CuotaEspecial)
                     .HasForeignKey(cec => cec.CuotaEspecialId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(ce => ce.Proveedor)
+                      .WithMany()
+                      .HasForeignKey(ce => ce.IdProveedor)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<CuotaEspecialCasa>(entity =>
@@ -172,6 +177,11 @@ namespace Condominio.Domain.DB
                       .WithMany()
                       .HasForeignKey(m => m.IdGasto)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(m => m.House)
+         .WithMany()
+         .HasForeignKey(m => m.IdCasa)        // ← USA IdCasa, no HouseId
+         .OnDelete(DeleteBehavior.Restrict);
             });
 
 

@@ -26,7 +26,7 @@ namespace Condominio.Infrastructure.Repositories
         {
             _context.ChangeTracker.Clear();
 
-            var lista = await _context.FacturaMesHijo.Where(x => x.FacturaMesId == id).ToListAsync();
+            var lista = await _context.FacturaMesHijo.Where(x => x.FacturaMesId == id).Include(x => x.CategoriaGasto).ToListAsync();
             return lista;
         }
 

@@ -292,14 +292,14 @@ namespace Condominio.Infrastructure.Repositories
 
                 _context.FacturaMes.Update(factura);
 
-                await _movimientoRepo.SaveMovimiento(
-                    monto: payment.Monto,
-                    montoBs: payment.MontoBs,
-                    tasa: payment.Tasa,
-                    idCasa: facturaMesCasa.HouseId,
-                    factura: factura,
-                    cuota: null
-                );
+              await _movimientoRepo.SaveMovimiento(
+                  monto: payment.Monto,
+                  montoBs: payment.MontoBs,
+                  tasa: payment.Tasa,
+                  idCasa: facturaMesCasa.HouseId,
+                  factura: factura,
+                  cuota: null
+              );
 
                 var usuario = await _context.Users
         .AsNoTracking()

@@ -76,7 +76,6 @@ namespace Condominio.Web.Components.Pages
 
 
                     await gastosRepository.AddAsync(selectedItem);
-                    await gastosRepository.SaveChangesAsync();
                     // Si tienes SaveChanges en el repositorio
                     await LoadUsers(); // Recargar la lista
                     selectedIndex = 0;
