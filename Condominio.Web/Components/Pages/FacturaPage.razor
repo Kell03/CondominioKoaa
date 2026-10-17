@@ -17,10 +17,10 @@
 
 <RadzenCard Style="background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
     <RadzenText TextStyle="TextStyle.H4" Style="margin: 0; color: #1a2a3a; font-weight: 500;">
-        Facturas
+        Recibos
     </RadzenText>
     <RadzenText TextStyle="TextStyle.Body2" Style="margin: 4px 0 0 0; color: #6c757d;">
-        Gestión de facturas mensuales del condominio
+        Gestión de Recibos mensuales del condominio
     </RadzenText>
 </RadzenCard>
 
@@ -43,7 +43,7 @@
                     <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0;">
 
                         <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
-                            Detalle de Factura #@order.Id
+                            Detalle de Recibo #@order.Id
                         </RadzenText>
                         <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Style="background: #b8c6d9; border-radius: 6px;" Data="@order.FacturaMesHijos">
                             <Columns>

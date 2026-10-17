@@ -22,7 +22,12 @@ namespace Condominio.Infrastructure.Repositories
             _notificacionService = notificacionService;
 
         }
+        public override async Task<IEnumerable<Movimientos>> GetAllAsync()
+        {
+            _context.ChangeTracker.Clear();
 
+            return await _dbSet.Include(c => c.House).Include(x => x.CuotaEspecial).Include(x => x.Factura).OrderByDescending(x => x.CreatedAt).ToListAsync();
+        }
 
 
         public async Task SaveMovimiento(decimal monto, decimal? montoBs, decimal? tasa, FacturaMes? factura = null, CuotaEspecial? cuota = null, int? idCasa = null, Gasto? gasto = null)

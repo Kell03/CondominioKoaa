@@ -1,0 +1,127 @@
+﻿@page "/movimientos"
+@attribute [Authorize]
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
+@using Microsoft.AspNetCore.Authorization
+@inject MovimientosRepository Movimientorepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@rendermode InteractiveServer
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+
+        <RadzenCard Style="background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <RadzenText TextStyle="TextStyle.H4" Style="margin: 0; color: #1a2a3a; font-weight: 500;">
+                Historial de Transacciones
+            </RadzenText>
+           
+        </RadzenCard>
+
+        <RadzenTabs @bind-SelectedIndex=@selectedIndex>
+            <Tabs>
+                <RadzenTabsItem Text="Lista">
+
+
+                    <RadzenDataGrid AllowFiltering="true"
+                                    AllowColumnResize="true"
+                                    AllowAlternatingRows="false"
+                                    FilterMode="FilterMode.Advanced"
+                                    AllowSorting="true"
+                                    PageSize="5"
+                                    AllowPaging="true"
+                                    PagerHorizontalAlign="HorizontalAlign.Left"
+                                    ShowPagingSummary="true"
+                                    Data="@items"
+                                    ColumnWidth="300px"
+                                    LogicalFilterOperator="LogicalFilterOperator.Or"
+                                    SelectionMode="DataGridSelectionMode.Single"
+                                    @bind-Value=@selectedEmployees
+                                   >
+                        <Columns>
+
+                            <!-- Fecha -->
+                            <RadzenDataGridColumn Property="@nameof(Movimientos.Fecha)"
+                                                  Title="Fecha"
+                                                  Width="140px"
+                                                  FormatString="{0:dd/MM/yyyy}" />
+
+                            <!-- Tipo (Entrada / Salida) -->
+                            <RadzenDataGridColumn Property="@nameof(Movimientos.Tipo)"
+                                                  Title="Tipo"
+                                                  Width="100px">
+                                <Template Context="item">
+                                    @if (item.Tipo == TipoMovimiento.Entrada)
+                                    {
+                                        <RadzenBadge Text="Entrada"
+                                                     BadgeStyle="BadgeStyle.Success"
+                                                     IsPill="true" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenBadge Text="Salida"
+                                                     BadgeStyle="BadgeStyle.Danger"
+                                                     IsPill="true" />
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <!-- Descripción (rojo si es gasto) -->
+                            <RadzenDataGridColumn Property="@nameof(Movimientos.Descripcion)"
+                                                  Title="Descripción"
+                                                  Width="250px">
+                                <Template Context="item">
+                                    @if (item.IdGasto.HasValue)
+                                    {
+                                        <span style="color: red; font-weight: 600;">
+                                            @item.Descripcion
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>@item.Descripcion</span>
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <!-- Monto -->
+                            <RadzenDataGridColumn Property="@nameof(Movimientos.Monto)"
+                                                  Title="Monto ($)"
+                                                  Width="120px"
+                                                  TextAlign="TextAlign.Right">
+                                <Template Context="item">
+                                    @item.Monto.ToString("N2")
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <!-- Monto Bs -->
+                            <RadzenDataGridColumn Property="@nameof(Movimientos.MontoBs)"
+                                                  Title="Monto (Bs)"
+                                                  Width="140px"
+                                                  TextAlign="TextAlign.Right">
+                                <Template Context="item">
+                                    @(item.MontoBs.HasValue ? item.MontoBs.Value.ToString("N2") : "-")
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <!-- Opciones -->
+                         
+
+                        </Columns>
+
+                        <EmptyTemplate>
+                            <div style="padding: 20px; text-align: center; color: #6c757d;">
+                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                    No hay movimientos registrados
+                                </RadzenText>
+                            </div>
+                        </EmptyTemplate>
+                    </RadzenDataGrid>
+
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+    </div>
+</div>
