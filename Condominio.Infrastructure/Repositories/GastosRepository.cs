@@ -30,7 +30,7 @@ namespace Condominio.Infrastructure.Repositories
         {
             _context.ChangeTracker.Clear();
 
-            return await _dbSet.Include(x => x.FacturaMesHijo).Include(x => x.CuotaEspecial).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            return await _dbSet.Include(x => x.FacturaMesHijo).ThenInclude(x => x.CategoriaGasto).Include(x => x.CuotaEspecial).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 
         public override async Task AddAsync(Gasto entity)

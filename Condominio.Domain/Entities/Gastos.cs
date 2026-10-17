@@ -15,6 +15,7 @@ namespace Condominio.Domain.Entities
         public decimal Tasa { get; set; }
         public DateTime FechaPago { get; set; }
         public string? Comprobante { get; set; }
+        public string? Motivo { get; set; }
         public string? Notas { get; set; }
 
         // Navegación

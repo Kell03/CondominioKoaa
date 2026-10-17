@@ -1,0 +1,37 @@
+﻿@using Condominio.Domain.Entities
+@using Condominio.Infrastructure.Repositories
+@inject Radzen.DialogService DialogService
+@inject CategoriaRepository CategoriaRepository
+
+<RadzenTemplateForm TItem="CategoriasGasto" Data="@categoria" Submit="@Guardar">
+    <RadzenStack Gap="1rem" Style="padding: 10px;">
+
+        <RadzenText TextStyle="TextStyle.H6">Nueva Categoría</RadzenText>
+
+        <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+            <RadzenLabel Text="Nombre" Component="NombreInput">
+                Nombre <span style="color: red;">*</span>
+            </RadzenLabel>
+            <RadzenTextBox Name="NombreInput" @bind-Value="categoria.Nombre" Style="width: 100%;" />
+            <RadzenRequiredValidator Component="NombreInput" Text="El nombre es requerido" />
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="@(() => DialogService.Close(false))" />
+            <RadzenButton Text="Guardar" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    private CategoriasGasto categoria = new();
+
+    private async Task Guardar()
+    {
+        await CategoriaRepository.AddAsync(categoria);
+        await CategoriaRepository.SaveChangesAsync();
+
+        // Cerramos el diálogo devolviendo la categoría recién creada
+        DialogService.Close(categoria);
+    }
+}

@@ -165,50 +165,50 @@
         <RadzenPanelMenu>
             @if (isAuthenticated)
             {
-                <RadzenPanelMenuItem Text="Home" Path="" Icon="home" Click="@CerrarSidebarSiMobile" />
+                <RadzenPanelMenuItem Text="Home" Path="" Icon="home" class="menu-padre" Click="@CerrarSidebarSiMobile" />
 
                 
                 @if (isAdmin)
                 {
-                    <RadzenPanelMenuItem Text="Configuración" Icon="settings">
-                        <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" Click="@CerrarSidebarSiMobile" />
-                        <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box"Click="@CerrarSidebarSiMobile" />
+                    <RadzenPanelMenuItem Text="Configuración" Icon="settings" class="menu-padre">
+                        <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" class="submenu-item" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box" class="submenu-item" Click="@CerrarSidebarSiMobile" />
                         <RadzenPanelMenuItem Text="Configuración Moneda"
                                              Path="configuracionMoneda"
-                                             Icon="currency_exchange" Click="@CerrarSidebarSiMobile"/>
+                                             Icon="currency_exchange" class="submenu-item" Click="@CerrarSidebarSiMobile"/>
                     </RadzenPanelMenuItem>
 
-                    <RadzenPanelMenuItem Text="Gestión de Recibos" Icon="request_quote">
-                        <RadzenPanelMenuItem Text="Recibos" Path="facturas" Icon="description" Click="@CerrarSidebarSiMobile"/>
-                        <RadzenPanelMenuItem Text="Cuotas Especiales" Path="cuotaespecial" Icon="receipt_long"Click="@CerrarSidebarSiMobile" />
-                        <RadzenPanelMenuItem Text="Imagenes Facturas" Path="facturaimagenes" Icon="receipt_long"Click="@CerrarSidebarSiMobile" />
+                    <RadzenPanelMenuItem Text="Gestión de Recibos" Icon="request_quote" class="menu-padre">
+                        <RadzenPanelMenuItem Text="Recibos" Path="facturas" Icon="description" class="submenu-item" Click="@CerrarSidebarSiMobile"/>
+                        <RadzenPanelMenuItem Text="Cuotas Especiales" Path="cuotaespecial" Icon="receipt_long" class="submenu-item" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Imagenes Facturas" Path="facturaimagenes" Icon="receipt_long" class="submenu-item"  Click="@CerrarSidebarSiMobile" />
                     </RadzenPanelMenuItem>
 
 
-                    <RadzenPanelMenuItem Text="Gestión de Gastos" Icon="payments">
-                        <RadzenPanelMenuItem Text="Proveedores" Path="proveedores" Icon="store" Click="@CerrarSidebarSiMobile" />
-                        <RadzenPanelMenuItem Text="Categorías de Gasto" Path="categorias" Icon="category" Click="@CerrarSidebarSiMobile" />
-                        <RadzenPanelMenuItem Text="Gastos" Path="gastos" Icon="receipt_long" Click="@CerrarSidebarSiMobile" />
-                        <RadzenPanelMenuItem Text="Historial Transacciones" Path="movimientos" Icon="swap_vert" Click="@CerrarSidebarSiMobile" />  
+                    <RadzenPanelMenuItem Text="Gestión de Gastos" Icon="payments" class="menu-padre">
+                        <RadzenPanelMenuItem Text="Proveedores" Path="proveedores" Icon="store" class="submenu-item" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Categorías de Gasto" Path="categorias" Icon="category" class="submenu-item" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Gastos" Path="gastos" Icon="receipt_long" class="submenu-item" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Historial Transacciones" Path="movimientos" Icon="swap_vert" class="submenu-item" Click="@CerrarSidebarSiMobile" />
                     </RadzenPanelMenuItem>
                 }
 
                 @if (isAdmin)
                 {
-                    <RadzenPanelMenuItem Text="Conciliación de Pagos " Icon="receipt">
+                    <RadzenPanelMenuItem Text="Conciliación de Pagos " Icon="receipt" class="menu-padre">
 
-                        <RadzenPanelMenuItem Text="Cuota Especial" Path="recibocuotaespecial" Icon="article" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Cuota Especial" Path="recibocuotaespecial" Icon="article" class="submenu-item" Click="@CerrarSidebarSiMobile" />
 
-                        <RadzenPanelMenuItem Text="Recibos" Path="recibofactura" Icon="description" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Recibos" Path="recibofactura" Icon="description" class="submenu-item" Click="@CerrarSidebarSiMobile" />
                     </RadzenPanelMenuItem>                            
                 }
                 else
                 {
-                    <RadzenPanelMenuItem Text="Recibos" Icon="receipt">
+                    <RadzenPanelMenuItem Text="Recibos" Icon="receipt" class="menu-padre">
 
-                        <RadzenPanelMenuItem Text="Cuota Especial" Path="recibocuotaespecial" Icon="article" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Cuota Especial" Path="recibocuotaespecial" Icon="article" class="submenu-item" Click="@CerrarSidebarSiMobile" />
 
-                        <RadzenPanelMenuItem Text="Recibo" Path="recibofactura" Icon="description" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Recibo" Path="recibofactura" Icon="description" class="submenu-item" Click="@CerrarSidebarSiMobile" />
                     </RadzenPanelMenuItem>
                 }
             }
@@ -275,12 +275,38 @@
                     transform: translateX(0) !important;
                 }
             }
+
+
+            .submenu-item {
+                background-color: rgba(255, 255, 255, 0.1) !important;
+                border-left: 3px solid #007bff !important;
+                /* ✅ Subimos la opacidad al 15% o 20% */
+                border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+                padding-left: 12px !important;
+                margin-left: 8px !important;
+            }
+
+                .submenu-item:hover {
+                    background-color: rgba(255, 255, 255, 0.2) !important;
+                }
+
+                /* El último elemento no necesita línea abajo para que no choque con el final del menú */
+                .submenu-item:last-child {
+                    border-bottom: none !important;
+                }
+
+            .menu-padre {
+                background-color: rgba(0, 0, 0, 0.3) !important;
+                font-weight: 600 !important;
+            }
     </style>
 </RadzenLayout>
 
 
 
 <RadzenDialog />
+
+
 
 
 

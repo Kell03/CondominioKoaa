@@ -1,15 +1,21 @@
 ﻿@page "/facturas/crear"
+@using Condominio.Web.Components.Dialogs
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
+@inject Radzen.DialogService DialogService
 @inject FacturaMesRepository FacturaMesRepository
 @inject CategoriaRepository CategoriaRepository
 @inject ProveedorRepository ProveedorRepository
 @inject IGenericRepository<FacturaMesHijo> FacturaMesHijoRepository
 @layout EmptyLayout
 @inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+
+@rendermode InteractiveServer
 
 <RadzenStack Gap="0.5rem" Style="width: 100%; max-width: min(800px, 100%); margin: 0 auto; padding: 16px; box-sizing: border-box;">
     <RadzenButton Icon="arrow_back"
@@ -76,21 +82,30 @@
                     </RadzenText>
 
                     <!-- Categoría -->
+
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
                         <RadzenLabel Text="Categoría" Component="CatInput" />
-                        <RadzenDropDown @bind-Value="itemEditando.IdCategoria"
-                                        TValue="int?"
-                                        Data="@categorias"
-                                        TextProperty="Nombre"
-                                        ValueProperty="Id"
-                                        AllowFiltering="true"
-                                        AllowClear="true"
-                                        Placeholder="Buscar categoría..."
-                                        Style="width: 100%;"
-                                        Name="CatInput" />
-                        <RadzenRequiredValidator Text="Categoría es requerida"
-                                                 Component="CatInput"
-                                                 Popup="true" />
+
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center" Style="width: 100%;">
+                            <RadzenDropDown @bind-Value="itemEditando.IdCategoria"
+                                            TValue="int?"
+                                            Data="@categorias"
+                                            TextProperty="Nombre"
+                                            ValueProperty="Id"
+                                            AllowFiltering="true"
+                                            AllowClear="true"
+                                            Placeholder="Buscar categoría..."
+                                            Style="flex: 1;"
+                                            Name="CatInput" />
+
+                            <RadzenButton Icon="add"
+                                          ButtonStyle="ButtonStyle.Success"
+                                          Variant="Variant.Flat"
+                                          Click="@AgregarCategoriaRapida"
+                                          Tooltip="Crear nueva categoría" />
+                        </RadzenStack>
+
+                        <RadzenRequiredValidator Text="Categoría es requerida" Component="CatInput" Popup="true" />
                     </RadzenStack>
 
                     <!-- Monto -->
@@ -105,16 +120,7 @@
                                                  Popup="true" />
                     </RadzenStack>
 
-                    <!-- Motivo -->
-                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
-                        <RadzenLabel Text="Motivo" Component="MotivoInput" />
-                        <RadzenTextBox @bind-Value="itemEditando.Motivo"
-                                       Style="width: 100%;"
-                                       Name="MotivoInput" />
-                        <RadzenRequiredValidator Text="Motivo es requerido"
-                                                 Component="MotivoInput"
-                                                 Popup="true" />
-                    </RadzenStack>
+                    
 
                     <!-- Botones -->
                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
@@ -229,4 +235,6 @@
     {
         NavigationManager.NavigateTo("/facturas");
     }
+
+   
 }

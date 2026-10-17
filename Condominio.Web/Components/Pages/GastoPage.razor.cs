@@ -25,22 +25,47 @@ namespace Condominio.Web.Components.Pages
 
         private IQueryable<Gasto> items;
         private BcvRates rates;
+        private bool cargandoRates = true;
 
         string Moneda = "USD";
 
         protected override async Task OnInitializedAsync()
         {
-            await LoadUsers();
+            try
+            {
+                // 1. Lanzamos el scraper primero (en segundo plano)
+                var tareaRates = BcvScraper.GetRatesAsync();
 
-            item = await gastosRepository.GetAllAsync();
-            var ListacuotasEspeciales = await cuotaEspecialRepository.GetAllAsync();
-            var listaFacutas = await facturaMesRepository.GetAllAsync();
-            facturas = listaFacutas.ToList();
-            cuotasEspeciales = ListacuotasEspeciales.ToList();
-            rates = await BcvScraper.GetRatesAsync();
+                // 2. Cargamos la base de datos de forma SECUENCIAL (evita el error de "A second operation was started...")
+                items = (await gastosRepository.GetAllAsync()).AsQueryable();
+                selectedEmployees = new List<Gasto>() { items.FirstOrDefault() };
 
-            var monedas = await MonedaRepository.GetAllAsync();
-            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
+                cuotasEspeciales = (await cuotaEspecialRepository.GetAllAsync()).ToList();
+                facturas = (await facturaMesRepository.GetAllAsync()).ToList();
+
+                var monedas = await MonedaRepository.GetAllAsync();
+                Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
+
+                // 3. Esperamos que el scraper termine
+                try
+                {
+                    rates = await tareaRates;
+                    if (rates == null)
+                    {
+                        Console.WriteLine("⚠️ rates es null, el BCV no respondió.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error en BcvScraper: {ex.Message}");
+                }
+
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error general al cargar: {ex.Message}");
+            }
         }
 
         private async Task LoadUsers()

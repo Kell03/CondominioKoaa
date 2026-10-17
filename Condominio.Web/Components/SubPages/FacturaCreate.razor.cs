@@ -1,5 +1,6 @@
 using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
+using Condominio.Web.Components.Dialogs;
 using Microsoft.AspNetCore.Components;
 using Radzen;
 using Radzen.Blazor;
@@ -139,10 +140,7 @@ namespace Condominio.Web.Components.SubPages
         };
 
         private List<int> years = new List<int>();
-
-        // Inyectar la instancia de DialogService
-        [Inject]
-        protected DialogService DialogService { get; set; } = default!;
+        
 
 
         private async Task SaveItem()
@@ -174,5 +172,39 @@ namespace Condominio.Web.Components.SubPages
             }
         }
 
+
+        private async Task AgregarCategoriaRapida()
+        {
+            try
+            {
+                var resultado = await DialogService.OpenAsync<DialogoNuevaCategoria>(
+                     "Nueva Categoría",         // título
+                     null,              // parámetros
+                     new DialogOptions()
+                 );
+
+                // Abrimos el diálogo (asegúrate de inyectar DialogService si no lo has hecho)
+                //var resultado = await DialogService.OpenAsync<DialogoNuevaCategoria>("Nueva Categoría",
+                //    null,
+                //    new DialogOptions { Width = "400px", CloseDialogOnOverlayClick = true });
+
+                // Si guardó, el resultado será la Categoría
+                if (resultado is CategoriasGasto nuevaCategoria)
+                {
+                    // 1. Recargamos la lista de categorías
+                    categorias = (await CategoriaRepository.GetAllAsync()).ToList();
+
+                    // 2. Seleccionamos automáticamente la nueva categoría
+                    itemEditando.IdCategoria = nuevaCategoria.Id;
+
+                    StateHasChanged();
+                }
+            }
+            catch(Exception ex)
+            {
+                throw;
+            }
+        
+        }
     }
 }
