@@ -1,5 +1,6 @@
 ﻿@page "/gastos"
 @attribute [Authorize]
+@attribute [Authorize(Roles = "Administrador")]
 @using Condominio.Application.Services
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories

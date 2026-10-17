@@ -1,5 +1,6 @@
 ﻿@page "/configuracionMoneda"
 @attribute [Authorize]
+@attribute [Authorize(Roles = "Administrador")]
 @using Condominio.Domain.Entities
 @using Condominio.Infrastructure.Repositories
 @using Microsoft.AspNetCore.Authorization

@@ -1,5 +1,6 @@
 ﻿@page "/movimientos"
 @attribute [Authorize]
+@attribute [Authorize(Roles = "Administrador")]
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
