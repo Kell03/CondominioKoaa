@@ -98,7 +98,25 @@ namespace Condominio.Web.Components.SubPages
             Item.Year = int.Parse(yearInput);
             orders = new List<FacturaMesHijo>();
             var itemList = await CategoriaRepository.GetAllAsync();
-            categorias = itemList.ToList();
+            categorias = itemList.Where(x => x.Isfijo).ToList();
+
+
+            // 2. Recorrer las categorías y crear un FacturaMesHijo por cada una
+            foreach (var categoria in categorias)
+            {
+                var nuevoHijo = new FacturaMesHijo
+                {
+                    IdCategoria = categoria.Id,
+                    IdProveedor = categoria.IdProveedor, // Se auto-asigna el proveedor de la categoría
+                    Motivo =null,           // Usamos el nombre de la categoría como motivo
+                    Monto = (double)categoria.Monto,                           // Monto inicial en 0
+                    Pagado = false                       // Aún no está pagado
+                };
+
+                orders.Add(nuevoHijo);
+            }
+
+            await ordersGrid.Reload();
 
         }
 

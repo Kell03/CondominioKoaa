@@ -166,7 +166,7 @@
 
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
                         <RadzenLabel Component="CatInput">
-                            Proveedor <span style="color: red;">*</span>
+                            Proveedor
                         </RadzenLabel>
                         <RadzenDropDown @bind-Value="selectedItem.IdProveedor"
                                         TValue="int?"
@@ -178,9 +178,7 @@
                                         Placeholder="Buscar Proveedor..."
                                         Style="width: 100%; max-width: 400px;"
                                         Name="CatInput" />
-                        <RadzenRequiredValidator Text="Proveedor es requerida"
-                                                 Component="CatInput"
-                                                 Popup="true" />
+                      
                     </RadzenStack>
 
 

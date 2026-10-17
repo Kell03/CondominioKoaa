@@ -120,7 +120,30 @@
 
               
 
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="MontoInput">Monto Base (Opcional)</RadzenLabel>
+                                <RadzenNumeric Name="MontoInput"
+                                               @bind-Value="selectedItem.Monto"
+                                               TValue="decimal"
+                                               Style="width: 100%; max-width: 400px;"
+                                               Format="C2" />
+                            </RadzenStack>
 
+                            <!-- ✅ SWITCH ES FIJO -->
+                            <RadzenStack Orientation="Orientation.Horizontal"
+                                         Gap="1rem"
+                                         AlignItems="AlignItems.Center"
+                                         Style="padding: 10px 0;">
+                                <RadzenSwitch @bind-Value="selectedItem.Isfijo" Name="IsFijoInput" />
+                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+                                    <RadzenLabel Component="IsFijoInput" Style="font-weight: 600; cursor: pointer;">
+                                        Gasto Fijo
+                                    </RadzenLabel>
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d;">
+                                        Si está activo, se cargará automáticamente cada mes en las facturas.
+                                    </RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
 
                             <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" Style="width: 100%; max-width: 400px;" />
                         </RadzenStack>

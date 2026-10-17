@@ -27,7 +27,7 @@
 
             <!-- ✅ TÍTULO -->
             <RadzenText TextStyle="TextStyle.H5" Style="margin: 0; color: #1a2a3a; font-weight: 600; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
-                Nueva Factura
+                Nuevo Recibo
             </RadzenText>
 
             <!-- ✅ FILA: MES Y AÑO EN LÍNEA -->
@@ -131,7 +131,7 @@
             }
 
             <!-- ✅ BOTÓN AGREGAR -->
-            <RadzenButton Text="Agregar Monto"
+            <RadzenButton Text="Agregar Gasto Fijo"
                           Icon="add_circle"
                           ButtonStyle="ButtonStyle.Success"
                           Click="@AgregarItem"
@@ -139,8 +139,6 @@
                           Style="margin-bottom: 16px;" />
 
             <!--GRID-->
-
-            <RadzenText>Total de items: @orders.Count</RadzenText>
 
             <RadzenDataGrid Data="@orders" @ref="ordersGrid"
                             TItem="FacturaMesHijo"
