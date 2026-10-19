@@ -126,16 +126,24 @@ namespace Condominio.Web.Components.Pages
 
         private async Task ConfirmDelete(FacturaMes item)
         {
-            var result = await DialogService.Confirm(
-                $"¿Estás seguro de eliminar la factura {ObtenerNombreMes(item.Mes)} {item.Year}?",
-                "Confirmar eliminación",
-                new ConfirmOptions() { OkButtonText = "Sí", CancelButtonText = "No" }
-            );
-
-            if (result == true)
+            try
             {
-                await DeleteUser(item);
+                var result = await DialogService.Confirm(
+               $"¿Estás seguro de eliminar la factura {ObtenerNombreMes(item.Mes)} {item.Year}?",
+               "Confirmar eliminación",
+               new ConfirmOptions() { OkButtonText = "Sí", CancelButtonText = "No" }
+           );
+
+                if (result == true)
+                {
+                    await DeleteUser(item);
+                }
             }
+            catch(Exception ex)
+            {
+                ;
+            }
+           
         }
 
 

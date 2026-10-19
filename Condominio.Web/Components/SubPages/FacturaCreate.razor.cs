@@ -109,7 +109,7 @@ namespace Condominio.Web.Components.SubPages
                 {
                     IdCategoria = categoria.Id,
                     IdProveedor = categoria.IdProveedor, // Se auto-asigna el proveedor de la categoría
-                    Motivo =null,           // Usamos el nombre de la categoría como motivo
+                    Motivo ="",           // Usamos el nombre de la categoría como motivo
                     Monto = (double)categoria.Monto,                           // Monto inicial en 0
                     Pagado = false                       // Aún no está pagado
                 };

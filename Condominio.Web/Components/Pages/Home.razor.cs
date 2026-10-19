@@ -1,3 +1,4 @@
+using Condominio.Application.Services;
 using Condominio.Domain.Entities;
 
 namespace Condominio.Web.Components.Pages
@@ -16,7 +17,8 @@ namespace Condominio.Web.Components.Pages
         public string TitleCuota = "";
         public double Total = 0;
         public double Total2 = 0;
-
+         public double movimientoTotalBs = 0;
+         public double movimientoTotalUsd = 0;
         public List<MesModel> months = MesModel.GetMeses();  // ✅ Directo sin cargar en OnInit
         public int? selectedMonth = null;
         DataItem[] revenue = new DataItem[]
@@ -29,11 +31,18 @@ namespace Condominio.Web.Components.Pages
         private int? selectedYear = DateTime.Now.Year;
 
         IEnumerable<FacturaMes> facturas = [];
+        IEnumerable<Movimientos> Movimientos = [];
         IEnumerable<CuotaEspecial> cuotas = [];
         List<string> listaCuotas = [];
         string selectedCuota = "";
 
         private bool yaCargo = false;
+
+        private BcvRates rates;
+        private bool cargandoRates = true;
+
+        string Moneda = "USD";
+        decimal tasa = 0;
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -43,8 +52,28 @@ namespace Condominio.Web.Components.Pages
 
                 try
                 {
+                    var tareaRates = BcvScraper.GetRatesAsync();
+
                     await LoadData();
                     await LoadDataCuotas();
+                    var monedas = await MonedaRepository.GetAllAsync();
+                    Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
+
+                    // 3. Esperamos que el scraper termine
+                    try
+                    {
+                        rates = await tareaRates;
+                        if (rates == null)
+                        {
+                            Console.WriteLine("⚠️ rates es null, el BCV no respondió.");
+                        }
+                        await LoadMovimientos();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Error en BcvScraper: {ex.Message}");
+                    }
                     StateHasChanged();
                 }
                 catch (Exception ex)
@@ -71,6 +100,21 @@ namespace Condominio.Web.Components.Pages
             var item = facturas.LastOrDefault();
             Title = $"{item?.NombreMes} {item?.Year}";
             Total = item?.MontoTotal ?? 0;
+
+        }
+
+
+        private async Task LoadMovimientos()
+        {
+            Movimientos = await MovimientoRepository.GetAllAsync();
+            var totalMenosUsd = Movimientos.Where(x => x.IdGasto != null).Sum(x => x.MontoBs);
+            var totalmasUsd = Movimientos.Where(x => x.IdGasto == null).Sum(x => x.MontoBs);
+            movimientoTotalBs = (double)((totalmasUsd - totalMenosUsd) ?? 0);
+
+            var prop = rates.GetType().GetProperty(Moneda);
+            tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+
+            movimientoTotalUsd = (double)Math.Round((decimal)movimientoTotalBs / (decimal)tasa, 2);
 
         }
 

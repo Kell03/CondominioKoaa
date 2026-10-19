@@ -1,16 +1,46 @@
 ﻿@page "/"
 @attribute [Authorize]
+@using Condominio.Application.Services
 @using Condominio.Domain.Entities
 @using Condominio.Infrastructure.Repositories
 @using Microsoft.AspNetCore.Authorization
 @inject FacturaMesRepository FacturaMesRepository
 @inject CuotaEspecialRepository CuotaEspecialRepository
-@inject MovimientosPage MovimientoRepository
+@inject MovimientosRepository MovimientoRepository
 @using Radzen
+@inject BcvScraperService BcvScraper
+@inject ConfiguracionMonedaRepository MonedaRepository
 @using Radzen.Blazor
 @rendermode InteractiveServer
 
 <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+
+    <!-- ✅ TARJETAS DE RESUMEN (KPIs) -->
+    <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+
+        <!-- Saldo en Dólares -->
+        <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #28a745;">
+            <RadzenStack Gap="0.5rem">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo Total (USD)</RadzenText>
+                <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold; color: #28a745; margin: 0;">
+                    @movimientoTotalUsd.ToString("N2") USD
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+
+        <!-- Saldo en Bolívares -->
+        <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #007bff;">
+            <RadzenStack Gap="0.5rem">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo Total (Bs)</RadzenText>
+                <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold; color: #007bff; margin: 0;">
+                    @movimientoTotalBs.ToString("N2") Bs
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+
+    </div>
+
+
 
     <!-- Columna 1: Gráfico 1 -->
     <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">

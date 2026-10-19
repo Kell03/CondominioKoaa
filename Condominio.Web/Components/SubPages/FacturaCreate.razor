@@ -28,7 +28,7 @@
 
 
 
-    <RadzenTemplateForm TItem="FacturaMes" Data=@Item @onsubmit="SaveItem" Style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
+    <RadzenTemplateForm TItem="FacturaMes" Data=@Item Submit="@SaveItem" Style="padding: 20px; background: #f8f9fa; border-radius: 8px;">
         <RadzenStack Gap="1.5rem">
 
             <!-- ✅ TÍTULO -->
@@ -84,7 +84,7 @@
                     <!-- Categoría -->
 
                     <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
-                        <RadzenLabel Text="Categoría" Component="CatInput" />
+                        <RadzenLabel Text="Categoría (opcional)" Component="CatInput" />
 
                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center" Style="width: 100%;">
                             <RadzenDropDown @bind-Value="itemEditando.IdCategoria"
@@ -105,7 +105,16 @@
                                           Tooltip="Crear nueva categoría" />
                         </RadzenStack>
 
-                        <RadzenRequiredValidator Text="Categoría es requerida" Component="CatInput" Popup="true" />
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+                        <RadzenLabel Text="Motivo" Component="MotivoInput" />
+                        <RadzenTextBox @bind-Value="itemEditando.Motivo"
+                                       Style="width: 100%;"
+                                       Name="MotivoInput" />
+                        <RadzenRequiredValidator Text="Motivo es requerido"
+                                                 Component="MotivoInput"
+                                                 Popup="true" />
                     </RadzenStack>
 
                     <!-- Monto -->
@@ -158,13 +167,27 @@
 
                     <!-- Categoría -->
                     <RadzenDataGridColumn Property="@nameof(FacturaMesHijo.IdCategoria)"
-                                          Title="Cat."
+                                          Title="Cat. / Motivo"
                                           Width="55%"
                                           MinWidth="120px">
                         <Template Context="item">
-                                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
 
-                            @(categorias.FirstOrDefault(c => c.Id == item.IdCategoria)?.Nombre ?? "-")
+                                @if (item.IdCategoria.HasValue)
+                                {
+                                    <!-- Si hay categoría, mostramos su nombre -->
+                                    <span >
+                                        @(categorias.FirstOrDefault(c => c.Id == item.IdCategoria)?.Nombre)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <!-- Si no hay categoría, mostramos el Motivo -->
+                                    <span>
+                                        @item.Motivo
+                                    </span>
+                                }
+
                             </div>
                         </Template>
                     </RadzenDataGridColumn>
