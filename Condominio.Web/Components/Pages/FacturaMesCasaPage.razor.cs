@@ -14,7 +14,7 @@ namespace Condominio.Web.Components.Pages
     {
 
         RadzenDataGrid<FacturaMesCasa> grid;
-        IList<FacturaMesCasa> invoices;
+        private IList<FacturaMesCasa> invoices = new List<FacturaMesCasa>();
         IEnumerable<FacturaMesCasa> employees;
         bool allowRowSelectOnRowClick = true;
 

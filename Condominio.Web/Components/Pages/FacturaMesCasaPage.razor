@@ -16,6 +16,7 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject AppState AppState
 @inject BcvScraperService BcvScraper
+@inject Radzen.NotificationService NotificationService
 @rendermode InteractiveServer
 
 
@@ -113,8 +114,29 @@
                                 <HeaderTemplate>
                                     <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
                                                     InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
-                                                    Value="@(invoices == null || invoices?.Any() != true ? false : !items.All(i => invoices.Contains(i)) ? null : items.Any(i => invoices.Contains(i)))"
-                                                    Change="@(args => invoices = args == true ? items.ToList() : null)" />
+                                                    Value="@(invoices == null || !invoices.Any() ? false : !grid.View.Cast<FacturaMesCasa>().All(i => invoices.Contains(i)) ? null : grid.View.Cast<FacturaMesCasa>().Any(i => invoices.Contains(i)))"
+                                                    Change="@(args =>
+                                                {
+                                                    // ✅ 1. Si invoices es null, lo inicializamos
+                                                    if (invoices == null) invoices = new List<FacturaMesCasa>();
+
+                                                    var visibles = grid.View.Cast<FacturaMesCasa>().ToList();
+
+                                                    if (args == true)
+                                                    {
+                                                        foreach (var item in visibles)
+                                                        {
+                                                            if (!invoices.Contains(item)) invoices.Add(item);
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        foreach (var item in visibles)
+                                                        {
+                                                            invoices.Remove(item);
+                                                        }
+                                                    }
+                                                })" />
                                 </HeaderTemplate>
                                 <Template Context="data">
                                     <RadzenCheckBox TabIndex="-1" TriState="false"
@@ -567,16 +589,24 @@
     int selectedIndex = 0;
     private string _referenciaLote = ""; // Variable para capturar el texto
 
-   
+
     private async Task ConfirmarPagosMasivos()
     {
         if (invoices == null || !invoices.Any()) return;
 
+
+        var prop = rates.GetType().GetProperty(Moneda);
+
+        var tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+        var montototal = invoices.Sum(x =>x.MontoTotal);
+        var montoBs = montototal * tasa;
         // 1. Pasamos la cantidad de recibos como parámetro
         var parametros = new Dictionary<string, object>
-    {
-        { "CantidadRecibos", invoices.Count }
-    };
+{
+    { "CantidadRecibos", invoices.Count },
+    { "MontoTotalBs", montoBs },     // 👈 Enviamos el monto en Bs
+    { "MontoTotalUsd", montototal }  // 👈 Enviamos también el monto en USD (opcional)
+};
 
         // 2. Abrimos el diálogo que creamos
         var referenciaIngresada = await DialogService.OpenAsync<DialogoReferencia>(
@@ -589,21 +619,36 @@
 
         try
         {
-            // 4. Aquí ya tienes la referencia en la variable
-            string refTexto = referenciaIngresada.ToString();
+          List<Payments> pagos = new List<Payments>();
+          // 4. Aquí ya tienes la referencia en la variable\
+          string refTexto = referenciaIngresada.ToString();
+          foreach (var recibo in invoices)
+          {
+              Payments pago = new Payments();
+              // 4. Aquí ya tienes la referencia en la variable\
+              pago.Referencia = refTexto;
+              pago.Monto = recibo.MontoTotal;
+              pago.MontoBs = recibo.MontoTotal * tasa;
+              pago.FacturaMesCasaId = recibo.Id;
+              pagos.Add(pago);
+          }
 
-            foreach (var recibo in invoices)
-            {
-                // Lógica para confirmar el recibo
-                // recibo.Estado = "Confirmada";
-                // recibo.Referencia = refTexto;
+           var result = await FacturaMesCasaRepository.RegistrarMultiplesPagoFactura(pagos);
+           // await FacturaMesCasaRepository.SaveChangesAsync();
+           if (result)
+           {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Pagos Guardados",
+                    Detail = $"Pagos registrado correctamente.",
+                    Duration = 3000 // ⏱️ 3000 milisegundos = 3 segundos
+                });
             }
 
-            // await FacturaMesCasaRepository.SaveChangesAsync();
-
-            await LoadData();
-            invoices = null; // Limpiar selección
-            StateHasChanged();
+           await LoadData();
+           invoices = null; // Limpiar selección
+           StateHasChanged();
         }
         catch (Exception ex)
         {

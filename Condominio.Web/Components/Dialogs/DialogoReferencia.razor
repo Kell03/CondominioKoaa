@@ -2,12 +2,31 @@
 
 <RadzenStack Gap="1rem" Style="padding: 10px;">
     <RadzenText TextStyle="TextStyle.Body1">
-        Vas a confirmar <strong>@CantidadRecibos</strong> recibos.<br />
-        Por favor, ingresa la referencia bancaria:
+        Vas a confirmar <strong>@CantidadRecibos</strong> recibos por un total de:
     </RadzenText>
 
+    <!-- ✅ MOSTRAMOS LOS MONTOS -->
+    <RadzenCard Style="background: #f8f9fa; padding: 10px; border-left: 4px solid #28a745;">
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">Total USD:</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: bold; color: #28a745;">
+                @MontoTotalUsd.ToString("N2") $
+            </RadzenText>
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Style="margin-top: 5px;">
+            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: 600;">Total Bs:</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: bold; color: #007bff;">
+                @MontoTotalBs.ToString("N2") Bs
+            </RadzenText>
+        </RadzenStack>
+    </RadzenCard>
+
     <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
-        <RadzenTextBox @bind-Value="Referencia" Placeholder="Ej: 12345678" Style="width: 100%;" />
+        <RadzenLabel Text="Referencia Bancaria" Component="RefInput">
+            Referencia <span style="color: red;">*</span>
+        </RadzenLabel>
+        <RadzenTextBox Name="RefInput" @bind-Value="Referencia" Placeholder="Ej: 12345678" Style="width: 100%;" />
     </RadzenStack>
 
     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
@@ -15,7 +34,12 @@
         <RadzenButton Text="Confirmar" ButtonStyle="ButtonStyle.Success" Click="@(() => DialogService.Close(Referencia))" />
     </RadzenStack>
 </RadzenStack>
+
 @code {
+    // ✅ Declaramos las propiedades que recibiremos
     [Parameter] public int CantidadRecibos { get; set; }
+    [Parameter] public decimal MontoTotalBs { get; set; }
+    [Parameter] public decimal MontoTotalUsd { get; set; }
+
     private string Referencia { get; set; } = "";
 }

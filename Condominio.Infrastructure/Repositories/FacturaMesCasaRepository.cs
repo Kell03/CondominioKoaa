@@ -166,6 +166,43 @@ namespace Condominio.Infrastructure.Repositories
             }
         }
 
+
+        public async Task<bool> RegistrarMultiplesPagoFactura(List<Payments> pagos)
+        {
+            if (pagos == null || !pagos.Any()) return false;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // ✅ 1. Transformamos la lista usando LINQ (Select)
+                var listaPayments = pagos.Select(item => new Payments
+                {
+                    FacturaMesCasaId = item.FacturaMesCasaId,
+                    Monto = item.Monto,
+                    MontoBs = item.MontoBs,
+                    Tasa = item.Tasa,
+                    MetodoPago = item.MetodoPago,
+                    Referencia = item.Referencia,
+                    Estado = "Pendiente"
+                }).ToList();
+
+                // ✅ 2. Agregamos TODA la lista al contexto de una vez
+                await _context.Payments.AddRangeAsync(listaPayments);
+
+                // ✅ 3. Guardamos (EF Core optimiza los inserts masivos internamente)
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"❌ Error: {ex.Message}");
+                return false;
+            }
+        }
+
         public async Task<IEnumerable<Payments>> GetPaymentsForUserAsync(int userId, int idFacturaMes)
         {
             try
