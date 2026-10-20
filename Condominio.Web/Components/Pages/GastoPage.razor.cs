@@ -2,6 +2,7 @@ using Condominio.Application.Services;
 using Condominio.Domain.Entities;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Radzen;
+using Radzen.Blazor;
 
 namespace Condominio.Web.Components.Pages
 {
@@ -10,6 +11,7 @@ namespace Condominio.Web.Components.Pages
 
 
         IList<Gasto> selectedEmployees;
+        RadzenDataGrid<FacturaMes> gridFactura;
         Gasto selectedItem = new Gasto();
         List<FacturaMes> facturas = new List<FacturaMes>();
         List<FacturaMesHijo> detallesFactura = new List<FacturaMesHijo>();
@@ -33,32 +35,7 @@ namespace Condominio.Web.Components.Pages
         {
             try
             {
-                // 1. Lanzamos el scraper primero (en segundo plano)
-                var tareaRates = BcvScraper.GetRatesAsync();
-
-                // 2. Cargamos la base de datos de forma SECUENCIAL (evita el error de "A second operation was started...")
-                items = (await gastosRepository.GetAllAsync()).AsQueryable();
-                selectedEmployees = new List<Gasto>() { items.FirstOrDefault() };
-
-                cuotasEspeciales = (await cuotaEspecialRepository.GetAllAsync()).ToList();
-                facturas = (await facturaMesRepository.GetAllAsync()).ToList();
-
-                var monedas = await MonedaRepository.GetAllAsync();
-                Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
-
-                // 3. Esperamos que el scraper termine
-                try
-                {
-                    rates = await tareaRates;
-                    if (rates == null)
-                    {
-                        Console.WriteLine("⚠️ rates es null, el BCV no respondió.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"❌ Error en BcvScraper: {ex.Message}");
-                }
+               await LoadUsers();
 
                 StateHasChanged();
             }
@@ -70,11 +47,32 @@ namespace Condominio.Web.Components.Pages
 
         private async Task LoadUsers()
         {
-            // Usas el método específico si existe
-            var itemList = await gastosRepository.GetAllAsync();
-            selectedEmployees = new List<Gasto>() { itemList.FirstOrDefault() };
+            // 1. Lanzamos el scraper primero (en segundo plano)
+            var tareaRates = BcvScraper.GetRatesAsync();
 
-            items = itemList.AsQueryable();
+            // 2. Cargamos la base de datos de forma SECUENCIAL (evita el error de "A second operation was started...")
+            items = (await gastosRepository.GetAllAsync()).AsQueryable();
+            selectedEmployees = new List<Gasto>() { items.FirstOrDefault() };
+
+            cuotasEspeciales = (await cuotaEspecialRepository.GetAllAsync()).ToList();
+            facturas = (await facturaMesRepository.GetAllAsync()).ToList();
+
+            var monedas = await MonedaRepository.GetAllAsync();
+            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
+
+            // 3. Esperamos que el scraper termine
+            try
+            {
+                rates = await tareaRates;
+                if (rates == null)
+                {
+                    Console.WriteLine("⚠️ rates es null, el BCV no respondió.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error en BcvScraper: {ex.Message}");
+            }
         }
 
 
@@ -232,6 +230,8 @@ namespace Condominio.Web.Components.Pages
             {
 
                  selectedItem = new Gasto();
+
+                selectedItem.FechaPago = DateTime.Today;
                 var prop = rates.GetType().GetProperty(Moneda);
                 selectedItem.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
 
@@ -348,6 +348,43 @@ namespace Condominio.Web.Components.Pages
             {
                 _isFormatting = false;
             }
+        }
+
+
+        private async Task PagarDetalleFactura(FacturaMes factura, FacturaMesHijo detalle)
+        {
+
+
+            selectedItem = new Gasto();
+            selectedItem.FechaPago = DateTime.Today;
+            var prop = rates.GetType().GetProperty(Moneda);
+            selectedItem.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+            origenSeleccionado = "Factura";
+            selectedItem.FacturaMesHijoId = null;
+            detallesFactura.Clear();
+            facturaSeleccionada = factura.Id;
+            if (!facturaSeleccionada.HasValue)
+                return;
+
+            // Cargar los detalles de la factura (solo los NO pagados)
+          
+                detallesFactura = factura.FacturaMesHijos.Where(d => !d.Pagado).ToList();
+            
+
+            selectedItem.FacturaMesHijoId = detalle.Id;
+
+
+            if (detalle != null)
+            {
+                selectedItem.Monto = Convert.ToDecimal(detalle.Monto);
+                selectedItem.MontoBs = Math.Round((decimal)detalle.Monto * (decimal)selectedItem.Tasa, 2);
+                _montoUsdStr = selectedItem.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                _montoBsStr = selectedItem.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+            }
+
+
+            selectedIndex = 2;
+            StateHasChanged();
         }
 
     }

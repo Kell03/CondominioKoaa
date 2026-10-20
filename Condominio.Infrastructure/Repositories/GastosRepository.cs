@@ -51,6 +51,17 @@ namespace Condominio.Infrastructure.Repositories
                 {
                     var factura = await _context.FacturaMesHijo.FirstOrDefaultAsync(x => x.Id == entity.FacturaMesHijoId);
                     factura.Pagado = true;
+
+                    var detallesFactura = await _context.FacturaMesHijo.Where(x => x.FacturaMesId == factura.FacturaMesId).ToListAsync();
+                    if(detallesFactura.Where(x=>x.Pagado == false).Any())
+                    {
+                        ;
+                    }
+                    else
+                    {
+                        FacturaMes recibo = await _context.FacturaMes.FirstOrDefaultAsync(x => x.Id == factura.FacturaMesId);
+                        recibo.EstadoPago = EstadoPagoFactura.Pagada;
+                    }
                 }
 
 
