@@ -1,0 +1,21 @@
+﻿@inject Radzen.DialogService DialogService
+
+<RadzenStack Gap="1rem" Style="padding: 10px;">
+    <RadzenText TextStyle="TextStyle.Body1">
+        Vas a confirmar <strong>@CantidadRecibos</strong> recibos.<br />
+        Por favor, ingresa la referencia bancaria:
+    </RadzenText>
+
+    <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+        <RadzenTextBox @bind-Value="Referencia" Placeholder="Ej: 12345678" Style="width: 100%;" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+        <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="@(() => DialogService.Close(null))" />
+        <RadzenButton Text="Confirmar" ButtonStyle="ButtonStyle.Success" Click="@(() => DialogService.Close(Referencia))" />
+    </RadzenStack>
+</RadzenStack>
+@code {
+    [Parameter] public int CantidadRecibos { get; set; }
+    private string Referencia { get; set; } = "";
+}

@@ -14,7 +14,11 @@ namespace Condominio.Web.Components.Pages
     {
 
         RadzenDataGrid<FacturaMesCasa> grid;
-        IList<FacturaMesCasa> selectedEmployees;
+        IList<FacturaMesCasa> invoices;
+        IEnumerable<FacturaMesCasa> employees;
+        bool allowRowSelectOnRowClick = true;
+
+
         FacturaMesCasa selectedItem = new FacturaMesCasa();
         private bool isAdmin = false;
         private IEnumerable<FacturaMes> FacturasMes;
@@ -41,6 +45,7 @@ namespace Condominio.Web.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             await CheckAdminRole();
+            allowRowSelectOnRowClick = true;
             await LoadData();
             rates = await BcvScraper.GetRatesAsync();
             await Task.Delay(5000);  // 2000 milisegundos = 2 segundos
@@ -71,9 +76,10 @@ namespace Condominio.Web.Components.Pages
                 items = itemList.AsQueryable();
                 var monedas = await MonedaRepository.GetAllAsync();
                 Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
-                selectedEmployees = itemList.Any()
+                employees = itemList.Any()
                     ? new List<FacturaMesCasa> { itemList.First() }
                     : new List<FacturaMesCasa>();
+
 
                 StateHasChanged();
             }
@@ -293,5 +299,32 @@ namespace Condominio.Web.Components.Pages
             }
         }
 
+
+
+        private void SelectAll(bool isSelected)
+        {
+            if (isSelected)
+            {
+                // Selecciona todos los items de la lista actual
+                invoices = items.ToList();
+            }
+            else
+            {
+                // Deselecciona todos
+                invoices.Clear();
+            }
+        }
+
+        private void SelectRow(FacturaMesCasa item, bool isSelected)
+        {
+            if (isSelected && !invoices.Contains(item))
+            {
+                invoices.Add(item);
+            }
+            else if (!isSelected && invoices.Contains(item))
+            {
+                invoices.Remove(item);
+            }
+        }
     }
 }

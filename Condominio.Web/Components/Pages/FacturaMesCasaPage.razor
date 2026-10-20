@@ -4,6 +4,7 @@
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
+@using Condominio.Web.Components.Dialogs
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @inject FacturaMesCasaRepository FacturaMesCasaRepository
@@ -49,12 +50,38 @@
             <Tabs>
                 <RadzenTabsItem Text="Lista">
 
+                    @if (invoices != null && invoices.Count > 1)
+                    {
+                        <div style="margin-bottom: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #007bff; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <RadzenText TextStyle="TextStyle.Body1" Style="margin: 0; color: #0056b3; font-weight: 500;">
+                                <RadzenIcon Icon="check_circle" Style="vertical-align: middle; margin-right: 5px;" />
+                                Has seleccionado <strong>@invoices.Count</strong> recibos.
+                            </RadzenText>
 
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                <!-- Aquí pones la acción que quieras hacer -->
+                                <RadzenButton Text="Confirmar Pagos Seleccionados"
+                                              Icon="done_all"
+                                              ButtonStyle="ButtonStyle.Success"
+                                              Size="ButtonSize.Small"
+                                              Click="@ConfirmarPagosMasivos" />
+
+                                <RadzenButton Text="Limpiar Selección"
+                                              Icon="clear"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Size="ButtonSize.Small"
+                                              Click="@(() => invoices = null)" />
+                            </RadzenStack>
+                        </div>
+                    }
 
                 
                     <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
-                                    Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees>
-                        <Template Context="order">
+                    SelectionMode="DataGridSelectionMode.Multiple"
+                                    Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or"  @bind-Value=@invoices>
+                       
+                                    
+                      <Template Context="order">
                             <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0;">
 
                                 <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
@@ -79,7 +106,26 @@
                         </Template>
                         <Columns>
 
-                    
+             
+
+
+                            <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                                <HeaderTemplate>
+                                    <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
+                                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
+                                                    Value="@(invoices == null || invoices?.Any() != true ? false : !items.All(i => invoices.Contains(i)) ? null : items.Any(i => invoices.Contains(i)))"
+                                                    Change="@(args => invoices = args == true ? items.ToList() : null)" />
+                                </HeaderTemplate>
+                                <Template Context="data">
+                                    <RadzenCheckBox TabIndex="-1" TriState="false"
+                                                    Value="@(invoices != null && invoices.Contains(data))"
+                                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
+                                                    TValue="bool" Change=@(args => { if (!allowRowSelectOnRowClick) { grid.SelectRow(data); } }) />
+                                </Template>
+                            </RadzenDataGridColumn>
+
+
+
                             <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Nro Casa" Width="160px">
                                 <Template Context="FacturaMesCasa">
                                     @FacturaMesCasa.House.Number
@@ -519,8 +565,49 @@
 
 @code {
     int selectedIndex = 0;
+    private string _referenciaLote = ""; // Variable para capturar el texto
 
    
+    private async Task ConfirmarPagosMasivos()
+    {
+        if (invoices == null || !invoices.Any()) return;
 
-    
+        // 1. Pasamos la cantidad de recibos como parámetro
+        var parametros = new Dictionary<string, object>
+    {
+        { "CantidadRecibos", invoices.Count }
+    };
+
+        // 2. Abrimos el diálogo que creamos
+        var referenciaIngresada = await DialogService.OpenAsync<DialogoReferencia>(
+            "Confirmar Pagos",
+            parametros,
+            new DialogOptions { Width = "400px", CloseDialogOnOverlayClick = true });
+
+        // 3. Si el usuario canceló o cerró la ventana, no hacemos nada
+        if (referenciaIngresada == null) return;
+
+        try
+        {
+            // 4. Aquí ya tienes la referencia en la variable
+            string refTexto = referenciaIngresada.ToString();
+
+            foreach (var recibo in invoices)
+            {
+                // Lógica para confirmar el recibo
+                // recibo.Estado = "Confirmada";
+                // recibo.Referencia = refTexto;
+            }
+
+            // await FacturaMesCasaRepository.SaveChangesAsync();
+
+            await LoadData();
+            invoices = null; // Limpiar selección
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al confirmar masivamente: {ex.Message}");
+        }
+    }
 }
