@@ -1,0 +1,111 @@
+﻿@page "/historialgastos"
+@attribute [Authorize]
+@attribute [Authorize(Roles = "Administrador")]
+@using Condominio.Application.Services
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
+@using Microsoft.AspNetCore.Authorization
+@inject FacturaMesRepository facturaMesRepository
+@inject FacturaMesHijoRepository facturaMeHijoRepository
+@inject GastosRepository gastosRepository
+@inject CuotaEspecialRepository cuotaEspecialRepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@inject BcvScraperService BcvScraper
+@inject ConfiguracionMonedaRepository MonedaRepository
+@inject AppState AppState
+@rendermode InteractiveServer
+
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+
+        <RadzenCard Style="background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <RadzenText TextStyle="TextStyle.H4" Style="margin: 0; color: #1a2a3a; font-weight: 500;">
+               Historial de gastos
+            </RadzenText>
+
+        </RadzenCard>
+
+        <RadzenTabs @bind-SelectedIndex=@selectedIndex>
+            <Tabs>
+                <RadzenTabsItem Text="Lista">
+
+                  
+
+                    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false"
+                                    FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true"
+                                    PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                    Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or"
+                                    SelectionMode="DataGridSelectionMode.Single"
+                                    RowSelect="@((Gasto item) => EditGasto(item))">
+                        <Columns>
+
+                            <RadzenDataGridColumn Property="@nameof(Gasto.FechaPago)" Title="Fecha Pago" Width="150px" FormatString="{0:dd/MM/yyyy}" />
+                            <RadzenDataGridColumn TItem="Gasto" Title="Concepto / Origen" Width="250px">
+                                <Template Context="item">
+                                    @if (item.FacturaMesHijoId.HasValue)
+                                    {
+
+                                        @item.FacturaMesHijo?.CategoriaGasto.Nombre
+
+                                    }
+                                    else if (item.CuotaEspecialId.HasValue)
+                                    {
+
+                                        @item.CuotaEspecial?.Motivo
+
+                                    }
+                                    else
+                                    {
+
+                                        @item.Motivo
+
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn Property="@nameof(Gasto.Monto)" Title="Monto" Width="130px" />
+                            <RadzenDataGridColumn Property="@nameof(Gasto.Comprobante)" Title="Comprobante" Width="180px" />
+                            <RadzenDataGridColumn Property="@nameof(Gasto.Notas)" Title="Notas" Width="200px" />
+                            <RadzenDataGridColumn TItem="Gasto" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                                <Template Context="item">
+
+                                    <RadzenButton Icon="delete"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Size="ButtonSize.Small"
+                                                  Tooltip="Eliminar Gasto"
+                                                  Click="@(() => ConfirmDelete(item))"
+                                                  @onclick:stopPropagation="true" />
+
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                        </Columns>
+
+                        <EmptyTemplate>
+                            <div style="padding: 20px; text-align: center; color: #6c757d;">
+                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                    No hay gastos registrados
+                                </RadzenText>
+                            </div>
+                        </EmptyTemplate>
+                    </RadzenDataGrid>
+
+                </RadzenTabsItem>
+
+
+
+
+
+               
+            </Tabs>
+        </RadzenTabs>
+    </div>
+</div>
+
+
+@code {
+    int selectedIndex = 0;
+}

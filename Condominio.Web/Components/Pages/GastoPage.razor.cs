@@ -387,5 +387,33 @@ namespace Condominio.Web.Components.Pages
             StateHasChanged();
         }
 
+        private async Task PagarDetalleCuota(CuotaEspecial  cuotaEspecial)
+        {
+
+
+            selectedItem = new Gasto();
+            selectedItem.FechaPago = DateTime.Today;
+            var prop = rates.GetType().GetProperty(Moneda);
+            selectedItem.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+            origenSeleccionado = "Cuota";
+            selectedItem.CuotaEspecialId = cuotaEspecial.Id;
+            if (!selectedItem.CuotaEspecialId.HasValue)
+                return;
+
+            // Cargar los detalles de la factura (solo los NO pagados)
+            var cuota = cuotasEspeciales.Where(x => x.Id == selectedItem.CuotaEspecialId).FirstOrDefault();
+
+            if (cuota != null)
+            {
+                selectedItem.Monto = cuota.MontoTotal;
+                selectedItem.MontoBs = Math.Round(cuota.MontoTotal * (decimal)selectedItem.Tasa, 2);
+                _montoUsdStr = selectedItem.Monto.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+                _montoBsStr = selectedItem.MontoBs.Value.ToString("N2", new System.Globalization.CultureInfo("es-ES"));
+            }
+
+            selectedIndex = 2;
+            StateHasChanged();
+        }
+
     }
 }

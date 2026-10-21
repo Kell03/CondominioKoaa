@@ -32,75 +32,7 @@
 
         <RadzenTabs @bind-SelectedIndex=@selectedIndex>
             <Tabs>
-                <RadzenTabsItem Text="Lista">
-
-                    <RadzenButton Text="Agregar"
-                                  Icon="add_circle"
-                                  ButtonStyle="ButtonStyle.Primary"
-                                  Style="margin-bottom: 0.5rem;"
-                                  Click="@(() => AddGasto())" />
-
-                    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false"
-                                    FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true"
-                                    PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
-                                    Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or"
-                                    SelectionMode="DataGridSelectionMode.Single"
-                                    RowSelect="@((Gasto item) => EditGasto(item))">
-                        <Columns>
-
-                            <RadzenDataGridColumn Property="@nameof(Gasto.FechaPago)" Title="Fecha Pago" Width="150px" FormatString="{0:dd/MM/yyyy}" />
-                            <RadzenDataGridColumn TItem="Gasto" Title="Concepto / Origen" Width="250px">
-                                <Template Context="item">
-                                    @if (item.FacturaMesHijoId.HasValue)
-                                    {
-                                        
-                                            @item.FacturaMesHijo?.CategoriaGasto.Nombre
-                                        
-                                    }
-                                    else if (item.CuotaEspecialId.HasValue)
-                                    {
-                                       
-                                            @item.CuotaEspecial?.Motivo
-                                        
-                                    }
-                                    else
-                                    {
-                                        
-                                            @item.Motivo
-                                       
-                                    }
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn Property="@nameof(Gasto.Monto)" Title="Monto" Width="130px" />
-                            <RadzenDataGridColumn Property="@nameof(Gasto.Comprobante)" Title="Comprobante" Width="180px" />
-                            <RadzenDataGridColumn Property="@nameof(Gasto.Notas)" Title="Notas" Width="200px" />
-                            <RadzenDataGridColumn TItem="Gasto" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
-                                <Template Context="item">
-
-                                    <RadzenButton Icon="delete"
-                                                  ButtonStyle="ButtonStyle.Danger"
-                                                  Size="ButtonSize.Small"
-                                                  Tooltip="Eliminar Gasto"
-                                                  Click="@(() => ConfirmDelete(item))"
-                                                  @onclick:stopPropagation="true" />
-
-                                </Template>
-                            </RadzenDataGridColumn>
-
-                        </Columns>
-
-                        <EmptyTemplate>
-                            <div style="padding: 20px; text-align: center; color: #6c757d;">
-                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
-                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
-                                    No hay gastos registrados
-                                </RadzenText>
-                            </div>
-                        </EmptyTemplate>
-                    </RadzenDataGrid>
-
-                </RadzenTabsItem>
-
+          
 
                 <RadzenTabsItem Text="Facturas">
 
@@ -208,6 +140,9 @@
                                     @facturaCasa.EstadoPago 
                                 </Template>
                             </RadzenDataGridColumn>
+
+
+
                     
                                                        
                         
@@ -230,6 +165,83 @@
 
 
              
+
+            
+                </RadzenTabsItem>
+
+
+                <RadzenTabsItem Text="Cuotas Especiales">
+
+
+                    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                    Data="@cuotasEspeciales" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single">
+                        <Columns>
+
+                            <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Motivo)" Title="Motivo" Width="160px" />
+                            <RadzenDataGridColumn Title="Proveedor" Width="160px">
+                                <Template Context="item">
+                                    @(item.Proveedor?.Nombre ?? "-")
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="CuotaEspecial" Title="Monto" Width="140px">
+                                <Template Context="cuota">
+                                    @cuota.MontoTotal $
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="CuotaEspecial" Title="Monto Recaudado" Width="170px">
+                                <Template Context="cuota">
+                                    @cuota.MontoRecaudado $
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn Property="@nameof(CuotaEspecial.NombreMes)" Title="Mes" Width="100px" />
+                            <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Year)" Title="Año" Width="100px" />
+                            <RadzenDataGridColumn TItem="CuotaEspecial" Title="Estado">
+                                <Template Context="item">
+                                    @if (item.Pagado == true)
+                                    {
+                                        <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; display: inline-block;">
+                                            <RadzenIcon Icon="check_circle" Style="font-size: 14px; vertical-align: middle; margin-right: 4px;" /> Pagado
+                                        </span>
+                                    }
+                                    else if (item.Pagado == false)
+                                    {
+                                        <span style="background: #f8d7da; color: #721c24; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; display: inline-block;">
+                                            <RadzenIcon Icon="pending" Style="font-size: 14px; vertical-align: middle; margin-right: 4px;" /> Pendiente
+                                        </span>
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <!-- ✅ COLUMNA ACCIÓN -->
+                            <RadzenDataGridColumn TItem="CuotaEspecial" Title="Acción" Width="100px" TextAlign="TextAlign.Center">
+                                <Template Context="item">
+                                    @if (item.Pagado == false)
+                                    {
+                                        <RadzenButton Text="Pagar"
+                                                      Icon="payment"
+                                                      ButtonStyle="ButtonStyle.Success"
+                                                      Size="ButtonSize.Small"
+                                                      Tooltip="Registrar pago"
+                                                      Click="@(() => PagarDetalleCuota(item))"
+                                                      @onclick:stopPropagation="true" />
+                                    }
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                        </Columns>
+
+                        <EmptyTemplate>
+                            <div style="padding: 20px; text-align: center; color: #6c757d;">
+                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                    No hay Cuotas Especiales registradas
+                                </RadzenText>
+
+                            </div>
+                        </EmptyTemplate>
+                    </RadzenDataGrid>
+
 
             
                 </RadzenTabsItem>

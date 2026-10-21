@@ -21,7 +21,7 @@ namespace Condominio.Domain.Entities
 
         public decimal MontoPagado { get; set; }
         public decimal SaldoPendiente { get; set; }
-        public string Estado { get; set; } = "Pendiente"; // 'Pendiente', 'Pagada', 'Rechazada'
+        public string Estado { get; set; } = EstadoCuotaCasa.Pendiente; // 'Pendiente', 'Pagada', 'Rechazada'
 
         public string? Referencia { get; set; }
 
@@ -46,5 +46,13 @@ namespace Condominio.Domain.Entities
 
         public ICollection<Payments>? Payments { get; set; }
 
+    }
+
+    public static class EstadoCuotaCasa
+    {
+        public const string Pendiente = "Pendiente";
+        public const string PagoParcial = "Pago Parcial"; // ✅ Con el espacio exacto
+        public const string Confirmada = "Confirmada";
+        public const string Rechazada = "Rechazada";
     }
 }

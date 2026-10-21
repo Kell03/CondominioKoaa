@@ -3,12 +3,14 @@ using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
 using Condominio.Web.Components.Dialogs;
 using Radzen;
+using Radzen.Blazor;
 
 namespace Condominio.Web.Components.Pages
 {
     public partial class CuotaEspecialCasaPage
     {
 
+        RadzenDataGrid<CuotaEspecialCasa> grid;
         IList<CuotaEspecialCasa> selectedEmployees;
         CuotaEspecialCasa selectedItem = new CuotaEspecialCasa();
         private IEnumerable<CuotaEspecial> CuotasEspeciales;
@@ -18,7 +20,7 @@ namespace Condominio.Web.Components.Pages
         IEnumerable<CuotaEspecialCasa> Cuotas;
 
         private IQueryable<CuotaEspecialCasa> items;
-
+        bool allowRowSelectOnRowClick = true;
         Payments Pago = new Payments();
         private IEnumerable<Payments> PagosList;
         private List<string> MetodosPago = new List<string>
@@ -32,10 +34,14 @@ namespace Condominio.Web.Components.Pages
         private string _montoUsdStr = "0,00";
         private bool _isFormatting = false;
         private bool _isFormattingusd = false;
+
+        private IList<CuotaEspecialCasa> cuotas = new List<CuotaEspecialCasa>();
+
         protected override async Task OnInitializedAsync()
         {
             await CheckAdminRole();
             await LoadData();
+            allowRowSelectOnRowClick = true;
             Cuotas = await CuotaEspecialCasaRepository.GetAllAsync();
             rates = await BcvScraper.GetRatesAsync();
             await Task.Delay(5000);

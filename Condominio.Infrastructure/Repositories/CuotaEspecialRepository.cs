@@ -124,7 +124,7 @@ namespace Condominio.Infrastructure.Repositories
                         MontoTotal = montoPorCasa,
                         MontoPagado = 0,
                         SaldoPendiente = montoPorCasa,
-                        Estado = "Pendiente",
+                        Estado = EstadoCuotaCasa.Pendiente,
                     });
 
                     var usuario = await _context.Users

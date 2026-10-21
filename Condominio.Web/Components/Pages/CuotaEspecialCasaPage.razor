@@ -4,6 +4,7 @@
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
+@using Condominio.Web.Components.Dialogs
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @inject CuotaEspecialCasaRepository CuotaEspecialCasaRepository
@@ -15,6 +16,7 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject AppState AppState
 @inject BcvScraperService BcvScraper
+@inject Radzen.NotificationService NotificationService
 @rendermode InteractiveServer
 
 
@@ -49,13 +51,88 @@
             <Tabs>
                 <RadzenTabsItem Text="Lista">
 
-         
+                    @if (cuotas != null && cuotas.Count > 1)
+                    {
+                        <div style="margin-bottom: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #007bff; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <RadzenText TextStyle="TextStyle.Body1" Style="margin: 0; color: #0056b3; font-weight: 500;">
+                                <RadzenIcon Icon="check_circle" Style="vertical-align: middle; margin-right: 5px;" />
+                                Has seleccionado <strong>@cuotas.Count</strong> recibos.
+                            </RadzenText>
 
-                    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
-                                    Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees>
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                <!-- Aquí pones la acción que quieras hacer -->
+                                <RadzenButton Text="Confirmar Pagos Seleccionados"
+                                              Icon="done_all"
+                                              ButtonStyle="ButtonStyle.Success"
+                                              Size="ButtonSize.Small"
+                                              Click="@ConfirmarPagosMasivos" />
+
+                                <RadzenButton Text="Limpiar Selección"
+                                              Icon="clear"
+                                              ButtonStyle="ButtonStyle.Light"
+                                              Size="ButtonSize.Small"
+                                              Click="@(() => cuotas = null)" />
+                            </RadzenStack>
+                        </div>
+                    }
+
+                    <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="10" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                    Data="@items" TItem="CuotaEspecialCasa" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@selectedEmployees>
                         <Columns>
 
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="120px">
+
+
+                            <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                                <HeaderTemplate>
+                                    <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
+                                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
+                                                    Value="@(cuotas == null || !cuotas.Any() ? false : !grid.View.Cast<CuotaEspecialCasa>().All(i => cuotas.Contains(i)) ? null : grid.View.Cast<CuotaEspecialCasa>().Any(i => cuotas.Contains(i)))"
+                                                    Change="@(args =>
+                                                        {
+                                                            if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
+                                                            var visibles = grid.View.Cast<CuotaEspecialCasa>().ToList();
+                                                            if (args == true)
+                                                            {
+                                                                foreach (var item in visibles)
+                                                                {
+                                                                    if (!cuotas.Contains(item)) cuotas.Add(item);
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                foreach (var item in visibles)
+                                                                {
+                                                                    cuotas.Remove(item);
+                                                                }
+                                                            }
+                                                        })" />
+                                </HeaderTemplate>
+                                <Template Context="data">
+                                    <RadzenCheckBox TabIndex="-1" TriState="false"
+                                                    Value="@(cuotas != null && cuotas.Contains(data))"
+                                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
+                                                    TValue="bool"
+                                                    Change="@(args =>
+                                                        {
+                                                            // ✅ 1. Inicializamos la lista si es null
+                                                            if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
+
+                                                            // ✅ 2. Agregamos o quitamos el item de la lista dependiendo del clic
+                                                            if (args == true)
+                                                            {
+                                                                if (!cuotas.Contains(data)) cuotas.Add(data);
+                                                            }
+                                                            else
+                                                            {
+                                                                cuotas.Remove(data);
+                                                            }
+                                                        })" />
+                                </Template>
+                            </RadzenDataGridColumn>
+
+
+
+                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="120px" Property="House.Number">
                                 <Template Context="cuota">
                                     @cuota.House.Number
                                 </Template>
@@ -109,19 +186,19 @@
                                                   Title="Estado"
                                                   Width="140px">
                                 <Template Context="cuotaCasa">
-                                    @if (cuotaCasa.Estado == "Pendiente")
+                                    @if (cuotaCasa.Estado == EstadoCuotaCasa.Pendiente)
                                     {
                                         <span style="background: #f8d7da; color: #721c24; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
                                             Pendiente
                                         </span>
                                     }
-                                    else if (cuotaCasa.Estado == "Pago Parcial")
+                                    else if (cuotaCasa.Estado == EstadoCuotaCasa.PagoParcial)
                                     {
                                         <span style="background: #e9ecef; color: #6c757d; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
                                             En Revisión
                                         </span>
                                     }
-                                    else if (cuotaCasa.Estado == "Confirmada")
+                                    else if (cuotaCasa.Estado == EstadoCuotaCasa.Confirmada)
                                     {
                                         <span style="background: #d4edda; color: #155724; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
                                             Confirmada
@@ -467,4 +544,70 @@
 
 @code {
     int selectedIndex = 0;
+
+    private async Task ConfirmarPagosMasivos()
+    {
+        if (cuotas == null || !cuotas.Any()) return;
+
+
+        var prop = rates.GetType().GetProperty(Moneda);
+
+        var tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+        var montototal = cuotas.Sum(x => x.MontoTotal);
+        var montoBs = montototal * tasa;
+        // 1. Pasamos la cantidad de recibos como parámetro
+        var parametros = new Dictionary<string, object>
+{
+    { "CantidadRecibos", cuotas.Count },
+    { "MontoTotalBs", montoBs },     // 👈 Enviamos el monto en Bs
+    { "MontoTotalUsd", montototal }  // 👈 Enviamos también el monto en USD (opcional)
+};
+
+        // 2. Abrimos el diálogo que creamos
+        var referenciaIngresada = await DialogService.OpenAsync<DialogoReferencia>(
+            "Confirmar Pagos",
+            parametros,
+            new DialogOptions { Width = "400px", CloseDialogOnOverlayClick = true });
+
+        // 3. Si el usuario canceló o cerró la ventana, no hacemos nada
+        if (referenciaIngresada == null) return;
+
+        try
+        {
+            List<Payments> pagos = new List<Payments>();
+            // 4. Aquí ya tienes la referencia en la variable\
+            string refTexto = referenciaIngresada.ToString();
+            foreach (var recibo in cuotas)
+            {
+                Payments pago = new Payments();
+                // 4. Aquí ya tienes la referencia en la variable\
+                pago.Referencia = refTexto;
+                pago.Monto = recibo.MontoTotal;
+                pago.MontoBs = recibo.MontoTotal * tasa;
+                pago.CuotaEspecialCasaId = recibo.Id;
+                pagos.Add(pago);
+            }
+
+            var result = await CuotaEspecialCasaRepository.RegistrarMultiplesPagoFactura(pagos);
+            // await FacturaMesCasaRepository.SaveChangesAsync();
+            if (result)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Pagos Guardados",
+                    Detail = $"Pagos registrado correctamente.",
+                    Duration = 3000 // ⏱️ 3000 milisegundos = 3 segundos
+                });
+            }
+
+            await LoadData();
+            cuotas = null; // Limpiar selección
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error al confirmar masivamente: {ex.Message}");
+        }
+    }
 }
