@@ -17,6 +17,8 @@
 @inject AppState AppState
 @inject BcvScraperService BcvScraper
 @inject Radzen.NotificationService NotificationService
+@inject NavigationManager NavigationManager
+
 @rendermode InteractiveServer
 
 
@@ -51,6 +53,15 @@
             <Tabs>
                 <RadzenTabsItem Text="Lista">
 
+                    <div style="margin-bottom: 15px; display: flex; justify-content: flex-start;">
+                        <RadzenButton Text="Pagar por Lote"
+                                      Icon="playlist_add_check"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => NavigationManager.NavigateTo("/recibofactura/confirmar"))" />
+                    </div>
+
+                    <!-- ✅ 2. EL CUADRO AZUL SOLO SI HAY SELECCIÓN MÚLTIPLE -->
                     @if (invoices != null && invoices.Count > 1)
                     {
                         <div style="margin-bottom: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #007bff; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -60,7 +71,6 @@
                             </RadzenText>
 
                             <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                                <!-- Aquí pones la acción que quieras hacer -->
                                 <RadzenButton Text="Confirmar Pagos Seleccionados"
                                               Icon="done_all"
                                               ButtonStyle="ButtonStyle.Success"
@@ -76,13 +86,12 @@
                         </div>
                     }
 
-                
                     <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
-                    SelectionMode="DataGridSelectionMode.Multiple"
-                                    Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or"  @bind-Value=@invoices>
+                                    SelectionMode="DataGridSelectionMode.Multiple"
+                                    Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" @bind-Value=@invoices>
+
                        
-                                    
-                      <Template Context="order">
+                        <Template Context="order">
                             <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0;">
 
                                 <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
@@ -116,27 +125,27 @@
                                                     InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
                                                     Value="@(invoices == null || !invoices.Any() ? false : !grid.View.Cast<FacturaMesCasa>().All(i => invoices.Contains(i)) ? null : grid.View.Cast<FacturaMesCasa>().Any(i => invoices.Contains(i)))"
                                                     Change="@(args =>
-                                                {
-                                                    // ✅ 1. Si invoices es null, lo inicializamos
-                                                    if (invoices == null) invoices = new List<FacturaMesCasa>();
+                                                                                {
+                                                                                    // ✅ 1. Si invoices es null, lo inicializamos
+                                                                                    if (invoices == null) invoices = new List<FacturaMesCasa>();
 
-                                                    var visibles = grid.View.Cast<FacturaMesCasa>().ToList();
+                                                                                    var visibles = grid.View.Cast<FacturaMesCasa>().ToList();
 
-                                                    if (args == true)
-                                                    {
-                                                        foreach (var item in visibles)
-                                                        {
-                                                            if (!invoices.Contains(item)) invoices.Add(item);
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        foreach (var item in visibles)
-                                                        {
-                                                            invoices.Remove(item);
-                                                        }
-                                                    }
-                                                })" />
+                                                                                    if (args == true)
+                                                                                    {
+                                                                                        foreach (var item in visibles)
+                                                                                        {
+                                                                                            if (!invoices.Contains(item)) invoices.Add(item);
+                                                                                        }
+                                                                                    }
+                                                                                    else
+                                                                                    {
+                                                                                        foreach (var item in visibles)
+                                                                                        {
+                                                                                            invoices.Remove(item);
+                                                                                        }
+                                                                                    }
+                                                                                })" />
                                 </HeaderTemplate>
                                 <Template Context="data">
                                     <RadzenCheckBox TabIndex="-1" TriState="false"
@@ -598,7 +607,7 @@
         var prop = rates.GetType().GetProperty(Moneda);
 
         var tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
-        var montototal = invoices.Sum(x =>x.MontoTotal);
+        var montototal = invoices.Sum(x => x.MontoTotal);
         var montoBs = montototal * tasa;
         // 1. Pasamos la cantidad de recibos como parámetro
         var parametros = new Dictionary<string, object>
@@ -619,24 +628,24 @@
 
         try
         {
-          List<Payments> pagos = new List<Payments>();
-          // 4. Aquí ya tienes la referencia en la variable\
-          string refTexto = referenciaIngresada.ToString();
-          foreach (var recibo in invoices)
-          {
-              Payments pago = new Payments();
-              // 4. Aquí ya tienes la referencia en la variable\
-              pago.Referencia = refTexto;
-              pago.Monto = recibo.MontoTotal;
-              pago.MontoBs = recibo.MontoTotal * tasa;
-              pago.FacturaMesCasaId = recibo.Id;
-              pagos.Add(pago);
-          }
+            List<Payments> pagos = new List<Payments>();
+            // 4. Aquí ya tienes la referencia en la variable\
+            string refTexto = referenciaIngresada.ToString();
+            foreach (var recibo in invoices)
+            {
+                Payments pago = new Payments();
+                // 4. Aquí ya tienes la referencia en la variable\
+                pago.Referencia = refTexto;
+                pago.Monto = recibo.MontoTotal;
+                pago.MontoBs = recibo.MontoTotal * tasa;
+                pago.FacturaMesCasaId = recibo.Id;
+                pagos.Add(pago);
+            }
 
-           var result = await FacturaMesCasaRepository.RegistrarMultiplesPagoFactura(pagos);
-           // await FacturaMesCasaRepository.SaveChangesAsync();
-           if (result)
-           {
+            var result = await FacturaMesCasaRepository.RegistrarMultiplesPagoFactura(pagos);
+            // await FacturaMesCasaRepository.SaveChangesAsync();
+            if (result)
+            {
                 NotificationService.Notify(new NotificationMessage
                 {
                     Severity = NotificationSeverity.Success,
@@ -646,9 +655,9 @@
                 });
             }
 
-           await LoadData();
-           invoices = null; // Limpiar selección
-           StateHasChanged();
+            await LoadData();
+            invoices = null; // Limpiar selección
+            StateHasChanged();
         }
         catch (Exception ex)
         {
