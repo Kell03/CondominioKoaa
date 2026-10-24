@@ -10,6 +10,7 @@
 
 using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
+using Condominio.Web.Components.Dialogs;
 using Radzen;
 using Radzen.Blazor;
 
@@ -25,7 +26,9 @@ namespace Condominio.Web.Components.SubPages
         private IList<Users> selectedEmployees = new List<Users>();
         private bool allowRowSelectOnRowClick = true;
         private bool isAdmin = false;
-
+        private int anioSeleccionado = DateTime.Now.Year;
+        private List<int> monthsSelected =new List<int>();
+        List<Payments> paymentsList = new List<Payments>();
         private List<string> roles = new List<string>
     {
         "Administrador",
@@ -66,12 +69,12 @@ namespace Condominio.Web.Components.SubPages
 
           
             // 3. Traes los pagos
-            List<Payments> pagos = await PaymentRepository.GetAllPaymentFacturaAsync();
+             paymentsList = await PaymentRepository.GetAllPaymentFacturaAsync();
 
             // 4. Filtro de pagos (asegurando que FacturaMesCasa no sea null)
-            var payments = pagos
-                .Where(x => x.FacturaMesCasa != null)
-                .Select(x => x.FacturaMesCasa.HouseId)
+            var payments = paymentsList
+                .Where(x => x.FacturaMesCasa != null && x.Estado == "Pendiente")
+                .Select(x => x.FacturaMesCasa.HouseId  )
                 .Distinct()
                 .ToList();
 
@@ -114,11 +117,85 @@ namespace Condominio.Web.Components.SubPages
         }
 
 
-       
 
 
 
-       
+
+        private async Task AbrirDialogo()
+        {
+            if (selectedEmployees == null || !selectedEmployees.Any()) return;
+
+            // Abrimos el nuevo diálogo
+            var resultado = await DialogService.OpenAsync<DialogoConfirmacionFacturaMulti>(
+                "Confirmar Creación",
+                null,
+                new DialogOptions { Width = "400px" });
+
+            // Si el usuario le dio Confirmar y el resultado no es nulo...
+            if (resultado is DialogoConfirmacionFacturaMulti.FacturaParams parametros)
+            {
+                anioSeleccionado = parametros.Anio;
+                monthsSelected = parametros.MesesSeleccionados.ToList();
+
+
+                var casasSeleccionadas = selectedEmployees
+       .Where(x => x.HouseId.HasValue)
+       .Select(x => x.HouseId.Value)
+       .ToList();
+
+                // ✅ 2. Hacemos el filtro de pagos de forma limpia y segura
+                List<Payments> paymentsForConfirmationList = paymentsList
+                    .Where(x =>
+                        x.FacturaMesCasa != null && // Validar que no sea null
+                        casasSeleccionadas.Contains(x.FacturaMesCasa.HouseId) &&
+                        x.FacturaMesCasa.FacturaMes != null &&
+                        x.FacturaMesCasa.FacturaMes.Year == anioSeleccionado &&
+                        monthsSelected.Contains(x.FacturaMesCasa.FacturaMes.Mes)
+                    )
+                    .ToList();
+
+                // (Opcional) Verificar si encontró algo
+                if (!paymentsForConfirmationList.Any())
+                {
+                    NotificationService.Notify(NotificationSeverity.Warning, "Sin resultados", "No se encontraron pagos para los usuarios y meses seleccionados.");
+                    return;
+                }
+
+                bool exito = await FacturaMesCasaRepository.MasiveConfirmPayment(paymentsForConfirmationList);
+
+                if (exito)
+                {
+                    // Notificación de éxito
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Pagos Confirmados",
+                        Detail = $"Se han confirmado {paymentsForConfirmationList.Count} pagos correctamente.",
+                        Duration = 3000 // 3 segundos
+                    });
+                }
+                else
+                {
+                    // Notificación de error
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Error al confirmar",
+                        Detail = "No se pudieron confirmar los pagos. Intente de nuevo.",
+                        Duration = 5000 // 5 segundos para que el usuario pueda leerlo
+                    });
+                }
+                await LoadUsers();
+                selectedEmployees.Clear();
+                anioSeleccionado = DateTime.Now.Year;
+                monthsSelected.Clear();
+
+                StateHasChanged();                // Aquí puedes hacer lo que necesites con el año y los meses.
+                // Ejemplo: Console.WriteLine($"Año: {anioSeleccionado}, Meses: {string.Join(",", mesesSeleccionados)}");
+
+                // await HacerMagiaConLosDatos(anioSeleccionado, mesesSeleccionados, selectedEmployees);
+            }
+        }
 
 
 

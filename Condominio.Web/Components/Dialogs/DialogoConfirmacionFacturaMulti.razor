@@ -1,0 +1,82 @@
+﻿@using Condominio.Domain.Entities
+@inject Radzen.DialogService DialogService
+
+<RadzenTemplateForm TItem="FacturaParams" Data="@Parametros" Submit="@Guardar">
+    <RadzenStack Gap="1rem" Style="padding: 10px;">
+
+        <RadzenText TextStyle="TextStyle.H6">Seleccionar Fechas</RadzenText>
+
+        <!-- ✅ CAMPO AÑO -->
+        <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+            <RadzenLabel Text="Año" Component="YearInput">
+                Año <span style="color: red;">*</span>
+            </RadzenLabel>
+            <RadzenNumeric Name="YearInput" @bind-Value="Parametros.Anio" TValue="int" Min="2020" Max="2100" Style="width: 100%;" />
+            <RadzenRequiredValidator Component="YearInput" Text="El año es requerido" />
+        </RadzenStack>
+
+        <!-- ✅ CAMPO MESES MULTISELECT -->
+        <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
+            <RadzenLabel Text="Meses a Facturar" Component="MesesInput">
+                Meses (Puedes elegir varios) <span style="color: red;">*</span>
+            </RadzenLabel>
+            <RadzenListBox Name="MesesInput"
+                           @bind-Value="Parametros.MesesSeleccionados"
+                           Data="@MesesDisponibles"
+                           TextProperty="Nombre"
+                           ValueProperty="Numero"
+                           Multiple="true"
+                           Style="width: 100%; height: 200px;" />
+            <RadzenRequiredValidator Component="MesesInput" Text="Selecciona al menos un mes" />
+        </RadzenStack>
+
+        <!-- BOTONES -->
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="@(() => DialogService.Close(null))" />
+            <RadzenButton Text="Confirmar" ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Success" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    // Propiedad para recibir los datos
+    public class FacturaParams
+    {
+        public int Anio { get; set; } = DateTime.Now.Year;
+        public IEnumerable<int>? MesesSeleccionados { get; set; }
+    }
+
+    private FacturaParams Parametros = new();
+
+    // Lista de meses con su número y nombre
+    private List<MesItem> MesesDisponibles = new()
+    {
+        new MesItem { Numero = 1, Nombre = "Enero" },
+        new MesItem { Numero = 2, Nombre = "Febrero" },
+        new MesItem { Numero = 3, Nombre = "Marzo" },
+        new MesItem { Numero = 4, Nombre = "Abril" },
+        new MesItem { Numero = 5, Nombre = "Mayo" },
+        new MesItem { Numero = 6, Nombre = "Junio" },
+        new MesItem { Numero = 7, Nombre = "Julio" },
+        new MesItem { Numero = 8, Nombre = "Agosto" },
+        new MesItem { Numero = 9, Nombre = "Septiembre" },
+        new MesItem { Numero = 10, Nombre = "Octubre" },
+        new MesItem { Numero = 11, Nombre = "Noviembre" },
+        new MesItem { Numero = 12, Nombre = "Diciembre" }
+    };
+
+    private void Guardar()
+    {
+        // Si eligió meses, cerramos el diálogo devolviendo los parámetros
+        if (Parametros.MesesSeleccionados != null && Parametros.MesesSeleccionados.Any())
+        {
+            DialogService.Close(Parametros);
+        }
+    }
+
+    public class MesItem
+    {
+        public int Numero { get; set; }
+        public string Nombre { get; set; } = "";
+    }
+}

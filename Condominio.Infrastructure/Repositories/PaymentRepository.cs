@@ -22,7 +22,7 @@ namespace Condominio.Infrastructure.Repositories
 
         public  async Task<List<Payments>> GetAllPaymentFacturaAsync()
         {
-            return await _dbSet.Where(x => x.FacturaMesCasaId > 0).Include(x => x.FacturaMesCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            return await _dbSet.Where(x => x.FacturaMesCasaId > 0).Include(x => x.FacturaMesCasa).ThenInclude(x => x.FacturaMes).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
     }
 }

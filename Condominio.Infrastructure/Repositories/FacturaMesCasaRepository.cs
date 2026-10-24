@@ -1,7 +1,9 @@
 ﻿using Condominio.Domain.DB;
 using Condominio.Domain.Entities;
 using Condominio.Domain.Interfaces;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -35,6 +37,10 @@ namespace Condominio.Infrastructure.Repositories
                         join user in _context.Users on house.Id equals user.HouseId into ownerGroup
                         from owner in ownerGroup.DefaultIfEmpty()
                         join payments in _context.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
+
+                        // 🔥 1. AGREGAMOS EL JOIN A FACTURAMES
+                        join facturaMes in _context.FacturaMes on factura.FacturaMesId equals facturaMes.Id
+
                         select new FacturaMesCasa
                         {
                             Id = factura.Id,
@@ -49,13 +55,19 @@ namespace Condominio.Infrastructure.Repositories
                             CreatedAt = factura.CreatedAt,
                             UpdatedAt = factura.UpdatedAt,
                             House = house,
-                            FacturaMes = factura.FacturaMes,
+
+                            // 🔥 2. ASIGNAMOS LA ENTIDAD QUE ACABAMOS DE TRAER EN EL JOIN
+                            FacturaMes = facturaMes,
+
                             Payments = paymentGroup.ToList(),
                             User = owner
                         };
 
             // ✅ Incluir hijos
-            var result = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
+            var result = await query
+                .OrderByDescending(x => x.FacturaMes.Year)
+                .ThenByDescending(x => x.FacturaMes.Mes)
+                .ToListAsync();
 
             // ✅ Cargar hijos por separado (1 consulta adicional)
             var facturaIds = result.Select(x => x.FacturaMesId).Distinct().ToList();
@@ -67,9 +79,13 @@ namespace Condominio.Infrastructure.Repositories
 
                 foreach (var factura in result)
                 {
-                    factura.FacturaMes.FacturaMesHijos = hijos
-                        .Where(h => h.FacturaMesId == factura.FacturaMesId)
-                        .ToList();
+                    // ✅ Validamos que FacturaMes no sea nulo para evitar NullReferenceException
+                    if (factura.FacturaMes != null)
+                    {
+                        factura.FacturaMes.FacturaMesHijos = hijos
+                            .Where(h => h.FacturaMesId == factura.FacturaMesId)
+                            .ToList();
+                    }
                 }
             }
 
@@ -82,7 +98,10 @@ namespace Condominio.Infrastructure.Repositories
             _context.ChangeTracker.Clear();
 
             var idCasa = await _context.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
-            return await _dbSet.Include(x => x.House).Include(x => x.FacturaMes).ThenInclude(x => x.FacturaMesHijos).Where(x => x.House.Id == idCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            return await _dbSet.Include(x => x.House).Include(x => x.FacturaMes).ThenInclude(x => x.FacturaMesHijos)
+                .ThenInclude(x => x.CategoriaGasto).Where(x => x.House.Id == idCasa)
+                .OrderByDescending(x => x.FacturaMes.Year)
+                .ThenByDescending(x => x.FacturaMes.Mes).ToListAsync();
         }
 
 
@@ -272,6 +291,7 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
+       
         public async Task<bool> ConfirmPayment(Payments payment)
         {
             // ✅ INICIAR TRANSACCIÓN
@@ -280,8 +300,93 @@ namespace Condominio.Infrastructure.Repositories
             try
             {
 
+                int usuarioId = await PaymentConfirm(payment, transaction);
+
+
+                if(usuarioId > 0)
+                {
+                    await transaction.CommitAsync();
+
+
+                    await _notificacionService.EnviarNotificacionAsync(usuarioId);
+
+                    return true; // Éxito
+
+                }
+                else
+                {
+                    throw new Exception($"Falló al confirmar");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
+                await transaction.RollbackAsync();
+
+                // Opcional: guardar el error en un log
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+
+                return false; // Falló
+            }
+        }
+
+
+
+        public async Task<bool> MasiveConfirmPayment(List<Payments> payments)
+        {
+            if (payments == null || !payments.Any()) return false;
+
+            // ✅ 1. Iniciar transacción UNA SOLA VEZ
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var usuariosA_Notificar = new List<int>();
+
+            try
+            {
+                // ✅ 2. Recorrer TODOS los pagos
+                foreach (var payment in payments)
+                {
+                    int usuarioId = await PaymentConfirm(payment, transaction);
+
+                    if (usuarioId > 0)
+                    {
+                        usuariosA_Notificar.Add(usuarioId);
+                    }
+                    else
+                    {
+                        // Si uno falla, lanzamos la excepción para abortar TODO
+                        throw new Exception($"Falló al confirmar el pago con ID {payment.Id}");
+                    }
+                }
+
+                // ✅ 3. Si el bucle termina sin errores, hacemos el Commit GLOBAL
+                await transaction.CommitAsync();
+
+                // ✅ 4. Enviamos las notificaciones DESPUÉS del commit exitoso
+                foreach (var userId in usuariosA_Notificar.Distinct())
+                {
+                    await _notificacionService.EnviarNotificacionAsync(userId);
+                }
+
+                return true; // Todo el lote fue exitoso
+            }
+            catch (Exception ex)
+            {
+                // ❌ 5. Si algo falló, hacemos un único Rollback GLOBAL
+                await transaction.RollbackAsync();
+                Console.WriteLine($"❌ Error en lote masivo, se revirtió todo: {ex.Message}");
+                return false;
+            }
+        }
+
+        private async Task<int> PaymentConfirm(Payments payment, IDbContextTransaction transaction)
+        {
+
+            try
+            {
                 var facturaMesCasa = await _context.FacturaMesCasa
-                 .FirstOrDefaultAsync(x => x.Id == payment.FacturaMesCasaId);
+              .FirstOrDefaultAsync(x => x.Id == payment.FacturaMesCasaId);
 
                 if (facturaMesCasa == null)
                     throw new Exception("Factura no encontrada");
@@ -329,14 +434,14 @@ namespace Condominio.Infrastructure.Repositories
 
                 _context.FacturaMes.Update(factura);
 
-              await _movimientoRepo.SaveMovimiento(
-                  monto: payment.Monto,
-                  montoBs: payment.MontoBs,
-                  tasa: payment.Tasa,
-                  idCasa: facturaMesCasa.HouseId,
-                  factura: factura,
-                  cuota: null
-              );
+                await _movimientoRepo.SaveMovimiento(
+                    monto: payment.Monto,
+                    montoBs: payment.MontoBs,
+                    tasa: payment.Tasa,
+                    idCasa: facturaMesCasa.HouseId,
+                    factura: factura,
+                    cuota: null
+                );
 
                 var usuario = await _context.Users
         .AsNoTracking()
@@ -352,25 +457,13 @@ namespace Condominio.Infrastructure.Repositories
                 });
 
                 await _context.SaveChangesAsync();
-
-                // ✅ CONFIRMAR TRANSACCIÓN
-                await transaction.CommitAsync();
-
-
-                await _notificacionService.EnviarNotificacionAsync(usuario.Id);
-
-                return true; // Éxito
+                return usuario.Id;
             }
             catch (Exception ex)
             {
-                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
-                await transaction.RollbackAsync();
-
-                // Opcional: guardar el error en un log
-                Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return false; // Falló
+                return 0;
             }
+
         }
 
     }

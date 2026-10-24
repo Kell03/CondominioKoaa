@@ -54,7 +54,7 @@
                 <RadzenTabsItem Text="Lista">
 
                     <div style="margin-bottom: 15px; display: flex; justify-content: flex-start;">
-                        <RadzenButton Text="Pagar por Lote"
+                        <RadzenButton Text="Confirmar por Lote"
                                       Icon="playlist_add_check"
                                       ButtonStyle="ButtonStyle.Success"
                                       Size="ButtonSize.Small"
@@ -92,27 +92,47 @@
 
                        
                         <Template Context="order">
-                            <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0;">
+                            <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0; width: 80%; box-sizing: border-box; overflow: hidden;">
 
                                 <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
                                     Detalle de Factura #@order.FacturaMes.Id
                                 </RadzenText>
-                                <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Style="background: #b8c6d9; border-radius: 6px;" Data="@order.FacturaMes.FacturaMesHijos">
+
+                                <!-- ✅ EL GRID ANIDADO AHORA USA 100% DE ANCHO -->
+                                <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true"
+                                                Style="background: #b8c6d9; border-radius: 6px; width: 80%;"
+                                                Data="@order.FacturaMes.FacturaMesHijos">
                                     <Columns>
-                                        <RadzenDataGridColumn Property="FacturaMesCasa.FacturaMes.FacturaMesHijos.Motivo" Title="Motivo" />
-                                        <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="120px">
+                                        <!-- ✅ Concepto ocupa el 65% -->
+                                        <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Concepto" Width="65%">
                                             <Template Context="item">
-                                                @($"{item.Monto} $")
+                                                <div style="white-space: normal; font-size: 13px;">
+                                                    @(item.CategoriaGasto != null
+                                                        ? item.CategoriaGasto.Nombre + (!string.IsNullOrWhiteSpace(item.Motivo) ? " - " + item.Motivo : "")
+                                                        : (!string.IsNullOrWhiteSpace(item.Motivo) ? item.Motivo : "-"))
+                                                </div>
                                             </Template>
                                         </RadzenDataGridColumn>
 
+                                        <!-- ✅ Monto ocupa el 35% y se alinea a la derecha -->
+                                        <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="35%" TextAlign="TextAlign.Right">
+                                            <Template Context="item">
+                                                <div style="font-weight: 600; font-size: 13px;">
+                                                    @($"{item.Monto:N2} $")
+                                                </div>
+                                            </Template>
+                                        </RadzenDataGridColumn>
                                     </Columns>
                                 </RadzenDataGrid>
-                                <RadzenText TextStyle="TextStyle.Body1" Style="margin-top: 10px; font-weight: bold; text-align: right; color: #333; border-top: 1px solid #ddd; padding-top: 8px;">
-                                    Total: @order.FacturaMes.FacturaMesHijos.Sum(h => h.Monto) $
-                                </RadzenText>
-                            </RadzenCard>
 
+                                <!-- ✅ TOTAL ADAPTADO -->
+                                <div style="display: flex; justify-content: flex-end; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 8px;">
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: bold; color: #333; margin: 0; padding-right: 15px;">
+                                        Total: @order.FacturaMes.FacturaMesHijos.Sum(h => h.Monto).ToString("N2") $
+                                    </RadzenText>
+                                </div>
+
+                            </RadzenCard>
                         </Template>
                         <Columns>
 
@@ -123,38 +143,60 @@
                                 <HeaderTemplate>
                                     <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
                                                     InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
-                                                    Value="@(invoices == null || !invoices.Any() ? false : !grid.View.Cast<FacturaMesCasa>().All(i => invoices.Contains(i)) ? null : grid.View.Cast<FacturaMesCasa>().Any(i => invoices.Contains(i)))"
+                                                    Value="@(invoices == null || !invoices.Any() ? false : !grid.View.Cast<FacturaMesCasa>().Where(x => x.SaldoPendiente > 0).All(i => invoices.Contains(i)) ? null : grid.View.Cast<FacturaMesCasa>().Where(x => x.SaldoPendiente > 0).Any(i => invoices.Contains(i)))"
                                                     Change="@(args =>
-                                                                                {
-                                                                                    // ✅ 1. Si invoices es null, lo inicializamos
-                                                                                    if (invoices == null) invoices = new List<FacturaMesCasa>();
+                                                        {
+                                                            if (invoices == null) invoices = new List<FacturaMesCasa>();
 
-                                                                                    var visibles = grid.View.Cast<FacturaMesCasa>().ToList();
+                                                            // ✅ FILTRAMOS: Solo tomamos las que tienen saldo pendiente
+                                                            var visiblesParaPagar = grid.View.Cast<FacturaMesCasa>()
+                                                                                        .Where(x => x.SaldoPendiente > 0)
+                                                                                        .ToList();
 
-                                                                                    if (args == true)
-                                                                                    {
-                                                                                        foreach (var item in visibles)
-                                                                                        {
-                                                                                            if (!invoices.Contains(item)) invoices.Add(item);
-                                                                                        }
-                                                                                    }
-                                                                                    else
-                                                                                    {
-                                                                                        foreach (var item in visibles)
-                                                                                        {
-                                                                                            invoices.Remove(item);
-                                                                                        }
-                                                                                    }
-                                                                                })" />
+                                                            if (args == true)
+                                                            {
+                                                                foreach (var item in visiblesParaPagar)
+                                                                {
+                                                                    if (!invoices.Contains(item)) invoices.Add(item);
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                foreach (var item in visiblesParaPagar)
+                                                                {
+                                                                    invoices.Remove(item);
+                                                                }
+                                                            }
+                                                        })" />
                                 </HeaderTemplate>
                                 <Template Context="data">
-                                    <RadzenCheckBox TabIndex="-1" TriState="false"
-                                                    Value="@(invoices != null && invoices.Contains(data))"
-                                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
-                                                    TValue="bool" Change=@(args => { if (!allowRowSelectOnRowClick) { grid.SelectRow(data); } }) />
+                                    @if (data.SaldoPendiente > 0)
+                                    {
+                                        <!-- ✅ Si tiene saldo pendiente, mostramos el checkbox -->
+                                        <RadzenCheckBox TabIndex="-1" TriState="false"
+                                                        Value="@(invoices != null && invoices.Contains(data))"
+                                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
+                                                        TValue="bool"
+                                                        Change=@(args =>
+                                                                {
+                                                                    if (invoices == null) invoices = new List<FacturaMesCasa>();
+                                                                    if (args == true)
+                                                                    {
+                                                                        if (!invoices.Contains(data)) invoices.Add(data);
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        invoices.Remove(data);
+                                                                    }
+                                                                }) />
+                                    }
+                                    else
+                                    {
+                                        <!-- ❌ Si ya está pagada, no mostramos nada (o un check deshabilitado) -->
+                                        <RadzenIcon Icon="check_circle" Style="color: #155724; font-size: 20px;" Tooltip="Ya está pagada" />
+                                    }
                                 </Template>
                             </RadzenDataGridColumn>
-
 
 
                             <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Nro Casa" Width="160px">
@@ -207,23 +249,12 @@
                                     @facturaCasa.SaldoPendiente $
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="FacturaMesCasa"
-                                                  Property="@nameof(FacturaMesCasa.NombreMes)"
-                                                  Title="Mes"
-                                                  Width="auto">
-                                <Template Context="facturaCasa">
-                                    @facturaCasa.NombreMes
-                                </Template>
-                            </RadzenDataGridColumn>
+
 
                             <RadzenDataGridColumn TItem="FacturaMesCasa"
-                                                  Property="@nameof(FacturaMesCasa.FacturaMes.Year)"
-                                                  Title="Año"
-                                                  Width="auto">
-                                <Template Context="facturaCasa">
-                                    @facturaCasa.FacturaMes.Year
-                                </Template>
-                            </RadzenDataGridColumn>
+                                                  Property="@nameof(FacturaMesCasa.PeriodoCompleto)"
+                                                  Title="Período"
+                                                  Width="150px" />
 
                     
                             <RadzenDataGridColumn TItem="FacturaMesCasa"

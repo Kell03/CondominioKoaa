@@ -4,18 +4,20 @@
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
+@using Condominio.Web.Components.Dialogs
 @using Microsoft.AspNetCore.Authorization
 @inject UserRepository UserRepository
 @inject PaymentRepository PaymentRepository
 
 @layout EmptyLayout
-
+@inject FacturaMesCasaRepository FacturaMesCasaRepository
 @inject IGenericRepository<Houses> HouseRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @inject AppState AppState
 @inject DialogService DialogService
 @inject NavigationManager NavigationManager
+@inject Radzen.NotificationService NotificationService
 @rendermode InteractiveServer
 
 
@@ -30,6 +32,23 @@
 
 
  
+
+
+    @if (selectedEmployees != null && selectedEmployees.Any())
+    {
+        <div style="margin-bottom: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #007bff; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <RadzenText TextStyle="TextStyle.Body1" Style="margin: 0; color: #0056b3; font-weight: 500;">
+                <RadzenIcon Icon="check_circle" Style="vertical-align: middle; margin-right: 5px;" />
+                Has seleccionado <strong>@selectedEmployees.Count</strong> usuarios.
+            </RadzenText>
+
+            <RadzenButton Text="Confirmar Seleccionados"
+                          Icon="done_all"
+                          ButtonStyle="ButtonStyle.Success"
+                          Size="ButtonSize.Small"
+                          Click="@AbrirDialogo" />
+        </div>
+    }
     <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
                 Data="@users" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@selectedEmployees
                 >
@@ -117,4 +136,7 @@
     {
         NavigationManager.NavigateTo("/recibofactura");
     }
+
+
+
 }

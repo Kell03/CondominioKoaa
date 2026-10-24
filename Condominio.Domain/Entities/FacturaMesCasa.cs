@@ -45,6 +45,11 @@ namespace Condominio.Domain.Entities
         [NotMapped]
         public int Year => FacturaMes?.Year ?? 0;
 
+        [NotMapped]
+        public string PeriodoCompleto => FacturaMes != null
+    ? $"{FacturaMes.NombreMes} {FacturaMes.Year}"
+    : "-";
+
         private string ObtenerNombreMes(int mes)
         {
             string[] meses = { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",

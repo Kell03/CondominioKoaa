@@ -86,21 +86,26 @@
                                 <HeaderTemplate>
                                     <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
                                                     InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
-                                                    Value="@(cuotas == null || !cuotas.Any() ? false : !grid.View.Cast<CuotaEspecialCasa>().All(i => cuotas.Contains(i)) ? null : grid.View.Cast<CuotaEspecialCasa>().Any(i => cuotas.Contains(i)))"
+                                                    Value="@(cuotas == null || !cuotas.Any() ? false : !grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).All(i => cuotas.Contains(i)) ? null : grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).Any(i => cuotas.Contains(i)))"
                                                     Change="@(args =>
                                                         {
                                                             if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
-                                                            var visibles = grid.View.Cast<CuotaEspecialCasa>().ToList();
+
+                                                            // ✅ FILTRAMOS: Solo tomamos las cuotas que tienen saldo pendiente
+                                                            var visiblesParaPagar = grid.View.Cast<CuotaEspecialCasa>()
+                                                                                        .Where(x => x.SaldoPendiente > 0)
+                                                                                        .ToList();
+
                                                             if (args == true)
                                                             {
-                                                                foreach (var item in visibles)
+                                                                foreach (var item in visiblesParaPagar)
                                                                 {
                                                                     if (!cuotas.Contains(item)) cuotas.Add(item);
                                                                 }
                                                             }
                                                             else
                                                             {
-                                                                foreach (var item in visibles)
+                                                                foreach (var item in visiblesParaPagar)
                                                                 {
                                                                     cuotas.Remove(item);
                                                                 }
@@ -108,25 +113,32 @@
                                                         })" />
                                 </HeaderTemplate>
                                 <Template Context="data">
-                                    <RadzenCheckBox TabIndex="-1" TriState="false"
-                                                    Value="@(cuotas != null && cuotas.Contains(data))"
-                                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
-                                                    TValue="bool"
-                                                    Change="@(args =>
-                                                        {
-                                                            // ✅ 1. Inicializamos la lista si es null
-                                                            if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
+                                    @if (data.SaldoPendiente > 0)
+                                    {
+                                        <!-- ✅ Si tiene saldo pendiente, mostramos el checkbox -->
+                                        <RadzenCheckBox TabIndex="-1" TriState="false"
+                                                        Value="@(cuotas != null && cuotas.Contains(data))"
+                                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
+                                                        TValue="bool"
+                                                        Change="@(args =>
+                                                                {
+                                                                    if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
 
-                                                            // ✅ 2. Agregamos o quitamos el item de la lista dependiendo del clic
-                                                            if (args == true)
-                                                            {
-                                                                if (!cuotas.Contains(data)) cuotas.Add(data);
-                                                            }
-                                                            else
-                                                            {
-                                                                cuotas.Remove(data);
-                                                            }
-                                                        })" />
+                                                                    if (args == true)
+                                                                    {
+                                                                        if (!cuotas.Contains(data)) cuotas.Add(data);
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        cuotas.Remove(data);
+                                                                    }
+                                                                })" />
+                                    }
+                                    else
+                                    {
+                                        <!-- ❌ Si ya está pagada (SaldoPendiente = 0), mostramos el check verde -->
+                                        <RadzenIcon Icon="check_circle" Style="color: #155724; font-size: 20px;" Tooltip="Ya está pagada" />
+                                    }
                                 </Template>
                             </RadzenDataGridColumn>
 
