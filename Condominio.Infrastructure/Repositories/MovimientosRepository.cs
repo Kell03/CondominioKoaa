@@ -30,6 +30,14 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
+        public  async Task<decimal> GettavailablefundsAsync()
+        {
+            // ✅ Sumamos directamente en la BD (mucho más rápido) y devolvemos el resultado
+            return await _context.Movimientos
+                .SumAsync(x => x.IdGasto == null ? (x.MontoBs ?? 0) : -(x.MontoBs ?? 0));
+        }
+
+
         public async Task SaveMovimiento(decimal monto, decimal? montoBs, decimal? tasa, FacturaMes? factura = null, CuotaEspecial? cuota = null, int? idCasa = null, Gasto? gasto = null)
         {
             try

@@ -14,6 +14,9 @@
 @inject Radzen.DialogService DialogService
 @inject BcvScraperService BcvScraper
 @inject ConfiguracionMonedaRepository MonedaRepository
+@inject MovimientosRepository MovimientoRepository
+@inject Radzen.NotificationService NotificationService
+
 @inject AppState AppState
 @rendermode InteractiveServer
 
@@ -30,7 +33,7 @@
             </RadzenText>
         </RadzenCard>
 
-        <RadzenTabs @bind-SelectedIndex=@selectedIndex>
+        <RadzenTabs @bind-SelectedIndex=@selectedIndex  Change="@OnTabChanged">
             <Tabs>
           
 
@@ -246,7 +249,7 @@
             
                 </RadzenTabsItem>
 
-                <RadzenTabsItem Text="Formulario" Disabled="true">
+                <RadzenTabsItem Text="Formulario" Disabled="false">
 
 
 

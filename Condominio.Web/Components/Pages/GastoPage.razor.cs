@@ -1,5 +1,6 @@
 using Condominio.Application.Services;
 using Condominio.Domain.Entities;
+using Condominio.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Radzen;
 using Radzen.Blazor;
@@ -25,6 +26,7 @@ namespace Condominio.Web.Components.Pages
         private bool _isFormattingusd = false;
         private bool _isFormatting = false;
 
+        private decimal fondoDisponible = 0;
         private IQueryable<Gasto> items;
         private BcvRates rates;
         private bool cargandoRates = true;
@@ -60,6 +62,7 @@ namespace Condominio.Web.Components.Pages
             var monedas = await MonedaRepository.GetAllAsync();
             Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
 
+            var fondoBs = await MovimientoRepository.GettavailablefundsAsync();
             // 3. Esperamos que el scraper termine
             try
             {
@@ -68,6 +71,13 @@ namespace Condominio.Web.Components.Pages
                 {
                     Console.WriteLine("⚠️ rates es null, el BCV no respondió.");
                 }
+                else
+                {
+                    var prop = rates.GetType().GetProperty(Moneda);
+                    var tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+                    fondoDisponible = fondoBs * tasa;
+                }
+
             }
             catch (Exception ex)
             {
@@ -89,6 +99,7 @@ namespace Condominio.Web.Components.Pages
                     // Si tienes SaveChanges en el repositorio
                     await LoadUsers(); // Recargar la lista
                     selectedIndex = 0;
+
                     selectedItem = new Gasto();
 
                     StateHasChanged();
@@ -96,15 +107,36 @@ namespace Condominio.Web.Components.Pages
                 }
                 else
                 {
+                    if (fondoDisponible < selectedItem.MontoBs)
+                    {
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Erroal, // Color amarillo/naranja
+                            Summary = "Fondos Insuficientes",
+                            Detail = $"No cuentas con los fondos disponibles para realizar esta transacción. Saldo actual: {fondoDisponible:N2} Bs.",
+                            Duration = 4000 // 4 segundos para que le dé tiempo de leer
+                        });
 
 
-                    await gastosRepository.AddAsync(selectedItem);
-                    // Si tienes SaveChanges en el repositorio
-                    await LoadUsers(); // Recargar la lista
-                    selectedIndex = 0;
-                    selectedItem = new Gasto();
-
-                    StateHasChanged();
+                    }
+                    else
+                    {
+                        await gastosRepository.AddAsync(selectedItem);
+                        // Si tienes SaveChanges en el repositorio
+                        await LoadUsers(); // Recargar la lista
+                        selectedIndex = 0;
+                        selectedItem = new Gasto();
+                        _montoUsdStr = "0,00";
+                        _montoBsStr = "0,00";
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Success,
+                            Summary = "Gasto Guardado",
+                            Detail = "La transacción se ha registrado correctamente.",
+                            Duration = 3000
+                        });
+                        StateHasChanged();
+                    }
                 }
             }
             catch (Exception ex)
@@ -415,5 +447,32 @@ namespace Condominio.Web.Components.Pages
             StateHasChanged();
         }
 
+
+        private async Task OnTabChanged(int index)
+        {
+            // Suponiendo que "Formulario" es el índice 1
+            if (index == 2)
+            {
+                await PagarOtro();
+            }
+        }
+
+        private async Task PagarOtro()
+        {
+
+
+            selectedItem = new Gasto();
+            selectedItem.FechaPago = DateTime.Today;
+            var prop = rates.GetType().GetProperty(Moneda);
+            selectedItem.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+            origenSeleccionado = "Otro";
+
+            selectedIndex = 2;
+            StateHasChanged();
+        }
+
+
     }
+
+
 }
