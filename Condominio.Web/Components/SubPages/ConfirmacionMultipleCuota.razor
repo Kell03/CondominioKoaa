@@ -1,0 +1,141 @@
+﻿@page "/recibocuotaespecial/confirmar"
+@attribute [Authorize]
+@using Condominio.Application.Services
+@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@using Condominio.Infrastructure.Repositories
+@using Condominio.Web.Components.Dialogs
+@using Microsoft.AspNetCore.Authorization
+@inject UserRepository UserRepository
+@inject PaymentRepository PaymentRepository
+
+@layout EmptyLayout
+@inject CuotaEspecialCasaRepository CuotaCasaRepository
+@inject IGenericRepository<Houses> HouseRepository
+@using Radzen.Blazor
+@inject Radzen.DialogService DialogService
+@inject AppState AppState
+@inject DialogService DialogService
+@inject NavigationManager NavigationManager
+@inject Radzen.NotificationService NotificationService
+@rendermode InteractiveServer
+
+
+<RadzenStack Gap="0.5rem" Style="width: 100%; max-width: min(800px, 100%); margin: 0 auto; padding: 16px; box-sizing: border-box;">
+    <RadzenButton Icon="arrow_back"
+                  ButtonStyle="ButtonStyle.Base"
+                  Variant="Variant.Text"
+                  Size="ButtonSize.Large"
+                  Click="@Volver"
+                  aria-label="Volver"
+                  Style="align-self: flex-start;" />
+
+
+ 
+
+
+    @if (selectedEmployees != null && selectedEmployees.Any())
+    {
+        <div style="margin-bottom: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #007bff; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <RadzenText TextStyle="TextStyle.Body1" Style="margin: 0; color: #0056b3; font-weight: 500;">
+                <RadzenIcon Icon="check_circle" Style="vertical-align: middle; margin-right: 5px;" />
+                Has seleccionado <strong>@selectedEmployees.Count</strong> usuarios.
+            </RadzenText>
+
+            <RadzenButton Text="Confirmar Seleccionados"
+                          Icon="done_all"
+                          ButtonStyle="ButtonStyle.Success"
+                          Size="ButtonSize.Small"
+                          Click="@AbrirDialogo" />
+        </div>
+    }
+    <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                    Data="@users" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@selectedEmployees>
+        <Columns>
+            <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                <HeaderTemplate>
+                    <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
+                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
+                                    Value="@(selectedEmployees == null || !selectedEmployees.Any() ? false : !grid.View.Cast<Users>().All(i => selectedEmployees.Contains(i)) ? null : grid.View.Cast<Users>().Any(i => selectedEmployees.Contains(i)))"
+                                    Change="@(args =>
+                                                                                                                {
+                                                                                                                    // ✅ 1. Si invoices es null, lo inicializamos
+                                                                                                                    if (selectedEmployees == null) selectedEmployees = new List<Users>();
+
+                                                                                                                    var visibles = grid.View.Cast<Users>().ToList();
+
+                                                                                                                    if (args == true)
+                                                                                                                    {
+                                                                                                                        foreach (var item in visibles)
+                                                                                                                        {
+                                                                                                                            if (!selectedEmployees.Contains(item)) selectedEmployees.Add(item);
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                    else
+                                                                                                                    {
+                                                                                                                        foreach (var item in visibles)
+                                                                                                                        {
+                                                                                                                            selectedEmployees.Remove(item);
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                })" />
+                </HeaderTemplate>
+                <Template Context="data">
+                    <RadzenCheckBox TabIndex="-1" TriState="false"
+                                    Value="@(selectedEmployees != null && selectedEmployees.Contains(data))"
+                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
+                                    TValue="bool"
+                                    Change="@(args =>
+                                                    {
+                                                        // ✅ Esto es lo que hace que el checkbox individual funcione
+                                                        if (selectedEmployees == null) selectedEmployees = new List<Users>();
+                                                        if (args == true)
+                                                        {
+                                                            if (!selectedEmployees.Contains(data)) selectedEmployees.Add(data);
+                                                        }
+                                                        else
+                                                        {
+                                                            selectedEmployees.Remove(data);
+                                                        }
+                                                    })" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Users.Name)" Title="First Name" Width="160px" />
+            <RadzenDataGridColumn TItem="Users"
+                                  Property="House.Number"
+                                  Title="Nro Casa"
+                                  Width="160px">
+                <Template Context="user">
+                    @user.House?.Number
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn Property="@nameof(Users.Email)" Title="Email" Width="160px" />
+            <RadzenDataGridColumn Property="@nameof(Users.Role)" Title="Rol" Width="200px" />
+
+       
+
+
+        </Columns>
+
+        <EmptyTemplate>
+            <div style="padding: 20px; text-align: center; color: #6c757d;">
+                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                    No hay Usuarios registrados
+                </RadzenText>
+
+            </div>
+        </EmptyTemplate>
+    </RadzenDataGrid>
+
+</RadzenStack>
+
+@code {
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/recibocuotaespecial");
+    }
+
+
+
+}

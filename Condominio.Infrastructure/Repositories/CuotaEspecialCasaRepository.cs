@@ -2,6 +2,7 @@
 using Condominio.Domain.Entities;
 using Condominio.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -271,6 +272,100 @@ namespace Condominio.Infrastructure.Repositories
             try
             {
 
+                int usuarioId = await PaymentConfirm(payment, transaction);
+
+
+                if (usuarioId > 0)
+                {
+                    await transaction.CommitAsync();
+
+
+                    await _notificacionService.EnviarNotificacionAsync(usuarioId);
+
+                    return true; // Éxito
+
+                }
+                else
+                {
+                    throw new Exception($"Falló al confirmar");
+                }
+
+            }
+            catch (Exception ex)
+            {
+                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
+                await transaction.RollbackAsync();
+
+                // Opcional: guardar el error en un log
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+
+                return false; // Falló
+            }
+        }
+
+        public async Task<bool> MasiveConfirmPayment(List<Payments> payments)
+        {
+            // ✅ INICIAR TRANSACCIÓN
+
+            if (payments == null || !payments.Any()) return false;
+
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            var usuariosA_Notificar = new List<int>();
+
+            try
+            {
+
+                foreach (var payment in payments)
+                {
+                    int usuarioId = await PaymentConfirm(payment, transaction);
+
+                    if (usuarioId > 0)
+                    {
+                        usuariosA_Notificar.Add(usuarioId);
+                    }
+                    else
+                    {
+                        // Si uno falla, lanzamos la excepción para abortar TODO
+                        throw new Exception($"Falló al confirmar el pago con ID {payment.Id}");
+                    }
+                }
+
+
+                // ✅ 3. Si el bucle termina sin errores, hacemos el Commit GLOBAL
+                await transaction.CommitAsync();
+
+                // ✅ 4. Enviamos las notificaciones DESPUÉS del commit exitoso
+                foreach (var userId in usuariosA_Notificar.Distinct())
+                {
+                    await _notificacionService.EnviarNotificacionAsync(userId);
+                }
+
+                return true; // Todo el lote fue exitoso
+
+                // 2. ✅ SUMAR el monto recaudado (NO asignar)
+
+            }
+            catch (Exception ex)
+            {
+                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
+                await transaction.RollbackAsync();
+
+                // Opcional: guardar el error en un log
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+
+                return false; // Falló
+            }
+        }
+
+
+
+
+        private async Task<int> PaymentConfirm(Payments payment, IDbContextTransaction transaction)
+        {
+            try
+            {
+
                 var cuotaCasa = await _context.CuotaEspecialCasa.FirstOrDefaultAsync(x => x.Id == payment.CuotaEspecialCasaId);
 
                 if (cuotaCasa == null)
@@ -346,13 +441,8 @@ namespace Condominio.Infrastructure.Repositories
 
                 await _context.SaveChangesAsync();
 
-                // ✅ CONFIRMAR TRANSACCIÓN
-                await transaction.CommitAsync();
 
-                await _notificacionService.EnviarNotificacionAsync(usuario.Id);
-
-
-                return true; // Éxito
+                return usuario.Id;
             }
             catch (Exception ex)
             {
@@ -362,9 +452,8 @@ namespace Condominio.Infrastructure.Repositories
                 // Opcional: guardar el error en un log
                 Console.WriteLine($"Error al guardar: {ex.Message}");
 
-                return false; // Falló
+                return 0; // Falló
             }
         }
-
     }
 }

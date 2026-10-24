@@ -46,6 +46,11 @@ namespace Condominio.Domain.Entities
 
         public ICollection<Payments>? Payments { get; set; }
 
+        public string PeriodoCompleto => CuotaEspecial != null
+? $"{CuotaEspecial.NombreMes} {CuotaEspecial.Year}"
+: "-";
+
+
     }
 
     public static class EstadoCuotaCasa

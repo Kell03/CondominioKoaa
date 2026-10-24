@@ -17,6 +17,7 @@
 @inject AppState AppState
 @inject BcvScraperService BcvScraper
 @inject Radzen.NotificationService NotificationService
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
 
@@ -50,6 +51,14 @@
         <RadzenTabs @bind-SelectedIndex=@selectedIndex>
             <Tabs>
                 <RadzenTabsItem Text="Lista">
+                    <div style="margin-bottom: 15px; display: flex; justify-content: flex-start;">
+                        <RadzenButton Text="Confirmar por Lote"
+                                      Icon="playlist_add_check"
+                                      ButtonStyle="ButtonStyle.Success"
+                                      Size="ButtonSize.Small"
+                                      Click="@(() => NavigationManager.NavigateTo("/recibocuotaespecial/confirmar"))" />
+                    </div>
+
 
                     @if (cuotas != null && cuotas.Count > 1)
                     {
@@ -181,16 +190,11 @@
                                     @cuota.SaldoPendiente $
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Mes" Width="140px">
-                                <Template Context="cuota">
-                                    @cuota.CuotaEspecial.NombreMes
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Año" Width="140px">
-                                <Template Context="cuota">
-                                    @cuota.CuotaEspecial.Year
-                                </Template>
-                            </RadzenDataGridColumn>
+                           
+                            <RadzenDataGridColumn TItem="CuotaEspecialCasa"
+                                                  Property="@nameof(CuotaEspecialCasa.PeriodoCompleto)"
+                                                  Title="Período"
+                                                  Width="150px" />
 
                       
                             <RadzenDataGridColumn TItem="CuotaEspecialCasa"

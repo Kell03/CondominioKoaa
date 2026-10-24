@@ -24,5 +24,11 @@ namespace Condominio.Infrastructure.Repositories
         {
             return await _dbSet.Where(x => x.FacturaMesCasaId > 0).Include(x => x.FacturaMesCasa).ThenInclude(x => x.FacturaMes).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
+
+
+        public async Task<List<Payments>> GetAllPaymentCuotasAsync()
+        {
+            return await _dbSet.Where(x => x.CuotaEspecialCasaId > 0).Include(x => x.CuotaEspecialCasa).ThenInclude(x => x.CuotaEspecial).OrderByDescending(x => x.CreatedAt).ToListAsync();
+        }
     }
 }
