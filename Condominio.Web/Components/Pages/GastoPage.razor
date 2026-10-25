@@ -345,7 +345,7 @@
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.3rem">
                                     <RadzenLabel Text="Motivo" Component="MotivoInput" />
                                     <RadzenTextBox @bind-Value="selectedItem.Motivo"
-                                                   Style="width: 100%;"
+                                                   Style="width: 100%; max-width: 400px;"
                                                    Name="MotivoInput" />
                                     <RadzenRequiredValidator Text="Motivo es requerido"
                                                              Component="MotivoInput"
@@ -399,7 +399,7 @@
                                                Name="MontoRequiredBsInput" />
 
                                 <RadzenRequiredValidator Component="MontoRequiredBsInput" Text="El monto bs es requerido" />
-                                <RadzenNumericRangeValidator Min="0.01" Max="999999.99"
+                                <RadzenNumericRangeValidator Min="0.01" Max="99999999999999.99"
                                                              Component="MontoRequiredBsInput"
                                                              Text="El monto bs debe ser mayor a 0" />
                             </RadzenStack>

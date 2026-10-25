@@ -75,7 +75,7 @@ namespace Condominio.Web.Components.Pages
                 {
                     var prop = rates.GetType().GetProperty(Moneda);
                     var tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
-                    fondoDisponible = fondoBs * tasa;
+                    fondoDisponible = fondoBs / tasa;
                 }
 
             }
@@ -111,7 +111,7 @@ namespace Condominio.Web.Components.Pages
                     {
                         NotificationService.Notify(new NotificationMessage
                         {
-                            Severity = NotificationSeverity.Erroal, // Color amarillo/naranja
+                            Severity = NotificationSeverity.Error, // Color amarillo/naranja
                             Summary = "Fondos Insuficientes",
                             Detail = $"No cuentas con los fondos disponibles para realizar esta transacción. Saldo actual: {fondoDisponible:N2} Bs.",
                             Duration = 4000 // 4 segundos para que le dé tiempo de leer
