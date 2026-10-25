@@ -53,13 +53,16 @@
             <Tabs>
                 <RadzenTabsItem Text="Lista">
 
-                    <div style="margin-bottom: 15px; display: flex; justify-content: flex-start;">
+                    @if(isAdmin)
+                    {
+                        <div style="margin-bottom: 15px; display: flex; justify-content: flex-start;">
                         <RadzenButton Text="Confirmar por Lote"
                                       Icon="playlist_add_check"
                                       ButtonStyle="ButtonStyle.Success"
                                       Size="ButtonSize.Small"
                                       Click="@(() => NavigationManager.NavigateTo("/recibofactura/confirmar"))" />
                     </div>
+                    }
 
                     <!-- ✅ 2. EL CUADRO AZUL SOLO SI HAY SELECCIÓN MÚLTIPLE -->
                     @if (invoices != null && invoices.Count >= 1)

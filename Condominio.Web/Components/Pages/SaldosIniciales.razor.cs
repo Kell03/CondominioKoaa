@@ -1,7 +1,9 @@
+using Condominio.Application.Services;
 using Condominio.Domain.Entities;
 using Condominio.Web.Components.Dialogs;
 using Radzen;
 using Radzen.Blazor;
+using System.Data;
 
 namespace Condominio.Web.Components.Pages
 {
@@ -26,6 +28,10 @@ namespace Condominio.Web.Components.Pages
         private int indiceEditando = -1;
         private List<Houses> casasSeleccionadas = new();
 
+        RadzenDataGrid<FacturaMesCasa> grid;
+        private IList<FacturaMesCasa> invoices = new List<FacturaMesCasa>();
+        IEnumerable<FacturaMesCasa> employees;
+        private IQueryable<FacturaMesCasa> items;
         private void AgregarItem()
         {
             itemEditando = new FacturaMesHijo();
@@ -91,6 +97,19 @@ namespace Condominio.Web.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
+            IEnumerable<FacturaMesCasa> itemList;
+
+            itemList = await FacturaMesCasaRepository.GetAllAsync();
+            itemList = itemList.Where(x => x.FacturaMes.Motivo != null).ToList();
+            items = itemList.AsQueryable();
+            employees = itemList.Any()
+                ? new List<FacturaMesCasa> { itemList.First() }
+                : new List<FacturaMesCasa>();
+
+
+            StateHasChanged();
+
+
             // Si el año está vacío, le ponemos el actual
             if (string.IsNullOrWhiteSpace(yearInput))
             {
@@ -127,23 +146,6 @@ namespace Condominio.Web.Components.Pages
         }
 
 
-
-        private List<object> months = new List<object>
-        {
-            new { Value = 1, Name = "Enero" },
-            new { Value = 2, Name = "Febrero" },
-            new { Value = 3, Name = "Marzo" },
-            new { Value = 4, Name = "Abril" },
-            new { Value = 5, Name = "Mayo" },
-            new { Value = 6, Name = "Junio" },
-            new { Value = 7, Name = "Julio" },
-            new { Value = 8, Name = "Agosto" },
-            new { Value = 9, Name = "Septiembre" },
-            new { Value = 10, Name = "Octubre" },
-            new { Value = 11, Name = "Noviembre" },
-            new { Value = 12, Name = "Diciembre" }
-        };
-
         private List<int> years = new List<int>();
 
 
@@ -158,6 +160,8 @@ namespace Condominio.Web.Components.Pages
 
             await FacturaMesRepository.SaveChangesAsync();
             DialogService.Close(true);
+            selectedIndex = 0;
+            casasSeleccionadas = new();
             await OnInitializedAsync();
             StateHasChanged();
 
@@ -233,6 +237,21 @@ namespace Condominio.Web.Components.Pages
             {
                 casasSeleccionadas = seleccionadas;
                 StateHasChanged(); // Refrescamos la pantalla para que cambie el texto del botón
+            }
+        }
+
+
+
+        void RowRender(RowRenderEventArgs<FacturaMesCasa> args)
+        {
+            args.Expandable = (args.Data.FacturaMes.FacturaMesHijos != null && args.Data.FacturaMes.FacturaMesHijos.Any());
+        }
+
+        void RowExpand(FacturaMesCasa order)
+        {
+            if (order.FacturaMes.FacturaMesHijos == null)
+            {
+                order.FacturaMes.FacturaMesHijos = order.FacturaMes.FacturaMesHijos.ToList();
             }
         }
     }

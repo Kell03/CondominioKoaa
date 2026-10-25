@@ -47,7 +47,7 @@ namespace Condominio.Domain.Entities
 
         [NotMapped]
         public string PeriodoCompleto => FacturaMes != null
-    ? $"{FacturaMes.NombreMes} {FacturaMes.Year}"
+    ? $"{FacturaMes.NombreMesCompleto}"
     : "-";
 
         private string ObtenerNombreMes(int mes)

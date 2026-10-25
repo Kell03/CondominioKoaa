@@ -27,7 +27,7 @@ namespace Condominio.Domain.Entities
         // ✅ PROPIEDAD CALCULADA PARA AÑO (OPCIONAL)
         // ✅ NUEVO: Nombre completo con año
         [NotMapped]
-       public string NombreMesCompleto => !string.IsNullOrEmpty(Motivo)? Motivo : $"{NombreMes} {Year}";
+       public string NombreMesCompleto => !string.IsNullOrEmpty(Motivo)? $"{Motivo} {Year}" : $"{NombreMes} {Year}";
 
         private string ObtenerNombreMes(int mes)
         {
