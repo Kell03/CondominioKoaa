@@ -1,0 +1,109 @@
+﻿@using Condominio.Domain.Entities
+@using Condominio.Domain.Interfaces.Repositories
+@inject Radzen.DialogService DialogService
+@inject IGenericRepository<Houses> HousesRepository
+
+<RadzenStack Gap="1rem" Style="padding: 10px;">
+
+    <!-- Buscador (muy útil si hay muchas casas) -->
+   <RadzenTextBox @bind-Value="filtro"
+                   Placeholder="Buscar por número o calle..."
+                   @oninput="@(args => { filtro = args.Value?.ToString(); FiltrarCasas(); })"
+                   Style="width: 100%;" />
+
+    <RadzenDataGrid @ref="grid" Data="@casasFiltradas" TItem="Houses"
+                    PageSize="8" AllowPaging="true"
+                    Style="height: 350px; width: 100%;">
+        <Columns>
+            <!-- Checkbox del Header (Seleccionar Todos) -->
+            <RadzenDataGridColumn Width="50px" Sortable="false" Filterable="false">
+                <HeaderTemplate>
+                    <RadzenCheckBox TValue="bool"
+                                    Value="@(casasFiltradas.Any() && casasFiltradas.All(c => casasSeleccionadasTemp.Contains(c)))"
+                                    Change="@(args => SeleccionarTodas(args == true))" />
+                </HeaderTemplate>
+                <Template Context="data">
+                    <!-- Checkbox de la Fila (Seleccionar uno) -->
+                    <RadzenCheckBox TValue="bool"
+                                    Value="@casasSeleccionadasTemp.Contains(data)"
+                                    Change="@(args => SeleccionarUna(data, args == true))" />
+                </Template>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Property="Number" Title="Nro Casa" Width="100px" />
+            <RadzenDataGridColumn Property="Street" Title="Calle" Width="150px" />
+        </Columns>
+    </RadzenDataGrid>
+
+    <!-- Botones -->
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+        <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="@(() => DialogService.Close(null))" />
+        <RadzenButton Text="Aceptar" ButtonStyle="ButtonStyle.Success" Click="@Guardar" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    // Variables internas del diálogo
+    private List<Houses> todasLasCasas = new();
+    private List<Houses> casasFiltradas = new();
+    private List<Houses> casasSeleccionadasTemp = new();
+    private string filtro = "";
+    private RadzenDataGrid<Houses> grid;
+
+    // Parámetro: Recibe las casas que ya estaban seleccionadas previamente
+    [Parameter] public IEnumerable<Houses> CasasSeleccionadasPreviamente { get; set; } = new List<Houses>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Cargamos las casas de la BD
+        var lista = await HousesRepository.GetAllAsync();
+        todasLasCasas = lista.OrderBy(c => c.Number).ToList();
+        casasFiltradas = todasLasCasas.ToList();
+
+        // Si ya había casas seleccionadas, las marcamos
+        if (CasasSeleccionadasPreviamente != null)
+        {
+            casasSeleccionadasTemp = CasasSeleccionadasPreviamente.ToList();
+        }
+    }
+
+    private void FiltrarCasas()
+    {
+        if (string.IsNullOrWhiteSpace(filtro))
+        {
+            casasFiltradas = todasLasCasas.ToList();
+        }
+        else
+        {
+            casasFiltradas = todasLasCasas
+                .Where(c => c.Number.Contains(filtro, StringComparison.OrdinalIgnoreCase) ||
+                            c.Street.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void SeleccionarTodas(bool seleccionar)
+    {
+        foreach (var casa in casasFiltradas)
+        {
+            if (seleccionar && !casasSeleccionadasTemp.Contains(casa))
+                casasSeleccionadasTemp.Add(casa);
+            else if (!seleccionar && casasSeleccionadasTemp.Contains(casa))
+                casasSeleccionadasTemp.Remove(casa);
+        }
+    }
+
+    private void SeleccionarUna(Houses casa, bool seleccionar)
+    {
+        if (seleccionar && !casasSeleccionadasTemp.Contains(casa))
+            casasSeleccionadasTemp.Add(casa);
+        else if (!seleccionar && casasSeleccionadasTemp.Contains(casa))
+            casasSeleccionadasTemp.Remove(casa);
+    }
+
+    private void Guardar()
+    {
+        // Devolvemos la lista de casas seleccionadas al componente que lo llamó
+        DialogService.Close(casasSeleccionadasTemp);
+    }
+}

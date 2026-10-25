@@ -114,6 +114,116 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
+
+        public async Task<bool> SaveListWithFacturaHijo(FacturaMes itemOriginal, List<FacturaMesHijo> childrenOriginal, List<int> houseIds)
+        {
+
+            var listIdUsers = new List<int>();
+            int guardadasExitosamente = 0;
+
+            foreach (var idcasa in houseIds)
+            {
+
+                using var transaction = await _context.Database.BeginTransactionAsync();
+
+                try
+                {
+
+                    var item = new FacturaMes
+                    {
+                        Mes = itemOriginal.Mes,
+                        Year = itemOriginal.Year,
+                        Motivo = itemOriginal.Motivo,
+                        IsActive = itemOriginal.IsActive,
+                        EstadoPago = itemOriginal.EstadoPago
+                    };
+
+
+                    await _context.FacturaMes.AddAsync(item);
+                    await _context.SaveChangesAsync(); // Guardar para obtener el ID
+
+                    // 2. Asignar el ID de la factura a los hijos
+                    var children = new List<FacturaMesHijo>();
+                    foreach (var child in childrenOriginal)
+                    {
+                        children.Add(new FacturaMesHijo
+                        {
+                            FacturaMesId = item.Id,
+                            Motivo = child.Motivo,
+                            Monto = child.Monto,
+                            IdCategoria = child.IdCategoria,
+                            IdProveedor = child.IdProveedor,
+                            Pagado = false
+                        });
+                    }
+
+                    // 3. Guardar los hijos
+                    await _context.FacturaMesHijo.AddRangeAsync(children);
+                    await _context.SaveChangesAsync();
+
+                    // 4. Actualizar el MontoTotal de la factura
+                    item.MontoTotal = children.Sum(c => c.Monto);
+                    _context.FacturaMes.Update(item);
+                    await _context.SaveChangesAsync();
+
+
+                    FacturaMesCasa facturaCasa = new FacturaMesCasa
+                    {
+                        FacturaMesId = item.Id,
+                        HouseId = idcasa,
+                        MontoTotal = (decimal)item.MontoTotal,
+                        SaldoPendiente = (decimal)item.MontoTotal,
+                        MontoPagado = 0,
+                        Estado = "Pendiente"
+                    };
+
+                    await _context.FacturaMesCasa.AddAsync(facturaCasa);
+
+                    var usuario = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.HouseId == idcasa);
+                    if (usuario != null)
+                    {
+                        await _context.Notificaciones.AddAsync(new Notificaciones
+                        {
+                            UserId = usuario.Id,
+                            Titulo = "Nueva factura",
+                            Mensaje = $"Factura de {item.Motivo} - {item.Year} disponible por ${item.MontoTotal:N2}",
+                            Tipo = "Factura",
+                            ReferenciaId = item.Id
+                        });
+                        listIdUsers.Add(usuario.Id); // ✅ Movido aquí adentro
+                    }
+
+
+                    // ✅ CONFIRMAR TRANSACCIÓN
+                    await transaction.CommitAsync();
+ 
+                    guardadasExitosamente++;
+
+                }
+                catch (Exception ex)
+                {
+                    // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
+                    await transaction.RollbackAsync();
+                    Console.WriteLine($"Error al guardar factura para la casa {idcasa}: {ex.Message}");
+
+                    _context.ChangeTracker.Clear();
+                }
+            }
+
+
+            if (listIdUsers.Any())
+            {
+                await _notificacionService.EnviarNotificacionMultipleAsync(listIdUsers);
+            }
+            // 1. Guardar la factura
+
+
+            return guardadasExitosamente > 0;
+
+
+        }
+
+
         public async Task DistribuirFacturaEntreCasas(FacturaMes entity)
         {
             if (entity == null)

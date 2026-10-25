@@ -14,6 +14,8 @@ namespace Condominio.Domain.Entities
        public bool Enviado { get; set; } = false;
        public double MontoTotal { get; set; } = 0;
 
+        public string? Motivo { get; set; }
+
         public decimal? MontoRecaudado { get; set; } = 0;// Nullable
 
         public EstadoPagoFactura EstadoPago { get; set; } = EstadoPagoFactura.Pendiente;
@@ -25,7 +27,7 @@ namespace Condominio.Domain.Entities
         // ✅ PROPIEDAD CALCULADA PARA AÑO (OPCIONAL)
         // ✅ NUEVO: Nombre completo con año
         [NotMapped]
-        public string NombreMesCompleto => $"{NombreMes} {Year}";
+       public string NombreMesCompleto => !string.IsNullOrEmpty(Motivo)? Motivo : $"{NombreMes} {Year}";
 
         private string ObtenerNombreMes(int mes)
         {

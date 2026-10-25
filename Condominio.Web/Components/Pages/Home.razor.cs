@@ -87,6 +87,7 @@ namespace Condominio.Web.Components.Pages
         private async Task LoadData()
         {
             facturas = await FacturaMesRepository.GetAllAsync();
+            facturas = facturas.Where(x => x.Motivo == string.Empty || x.Motivo == null).ToList();
            DataItem data1 = new DataItem();
             data1.Category = "Pendiente";
             var pendiente = (double)(Convert.ToDecimal(facturas.Select(x => x.MontoTotal).LastOrDefault())

@@ -1,5 +1,7 @@
-﻿@using Condominio.Domain.Entities
+﻿@attribute [Authorize]
+@using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Services
+@using Microsoft.AspNetCore.Authorization
 @inject IFacturaGastoService FacturaService
 @inject DialogService DialogService
 @page "/facturaimagenes"
