@@ -1,0 +1,172 @@
+﻿@page "/facturaimagenes"
+@using Condominio.Infrastructure.Services
+
+@using DriveFile = Google.Apis.Drive.v3.Data.File
+
+@inject GoogleDriveService DriveService
+@inject IJSRuntime JS
+
+
+<div style="display: flex; flex-direction: column; gap: 1rem;">
+
+    <!-- MIGAS DE PAN -->
+    <RadzenBreadCrumb>
+        <RadzenBreadCrumbItem Text="Inicio" Icon="home" Click="@(() => CargarCarpetas(idCarpetaRaiz, "Administrador de recibos"))" />
+        @if (rutaActual.Any())
+        {
+            @foreach (var item in rutaActual)
+            {
+                <RadzenBreadCrumbItem Text="@item.Nombre" Click="@(() => CargarCarpetas(item.Id, item.Nombre))" />
+            }
+        }
+    </RadzenBreadCrumb>
+
+    <RadzenCard Style="padding: 15px;">
+
+        <!-- FILA: BOTÓN ATRÁS + TÍTULO -->
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <RadzenButton Icon="arrow_back" Text="Volver" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Small"
+                          Disabled="@(rutaActual.Count == 0)" Click="@VolverAtras" />
+            <RadzenText TextStyle="TextStyle.H6" Style="margin: 0;">
+                @(rutaActual.Any() ? $"Contenido de: {rutaActual.Last().Nombre}" : "Carpetas Principales")
+            </RadzenText>
+        </div>
+
+        <!-- ✅ GRID 1: CARPETAS -->
+        @if (carpetasAMostrar.Any())
+        {
+            <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin-top: 10px; color: #555;">Carpetas</RadzenText>
+            <RadzenDataGrid Data="@carpetasAMostrar" TItem="DriveFile" AllowPaging="true" PageSize="12" Style="margin-bottom: 20px;">
+                <Columns>
+                    <RadzenDataGridColumn Title="Carpeta" Width="100%">
+                        <Template Context="carpeta">
+                            <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" @onclick="@(() => AbrirCarpeta(carpeta))">
+                                <RadzenIcon Icon="folder" Style="color: #f39c12; font-size: 24px;" />
+                                <span style="font-weight: 500; font-size: 15px;">@carpeta.Name</span>
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        }
+
+        <!-- ✅ GRID 2: ARCHIVOS (PDFs, Imágenes, etc.) -->
+        @if (archivosAMostrar.Any())
+        {
+            <RadzenText TextStyle="TextStyle.Subtitle1" Style="margin-top: 10px; color: #555;">Archivos</RadzenText>
+            <RadzenDataGrid Data="@archivosAMostrar" TItem="DriveFile" AllowPaging="true" PageSize="10">
+                <Columns>
+                    <RadzenDataGridColumn Title="Archivo" Width="70%">
+                        <Template Context="archivo">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <RadzenIcon Icon="description" Style="color: #e74c3c; font-size: 24px;" />
+                                <span>@archivo.Name</span>
+                            </div>
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn Title="Acción" Width="30%" TextAlign="TextAlign.Right">
+                        <Template Context="archivo">
+                            <RadzenButton Icon="download" Text="Descargar" ButtonStyle="ButtonStyle.Primary"
+                                          Size="ButtonSize.Small" Click="@(() => Descargar(archivo))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        }
+
+        <!-- Si no hay nada -->
+        @if (!carpetasAMostrar.Any() && !archivosAMostrar.Any())
+        {
+            <div style="text-align: center; padding: 20px; color: #666;">
+                <RadzenIcon Icon="folder_open" Style="font-size: 40px; color: #ccc;" />
+                <p>Esta carpeta está vacía</p>
+            </div>
+        }
+
+    </RadzenCard>
+</div>
+
+@code {
+    private List<DriveFile> todasLasCarpetas = new();
+    private List<DriveFile> carpetasAMostrar = new();
+    private List<DriveFile> archivosAMostrar = new(); // ✅ Nueva lista para archivos
+    private List<RutaItem> rutaActual = new();
+
+    private string idCarpetaRaiz = "1QY-bHkGS0lA4PDhITNo9YYUC38DXyIah";
+
+    protected override async Task OnInitializedAsync()
+    {
+        todasLasCarpetas = DriveService.ObtenerTodasLasCarpetas();
+        CargarCarpetas(idCarpetaRaiz, "Administrador de recibos");
+    }
+
+    private void CargarCarpetas(string idCarpeta, string nombreCarpeta)
+    {
+        if (idCarpeta != idCarpetaRaiz)
+        {
+            var index = rutaActual.FindIndex(x => x.Id == idCarpeta);
+            if (index >= 0) rutaActual = rutaActual.Take(index + 1).ToList();
+            else rutaActual.Add(new RutaItem { Id = idCarpeta, Nombre = nombreCarpeta });
+        }
+        else
+        {
+            rutaActual.Clear();
+        }
+
+        // Cargar carpetas
+        carpetasAMostrar = todasLasCarpetas
+            .Where(c => c.Parents != null && c.Parents.Contains(idCarpeta))
+            .OrderBy(c => c.Name)
+            .ToList();
+
+        // ✅ Cargar archivos de la carpeta actual
+        archivosAMostrar = DriveService.ObtenerArchivos(idCarpeta);
+    }
+
+    private void AbrirCarpeta(DriveFile carpeta)
+    {
+        CargarCarpetas(carpeta.Id, carpeta.Name);
+    }
+
+    private void VolverAtras()
+    {
+        if (rutaActual.Count > 0)
+        {
+            rutaActual.RemoveAt(rutaActual.Count - 1);
+            if (rutaActual.Count == 0) CargarCarpetas(idCarpetaRaiz, "Administrador de recibos");
+            else
+            {
+                var carpetaPadre = rutaActual.Last();
+                CargarCarpetas(carpetaPadre.Id, carpetaPadre.Nombre);
+            }
+        }
+    }
+
+    // ✅ MÉTODO PARA DESCARGAR EL ARCHIVO
+    private async Task Descargar(DriveFile archivo)
+    {
+        try
+        {
+            // 1. Obtenemos el archivo de Drive
+            var stream = await DriveService.DescargarArchivo(archivo.Id);
+
+            // 2. Lo convertimos a un arreglo de bytes
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+
+            // 3. Usamos JS para forzar la descarga en el navegador
+            await JS.InvokeVoidAsync("descargarArchivoDesdeBytes", archivo.Name, Convert.ToBase64String(bytes));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al descargar: {ex.Message}");
+        }
+    }
+
+    public class RutaItem
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
+    }
+}
