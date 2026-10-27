@@ -40,49 +40,54 @@
             <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
                             Data="@Invoices" TItem="FacturaMes" RowExpand="RowExpand">
                 <Template Context="order">
-                    <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0;">
+                    <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px auto; width: 95%; max-width: 800px; box-sizing: border-box; overflow: hidden;">
 
                         <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
                             Detalle de Recibo #@order.Id
                         </RadzenText>
-                        <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Style="background: #b8c6d9; border-radius: 6px;" Data="@order.FacturaMesHijos">
+                        <RadzenDataGrid AllowFiltering="false"
+                                        AllowSorting="false"
+                                        AllowPaging="false"
+                                        Style="background: #b8c6d9; border-radius: 6px; width: 100%;"
+                                        Data="@order.FacturaMesHijos">
                             <Columns>
-                                <RadzenDataGridColumn Title="Categoría / Motivo" Width="30%">
+                                <!-- Categoría: 40% -->
+                                <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Categoría / Motivo" Width="40%">
                                     <Template Context="item">
                                         @if (item.CategoriaGasto != null)
                                         {
-                                            <!-- Si hay categoría, la mostramos -->
-                                            <span >
-                                                @item.CategoriaGasto.Nombre
-                                            </span>
+                                            <span>@item.CategoriaGasto.Nombre</span>
                                         }
                                         else
                                         {
-                                            <!-- Si no hay categoría, mostramos el motivo (o un guion si está vacío) -->
-                                            <span >
-                                                @(string.IsNullOrWhiteSpace(item.Motivo) ? "-" : item.Motivo)
-                                            </span>
+                                            <span>@(string.IsNullOrWhiteSpace(item.Motivo) ? "-" : item.Motivo)</span>
                                         }
                                     </Template>
                                 </RadzenDataGridColumn>
-                                <RadzenDataGridColumn Title="Proveedor" Width="30%">
+
+                                <!-- Proveedor: 35% -->
+                                <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Proveedor" Width="35%">
                                     <Template Context="item">
                                         @(item.CategoriaGasto?.Proveedor?.Nombre ?? "-")
                                     </Template>
                                 </RadzenDataGridColumn>
-                                <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="120px">
+
+                                <!-- Monto: 25% (Le damos más espacio y lo alineamos a la derecha) -->
+                                <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="25%" >
                                     <Template Context="item">
-                                        @($"{item.Monto} $")
+                                        @($"{item.Monto:N2} $")
                                     </Template>
                                 </RadzenDataGridColumn>
-
                             </Columns>
                         </RadzenDataGrid>
-                        <RadzenText TextStyle="TextStyle.Body1" Style="margin-top: 10px; font-weight: bold; text-align: right; color: #333; border-top: 1px solid #ddd; padding-top: 8px;">
-                            Total: @order.FacturaMesHijos.Sum(h => h.Monto) $
-                        </RadzenText>
-                    </RadzenCard>
+                        <!-- ✅ Total alineado a la derecha -->
+                        <div style="display: flex; justify-content: flex-end; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 8px;">
+                            <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: bold; color: #333; margin: 0; padding-right: 15px;">
+                                Total: @order.FacturaMesHijos.Sum(h => h.Monto).ToString("N2") $
+                            </RadzenText>
+                        </div>
 
+                    </RadzenCard>
                 </Template>
                 <Columns>
                     <RadzenDataGridColumn TItem="FacturaMes" Title="Monto Total" Width="140px">

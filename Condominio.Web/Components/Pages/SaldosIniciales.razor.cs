@@ -33,6 +33,8 @@ namespace Condominio.Web.Components.Pages
         private IList<FacturaMesCasa> invoices = new List<FacturaMesCasa>();
         IEnumerable<FacturaMesCasa> employees;
         private IQueryable<FacturaMesCasa> items;
+
+        private bool isUploading = false;
         private void AgregarItem()
         {
             itemEditando = new FacturaMesHijo();

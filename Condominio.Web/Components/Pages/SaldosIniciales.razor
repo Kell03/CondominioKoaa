@@ -41,36 +41,52 @@
         <RadzenCard Style="padding: 15px; margin-bottom: 15px;">
             <RadzenText TextStyle="TextStyle.H6">Carga Masiva desde Excel</RadzenText>
 
-            <InputFile OnChange="@SubirExcel" accept=".xlsx" style="margin-top: 10px;" />
+            @if (isUploading)
+            {
+                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem" Style="margin-top: 15px;">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #0056b3; font-weight: 500;">
+                        Procesando archivo Excel, por favor espera...
+                    </RadzenText>
+                
 
-            <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; margin-top: 5px;">
-                Formato: Nro Casa | Año | Mes | Monto
-            </RadzenText>
+                    <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Info" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" AriaLabel="Cargando Excel" />
+
+                </RadzenStack>
+            }
+            else
+            {
+                <!-- ✅ SI NO ESTÁ SUBIENDO: Mostramos el botón de subida -->
+                <InputFile OnChange="@SubirExcel" accept=".xlsx" style="margin-top: 10px; display: block;" />
+
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; margin-top: 5px; display: block;">
+                    Formato: Nro Casa | Año | Mes | Monto
+                </RadzenText>
+            }
         </RadzenCard>
         <RadzenTabs @bind-SelectedIndex=@selectedIndex>
             <Tabs>
                    <RadzenTabsItem Text="Lista">
                     <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
                                     SelectionMode="DataGridSelectionMode.Single"
-                                    Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" @bind-Value=@invoices>
+                                    Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" LogicalFilterOperator="LogicalFilterOperator.Or" @bind-Value=@invoices>
 
-                       
                         <Template Context="order">
-                            <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; overflow: hidden;">
+                            <!-- ✅ La tarjeta ocupa el 100% del espacio disponible -->
+                            <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0; width: 80%; box-sizing: border-box;">
 
                                 <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
                                     Detalle de Factura #@order.FacturaMes.Id
                                 </RadzenText>
 
-                                <!-- ✅ EL GRID ANIDADO AHORA USA 100% DE ANCHO -->
+                                <!-- ✅ Grid interno al 100% y sin barras de scroll -->
                                 <RadzenDataGrid AllowFiltering="false"
                                                 AllowSorting="false"
                                                 AllowPaging="false"
-                                                Style="background: #b8c6d9; border-radius: 6px; width: 90%;"
+                                                Style="background: #b8c6d9; border-radius: 6px; width: 100%;"
                                                 Data="@order.FacturaMes.FacturaMesHijos">
                                     <Columns>
-                                        <!-- ✅ Concepto ocupa el 65% -->
-                                        <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Concepto" Width="65%">
+                                        <!-- ✅ Concepto: 75% (Para que no aplaste al monto) -->
+                                        <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Concepto" Width="75%">
                                             <Template Context="item">
                                                 <div style="white-space: normal; font-size: 13px;">
                                                     @(item.CategoriaGasto != null
@@ -79,21 +95,17 @@
                                                 </div>
                                             </Template>
                                         </RadzenDataGridColumn>
-
-                                        <!-- ✅ Monto ocupa el 35% y se alinea a la derecha -->
-                                        <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="35%" TextAlign="TextAlign.Right">
+                                        <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Monto" Width="25%">
                                             <Template Context="item">
-                                                <div style="font-weight: 600; font-size: 13px;">
                                                     @($"{item.Monto:N2} $")
-                                                </div>
                                             </Template>
                                         </RadzenDataGridColumn>
                                     </Columns>
                                 </RadzenDataGrid>
 
-                                <!-- ✅ TOTAL ADAPTADO -->
+                                <!-- ✅ TOTAL -->
                                 <div style="display: flex; justify-content: flex-end; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 8px;">
-                                    <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: bold; color: #333; margin: 0; padding-right: 15px;">
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: bold; color: #333; margin: 0; padding-right: 5px;">
                                         Total: @order.FacturaMes.FacturaMesHijos.Sum(h => h.Monto).ToString("N2") $
                                     </RadzenText>
                                 </div>
@@ -464,8 +476,10 @@
     private async Task SubirExcel(InputFileChangeEventArgs e)
     {
         var archivo = e.File;
+       
         if (archivo != null)
         {
+            isUploading = true;
             try
             {
                 // 1. Leer el archivo en memoria
@@ -516,10 +530,13 @@
                 {
                     await ProcesarCargaMasiva(deudasLeidas, casasAfectadas);
                 }
+
+                isUploading = false;
             }
             catch (Exception ex)
             {
                 NotificationService.Notify(NotificationSeverity.Error, "Error al leer Excel", ex.Message);
+                isUploading = false;
             }
         }
     }
