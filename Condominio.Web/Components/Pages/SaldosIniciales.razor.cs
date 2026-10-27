@@ -21,6 +21,7 @@ namespace Condominio.Web.Components.Pages
         private string? yearInput = DateTime.Now.Year.ToString();
 
         private List<FacturaMesHijo> orders = new();
+        private List<Houses> houses = new();
         private List<CategoriasGasto> categorias = new();
         private List<Proveedor> proveedores = new();
         private FacturaMesHijo itemEditando = new();
@@ -98,7 +99,8 @@ namespace Condominio.Web.Components.Pages
         {
             await base.OnInitializedAsync();
             IEnumerable<FacturaMesCasa> itemList;
-
+            var housesList = await HouseRepository.GetAllAsync();
+            houses = housesList.ToList();
             itemList = await FacturaMesCasaRepository.GetAllAsync();
             itemList = itemList.Where(x => x.FacturaMes.Motivo != null).ToList();
             items = itemList.AsQueryable();

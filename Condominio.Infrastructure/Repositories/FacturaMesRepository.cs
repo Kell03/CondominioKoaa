@@ -193,7 +193,7 @@ namespace Condominio.Infrastructure.Repositories
                         listIdUsers.Add(usuario.Id); // ✅ Movido aquí adentro
                     }
 
-
+                    await _context.SaveChangesAsync();
                     // ✅ CONFIRMAR TRANSACCIÓN
                     await transaction.CommitAsync();
  

@@ -9,12 +9,16 @@
 @inject FacturaMesRepository FacturaMesRepository
 @inject CategoriaRepository CategoriaRepository
 @inject ProveedorRepository ProveedorRepository
+@inject IGenericRepository<Houses> HouseRepository
 @inject IGenericRepository<FacturaMesHijo> FacturaMesHijoRepository
 @inject FacturaMesCasaRepository FacturaMesCasaRepository
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject Radzen.DialogService DialogService
 @inject IJSRuntime JSRuntime
+@using ClosedXML.Excel
+@using Microsoft.AspNetCore.Components.Forms
+@inject Radzen.NotificationService NotificationService
 
 @rendermode InteractiveServer
 
@@ -32,6 +36,17 @@
                 Se cargan las saldos iniciales o pendientes de las casas
             </RadzenText>
         </RadzenCard>
+
+
+        <RadzenCard Style="padding: 15px; margin-bottom: 15px;">
+            <RadzenText TextStyle="TextStyle.H6">Carga Masiva desde Excel</RadzenText>
+
+            <InputFile OnChange="@SubirExcel" accept=".xlsx" style="margin-top: 10px;" />
+
+            <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; margin-top: 5px;">
+                Formato: Nro Casa | Año | Mes | Monto
+            </RadzenText>
+        </RadzenCard>
         <RadzenTabs @bind-SelectedIndex=@selectedIndex>
             <Tabs>
                    <RadzenTabsItem Text="Lista">
@@ -41,15 +56,17 @@
 
                        
                         <Template Context="order">
-                            <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0; width: 80%; box-sizing: border-box; overflow: hidden;">
+                            <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; overflow: hidden;">
 
                                 <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
                                     Detalle de Factura #@order.FacturaMes.Id
                                 </RadzenText>
 
                                 <!-- ✅ EL GRID ANIDADO AHORA USA 100% DE ANCHO -->
-                                <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true"
-                                                Style="background: #b8c6d9; border-radius: 6px; width: 80%;"
+                                <RadzenDataGrid AllowFiltering="false"
+                                                AllowSorting="false"
+                                                AllowPaging="false"
+                                                Style="background: #b8c6d9; border-radius: 6px; width: 90%;"
                                                 Data="@order.FacturaMes.FacturaMesHijos">
                                     <Columns>
                                         <!-- ✅ Concepto ocupa el 65% -->
@@ -439,4 +456,138 @@
 
 @code {
     int selectedIndex = 0;
+
+
+    private List<DeudaExcelDto> deudasLeidas = new();
+
+    // Método que se ejecuta al subir el archivo (InputFile nativo de Blazor)
+    private async Task SubirExcel(InputFileChangeEventArgs e)
+    {
+        var archivo = e.File;
+        if (archivo != null)
+        {
+            try
+            {
+                // 1. Leer el archivo en memoria
+                // ✅ 1. El tamaño máximo permitido (ej. 10 MB) para evitar colgar el navegador
+                long maxFileSize = 1024 * 1024 * 10;
+
+                // ✅ 2. Abrimos el stream del archivo subido
+                using var stream = archivo.OpenReadStream(maxFileSize);
+
+                // ✅ 3. Creamos un MemoryStream y copiamos los datos de forma ASÍNCRONA
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+
+                // ✅ 4. Regresamos el puntero al inicio para que ClosedXML lo lea
+                memoryStream.Position = 0;
+
+                // ✅ 5. Ahora sí, le pasamos el MemoryStream (que sí soporta lectura síncrona)
+                using var workbook = new XLWorkbook(memoryStream);
+                var worksheet = workbook.Worksheet(1);
+
+                deudasLeidas.Clear();
+                var casasAfectadas = new HashSet<string>(); // Para saber qué casas vienen en el Excel
+
+                // 2. Leer fila por fila (Skip(1) para saltar los encabezados)
+                foreach (var row in worksheet.RowsUsed().Skip(1))
+                {
+                    var nroCasa = row.Cell(1).GetString().Trim();
+                    var anio = row.Cell(2).GetValue<int>();
+                    var nombreMes = row.Cell(3).GetString().Trim();
+                    var monto = row.Cell(4).GetValue<decimal>();
+
+                    if (!string.IsNullOrEmpty(nroCasa) && monto > 0)
+                    {
+                        deudasLeidas.Add(new DeudaExcelDto
+                        {
+                            NroCasa = nroCasa,
+                            Anio = anio,
+                            Mes = ObtenerNumeroMes(nombreMes), // Convertimos "Octubre" a 10
+                            NombreMes = nombreMes,
+                            Monto = monto
+                        });
+                        casasAfectadas.Add(nroCasa);
+                    }
+                }
+
+                // 3. Procesar los datos
+                if (deudasLeidas.Any())
+                {
+                    await ProcesarCargaMasiva(deudasLeidas, casasAfectadas);
+                }
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error al leer Excel", ex.Message);
+            }
+        }
+    }
+
+    // Convierte "Enero" -> 1, "Febrero" -> 2, etc.
+    private int ObtenerNumeroMes(string mes)
+    {
+        var meses = new[] { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+        return Array.FindIndex(meses, m => m.Equals(mes, StringComparison.OrdinalIgnoreCase)) + 1;
+    }
+
+    // Aquí conectamos con tu método de guardado
+    private async Task ProcesarCargaMasiva(List<DeudaExcelDto> deudas, HashSet<string> casasAfectadas)
+    {
+        // Por cada casa en el Excel, creamos su factura
+        foreach (var casaNumero in casasAfectadas)
+        {
+            // 1. Buscamos la casa en la BD por su número
+            var casa = houses.FirstOrDefault(h => h.Number == casaNumero);
+            if (casa == null) continue; // Si no existe, la saltamos
+
+            // 2. Filtramos las deudas de esta casa específica
+            var deudasDeEstaCasa = deudas.Where(d => d.NroCasa == casaNumero).ToList();
+
+            // 3. Creamos la Factura Cabecera
+            var facturaOriginal = new FacturaMes
+            {
+                Mes = DateTime.Now.Month,
+                Year = deudasDeEstaCasa.First().Anio, // Tomamos el año de la deuda
+                Motivo = "Deuda Inicial Excel",
+                IsActive = true,
+                EstadoPago = EstadoPagoFactura.Pendiente
+            };
+
+            // 4. Creamos los hijos (los meses)
+            var children = new List<FacturaMesHijo>();
+            foreach (var deuda in deudasDeEstaCasa)
+            {
+                children.Add(new FacturaMesHijo
+                {
+                    Motivo = deuda.NombreMes, // "Octubre", "Noviembre", etc.
+                    Monto = (double)deuda.Monto,
+                    IdCategoria = null,
+                    IdProveedor = null,
+                    Pagado = false
+                });
+            }
+
+            // 5. Llamamos a tu método (pasando la casa en una lista de 1 elemento)
+            await FacturaMesRepository.SaveListWithFacturaHijo(
+                facturaOriginal,
+                children,
+                new List<int> { casa.Id }
+            );
+        }
+
+        NotificationService.Notify(NotificationSeverity.Success, "Éxito", "Las facturas se generaron correctamente desde el Excel.");
+        await OnInitializedAsync();
+        StateHasChanged();
+    }
+
+    // DTO para manejar los datos del Excel
+    public class DeudaExcelDto
+    {
+        public string NroCasa { get; set; }
+        public int Anio { get; set; }
+        public int Mes { get; set; }
+        public string NombreMes { get; set; }
+        public decimal Monto { get; set; }
+    }
 }

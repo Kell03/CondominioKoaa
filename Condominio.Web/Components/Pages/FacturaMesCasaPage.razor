@@ -95,16 +95,19 @@
 
                        
                         <Template Context="order">
-                            <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0; width: 80%; box-sizing: border-box; overflow: hidden;">
+                            <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; overflow: hidden;">
 
                                 <RadzenText TextStyle="TextStyle.H6" Style="margin: 10px 0; color: #666;">
                                     Detalle de Factura #@order.FacturaMes.Id
                                 </RadzenText>
 
-                                <!-- ✅ EL GRID ANIDADO AHORA USA 100% DE ANCHO -->
-                                <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true"
-                                                Style="background: #b8c6d9; border-radius: 6px; width: 80%;"
-                                                Data="@order.FacturaMes.FacturaMesHijos">
+
+                                    <!-- ✅ EL GRID ANIDADO AHORA USA 100% DE ANCHO -->
+                                    <RadzenDataGrid AllowFiltering="false"
+                                                    AllowSorting="false"
+                                                    AllowPaging="false"
+                                                    Style="background: #b8c6d9; border-radius: 6px; width: 90%;"
+                                                    Data="@order.FacturaMes.FacturaMesHijos">
                                     <Columns>
                                         <!-- ✅ Concepto ocupa el 65% -->
                                         <RadzenDataGridColumn TItem="FacturaMesHijo" Title="Concepto" Width="65%">
