@@ -9,6 +9,7 @@
 @inject ProveedorRepository ProveedorRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
@@ -34,84 +35,170 @@
                           Style="margin-bottom: 0.5rem;"
                           Click="@(() => AddItem())" />
 
-    
+@if (_cargando)
+                    {
+                        <div style="text-align: center; padding: 50px;">
+                            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                            <RadzenText TextStyle="TextStyle.Body2" Style="margin-top: 10px; color: #666;">Cargando...</RadzenText>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (!_esMobile)
+                        {
 
-            <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                            <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
                             Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
                             RowSelect="@((CuotaEspecial item) => EditUser(item))">
-                <Columns>
+                                <Columns>
 
-                    <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Motivo)" Title="Motivo" Width="160px" />
-                    <RadzenDataGridColumn Title="Proveedor" Width="160px">
-                        <Template Context="item">
-                            @(item.Proveedor?.Nombre ?? "-")
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn TItem="CuotaEspecial" Title="Monto" Width="140px">
-                        <Template Context="cuota">
-                            @cuota.MontoTotal $
-                        </Template>
-                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Motivo)" Title="Motivo" Width="160px" />
+                                    <RadzenDataGridColumn Title="Proveedor" Width="160px">
+                                        <Template Context="item">
+                                            @(item.Proveedor?.Nombre ?? "-")
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn TItem="CuotaEspecial" Title="Monto" Width="140px">
+                                        <Template Context="cuota">
+                                            @cuota.MontoTotal $
+                                        </Template>
+                                    </RadzenDataGridColumn>
 
-                    <RadzenDataGridColumn TItem="CuotaEspecial" Title="Monto Recaudado" Width="170px">
-                        <Template Context="cuota">
-                            @cuota.MontoRecaudado $
-                        </Template>
-                    </RadzenDataGridColumn>
-                    <RadzenDataGridColumn Property="@nameof(CuotaEspecial.NombreMes)" Title="Mes" Width="100px" />
-                    <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Year)" Title="Año" Width="100px" />
-                    <RadzenDataGridColumn TItem="CuotaEspecial" Property="Enviado" Title="Enviar" Width="120px">
-                        <Template Context="cuota">
-                            @if (cuota.Enviado)
-                            {
-                                <RadzenButton Text="Enviado"
-                                              Icon="check_circle"
-                                              ButtonStyle="ButtonStyle.Success"
-                                              Size="ButtonSize.Small"
-                                              Disabled="true" />
-                            }
-                            else
-                            {
+                                    <RadzenDataGridColumn TItem="CuotaEspecial" Title="Monto Recaudado" Width="170px">
+                                        <Template Context="cuota">
+                                            @cuota.MontoRecaudado $
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn Property="@nameof(CuotaEspecial.NombreMes)" Title="Mes" Width="100px" />
+                                    <RadzenDataGridColumn Property="@nameof(CuotaEspecial.Year)" Title="Año" Width="100px" />
+                                    <RadzenDataGridColumn TItem="CuotaEspecial" Property="Enviado" Title="Enviar" Width="120px">
+                                        <Template Context="cuota">
+                                            @if (cuota.Enviado)
+                                            {
+                                                <RadzenButton Text="Enviado"
+                                                Icon="check_circle"
+                                                ButtonStyle="ButtonStyle.Success"
+                                                Size="ButtonSize.Small"
+                                                Disabled="true" />
+                                            }
+                                            else
+                                            {
 
-                                <div @onclick:stopPropagation="true">
-                                    <RadzenButton Text="Enviar a Todos"
-                                                  Icon="send"
-                                                  ButtonStyle="ButtonStyle.Primary"
-                                                  Size="ButtonSize.Small"
-                                                  Click="@(() => ConfirmSend(cuota))" />
-                                </div>
-                            }
+                                                <div @onclick:stopPropagation="true">
+                                                    <RadzenButton Text="Enviar a Todos"
+                                                    Icon="send"
+                                                    ButtonStyle="ButtonStyle.Primary"
+                                                    Size="ButtonSize.Small"
+                                                    Click="@(() => ConfirmSend(cuota))" />
+                                                </div>
+                                            }
 
-                        </Template>
-                    </RadzenDataGridColumn>
+                                        </Template>
+                                    </RadzenDataGridColumn>
 
-                    <RadzenDataGridColumn TItem="CuotaEspecial" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
-                        <Template Context="item">
+                                    <RadzenDataGridColumn TItem="CuotaEspecial" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                                        <Template Context="item">
 
-                            <RadzenButton Icon="delete"
-                                          ButtonStyle="ButtonStyle.Danger"
-                                          Size="ButtonSize.Small"
-                                          Tooltip="Eliminar Casa"
-                                          Click="@(() => ConfirmDelete(item))"
-                                          @onclick:stopPropagation="true" />
+                                            <RadzenButton Icon="delete"
+                                            ButtonStyle="ButtonStyle.Danger"
+                                            Size="ButtonSize.Small"
+                                            Tooltip="Eliminar Casa"
+                                            Click="@(() => ConfirmDelete(item))"
+                                            @onclick:stopPropagation="true" />
 
 
-                        </Template>
-                    </RadzenDataGridColumn>
+                                        </Template>
+                                    </RadzenDataGridColumn>
 
-                </Columns>
+                                </Columns>
 
-                <EmptyTemplate>
-                    <div style="padding: 20px; text-align: center; color: #6c757d;">
-                        <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
-                        <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
-                            No hay Cuotas Especiales registradas
-                        </RadzenText>
+                                <EmptyTemplate>
+                                    <div style="padding: 20px; text-align: center; color: #6c757d;">
+                                        <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                        <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                            No hay Cuotas Especiales registradas
+                                        </RadzenText>
 
-                    </div>
-                </EmptyTemplate>
-            </RadzenDataGrid>
+                                    </div>
+                                </EmptyTemplate>
+                            </RadzenDataGrid>
+                        }
+                        else
+                        {
+                            <!-- ✅ VISTA MÓVIL: TARJETAS -->
+                            <RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
+                                @foreach (var item in items)
+                                {
+                                    // Calculamos el color del borde según si está recaudado o no
+                                    var colorBorde = item.MontoRecaudado >= item.MontoTotal ? "#28a745" : "#6f42c1"; // Verde si ya se cobró todo, morado si no
 
+                                    <RadzenCard Style="@($"padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid {colorBorde};")">
+
+                                        <!-- 1. Encabezado: Motivo y Estado -->
+                                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #1a2a3a; white-space: normal;">
+                                                <RadzenIcon Icon="request_quote" Style="font-size: 20px; margin-right: 5px; color: #6f42c1;" />
+                                                @item.Motivo
+                                            </RadzenText>
+
+                                            @if (item.Enviado)
+                                            {
+                                                <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Enviado</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">No Enviado</span>
+                                            }
+                                        </RadzenStack>
+
+                                        <!-- 2. Período y Proveedor -->
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-top: 6px; font-size: 14px;">
+                                            <RadzenIcon Icon="calendar_today" Style="font-size: 14px; margin-right: 4px;" /> @item.NombreMes @item.Year
+                                        </RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-top: 2px; font-size: 14px;">
+                                            <RadzenIcon Icon="store" Style="font-size: 14px; margin-right: 4px;" /> @(item.Proveedor?.Nombre ?? "Sin proveedor")
+                                        </RadzenText>
+
+                                        <!-- 3. Montos -->
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
+                                            <div>
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Monto Total</RadzenText>
+                                                <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600; color: #333; margin: 0;">@item.MontoTotal.ToString("N2") $</RadzenText>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Recaudado</RadzenText>
+                                                <RadzenText TextStyle="TextStyle.H6"
+                                                            Style="@($"font-weight: 800; color: {(item.MontoRecaudado >= item.MontoTotal ? "#28a745" : "#6f42c1")}; margin: 0;")">
+                                                    @item.MontoRecaudado.ToString("N2") $
+                                                </RadzenText>
+                                            </div>
+                                        </div>
+
+                                        <!-- 4. Botones de Acción -->
+                                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+
+                                            @if (!item.Enviado)
+                                            {
+                                                <RadzenButton Text="Enviar" Icon="send" ButtonStyle="ButtonStyle.Primary"
+                                                              Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
+                                                              Click="@(() => ConfirmSend(item))" />
+                                            }
+                                            else
+                                            {
+                                                <RadzenButton Text="Enviado" Icon="check_circle" ButtonStyle="ButtonStyle.Success"
+                                                              Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small" Disabled="true" />
+                                            }
+
+                                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger"
+                                                          Style="border-radius: 8px;" Size="ButtonSize.Small"
+                                                          Click="@(() => ConfirmDelete(item))" />
+                                        </div>
+
+                                    </RadzenCard>
+                                }
+                            </RadzenStack>
+                        }
+                    }
 
             
         </RadzenTabsItem>

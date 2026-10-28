@@ -18,6 +18,7 @@
 @inject BcvScraperService BcvScraper
 @inject Radzen.NotificationService NotificationService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
 
@@ -85,18 +86,30 @@
                         </div>
                     }
 
-                    <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="10" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
-                                    Data="@items" TItem="CuotaEspecialCasa" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@selectedEmployees>
-                        <Columns>
+                    @if (_cargando)
+                    {
+                        <div style="text-align: center; padding: 50px;">
+                            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                            <RadzenText TextStyle="TextStyle.Body2" Style="margin-top: 10px; color: #666;">Cargando...</RadzenText>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (!_esMobile)
+                        {
+
+                        <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="10" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                        Data="@items" TItem="CuotaEspecialCasa" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@selectedEmployees>
+                            <Columns>
 
 
 
-                            <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
-                                <HeaderTemplate>
-                                    <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
-                                                    InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
-                                                    Value="@(cuotas == null || !cuotas.Any() ? false : !grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).All(i => cuotas.Contains(i)) ? null : grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).Any(i => cuotas.Contains(i)))"
-                                                    Change="@(args =>
+                                <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                                    <HeaderTemplate>
+                                        <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
+                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
+                                        Value="@(cuotas == null || !cuotas.Any() ? false : !grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).All(i => cuotas.Contains(i)) ? null : grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).Any(i => cuotas.Contains(i)))"
+                                        Change="@(args =>
                                                         {
                                                             if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
 
@@ -120,16 +133,16 @@
                                                                 }
                                                             }
                                                         })" />
-                                </HeaderTemplate>
-                                <Template Context="data">
-                                    @if (data.SaldoPendiente > 0)
-                                    {
-                                        <!-- ✅ Si tiene saldo pendiente, mostramos el checkbox -->
-                                        <RadzenCheckBox TabIndex="-1" TriState="false"
-                                                        Value="@(cuotas != null && cuotas.Contains(data))"
-                                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
-                                                        TValue="bool"
-                                                        Change="@(args =>
+                                    </HeaderTemplate>
+                                    <Template Context="data">
+                                        @if (data.SaldoPendiente > 0)
+                                        {
+                                            <!-- ✅ Si tiene saldo pendiente, mostramos el checkbox -->
+                                            <RadzenCheckBox TabIndex="-1" TriState="false"
+                                            Value="@(cuotas != null && cuotas.Contains(data))"
+                                            InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
+                                            TValue="bool"
+                                            Change="@(args =>
                                                                 {
                                                                     if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
 
@@ -142,129 +155,129 @@
                                                                         cuotas.Remove(data);
                                                                     }
                                                                 })" />
-                                    }
-                                    else
-                                    {
-                                        <!-- ❌ Si ya está pagada (SaldoPendiente = 0), mostramos el check verde -->
-                                        <RadzenIcon Icon="check_circle" Style="color: #155724; font-size: 20px;" Tooltip="Ya está pagada" />
-                                    }
-                                </Template>
-                            </RadzenDataGridColumn>
+                                        }
+                                        else
+                                        {
+                                            <!-- ❌ Si ya está pagada (SaldoPendiente = 0), mostramos el check verde -->
+                                            <RadzenIcon Icon="check_circle" Style="color: #155724; font-size: 20px;" Tooltip="Ya está pagada" />
+                                        }
+                                    </Template>
+                                </RadzenDataGridColumn>
 
 
 
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="120px" Property="House.Number">
-                                <Template Context="cuota">
-                                    @cuota.House.Number
-                                </Template>
-                            </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Casa" Width="120px" Property="House.Number">
+                                    <Template Context="cuota">
+                                        @cuota.House.Number
+                                    </Template>
+                                </RadzenDataGridColumn>
 
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa"
-                                                  Title="Propietario"
-                                                  Width="130px"
-                                                  Property="User.Name"
-                                                  Visible="@isAdmin">
-                                <Template Context="cuotaCasa">
-                                    @cuotaCasa.User?.Name
-                                </Template>
-                            </RadzenDataGridColumn>
-
-
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Motivo" Width="150px">
-                                <Template Context="cuota">
-                                    @cuota.CuotaEspecial?.Motivo
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Monto" Width="120px">
-                                <Template Context="cuota">
-                                    @cuota.MontoTotal $
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Pagado" Width="120px">
-                                <Template Context="cuota">
-                                    @cuota.MontoPagado $
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Pendiente" Width="120px">
-                                <Template Context="cuota">
-                                    @cuota.SaldoPendiente $
-                                </Template>
-                            </RadzenDataGridColumn>
-                           
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa"
-                                                  Property="@nameof(CuotaEspecialCasa.PeriodoCompleto)"
-                                                  Title="Período"
-                                                  Width="150px" />
-
-                      
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa"
-                                                  Property="Estado"
-                                                  Title="Estado"
-                                                  Width="140px">
-                                <Template Context="cuotaCasa">
-                                    @if (cuotaCasa.Estado == EstadoCuotaCasa.Pendiente)
-                                    {
-                                        <span style="background: #f8d7da; color: #721c24; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
-                                            Pendiente
-                                        </span>
-                                    }
-                                    else if (cuotaCasa.Estado == EstadoCuotaCasa.PagoParcial)
-                                    {
-                                        <span style="background: #e9ecef; color: #6c757d; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
-                                            En Revisión
-                                        </span>
-                                    }
-                                    else if (cuotaCasa.Estado == EstadoCuotaCasa.Confirmada)
-                                    {
-                                        <span style="background: #d4edda; color: #155724; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
-                                            Confirmada
-                                        </span>
-                                    }
-                                </Template>
-                            </RadzenDataGridColumn>
-
-                            <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
-                                <Template Context="cuotaCasa">
+                                <RadzenDataGridColumn TItem="CuotaEspecialCasa"
+                                Title="Propietario"
+                                Width="130px"
+                                Property="User.Name"
+                                Visible="@isAdmin">
+                                    <Template Context="cuotaCasa">
+                                        @cuotaCasa.User?.Name
+                                    </Template>
+                                </RadzenDataGridColumn>
 
 
-                                    @if (cuotaCasa.SaldoPendiente <= 0)
-                                    {
-                                        <RadzenButton Text="Ver"
-                                                      Icon="visibility"
-                                                      ButtonStyle="ButtonStyle.Success"
-                                                      Size="ButtonSize.Small"
-                                                      Tooltip="Ver pago"
-                                                      Click="@(() => EditUser(cuotaCasa))"
-                                                      @onclick:stopPropagation="true"
-                                                      Visible="@(!isAdmin)" />
-                                    }
-                                    else
-                                    {
+                                <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Motivo" Width="150px">
+                                    <Template Context="cuota">
+                                        @cuota.CuotaEspecial?.Motivo
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Monto" Width="120px">
+                                    <Template Context="cuota">
+                                        @cuota.MontoTotal $
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Pagado" Width="120px">
+                                    <Template Context="cuota">
+                                        @cuota.MontoPagado $
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Pendiente" Width="120px">
+                                    <Template Context="cuota">
+                                        @cuota.SaldoPendiente $
+                                    </Template>
+                                </RadzenDataGridColumn>
 
-                                        <RadzenButton Text="Pagar"
-                                                      Icon="payment"
-                                                      ButtonStyle="ButtonStyle.Secondary"
-                                                      Size="ButtonSize.Small"
-                                                      Tooltip="Realizar pago"
-                                                      Click="@(() => EditUser(cuotaCasa))"
-                                                      @onclick:stopPropagation="true"
-                                                      Visible="@(!isAdmin)" />
+                                <RadzenDataGridColumn TItem="CuotaEspecialCasa"
+                                Property="@nameof(CuotaEspecialCasa.PeriodoCompleto)"
+                                Title="Período"
+                                Width="150px" />
 
-                                    }
-                                    @if (isAdmin)
-                                    {
-                                        <div style="position: relative; display: inline-block;">
-                                            <RadzenButton Icon="visibility"
-                                                          ButtonStyle="ButtonStyle.Secondary"
-                                                          Size="ButtonSize.Small"
-                                                          Tooltip="Ver detalles"
-                                                          Click="@(() => AddPagosList(cuotaCasa))"
-                                                          @onclick:stopPropagation="true" />
 
-                                            @if (cuotaCasa.Payments?.Any(x => x.Estado == "Pendiente") == true)
-                                            {
-                                                <!-- ✅ USAR SPAN EN LUGAR DE RADZENBADGE -->
-                                                <span style="position: absolute;
+                                <RadzenDataGridColumn TItem="CuotaEspecialCasa"
+                                Property="Estado"
+                                Title="Estado"
+                                Width="140px">
+                                    <Template Context="cuotaCasa">
+                                        @if (cuotaCasa.Estado == EstadoCuotaCasa.Pendiente)
+                                        {
+                                            <span style="background: #f8d7da; color: #721c24; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
+                                                Pendiente
+                                            </span>
+                                        }
+                                        else if (cuotaCasa.Estado == EstadoCuotaCasa.PagoParcial)
+                                        {
+                                            <span style="background: #e9ecef; color: #6c757d; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
+                                                En Revisión
+                                            </span>
+                                        }
+                                        else if (cuotaCasa.Estado == EstadoCuotaCasa.Confirmada)
+                                        {
+                                            <span style="background: #d4edda; color: #155724; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 500; display: inline-block;">
+                                                Confirmada
+                                            </span>
+                                        }
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+                                <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                                    <Template Context="cuotaCasa">
+
+
+                                        @if (cuotaCasa.SaldoPendiente <= 0)
+                                        {
+                                            <RadzenButton Text="Ver"
+                                            Icon="visibility"
+                                            ButtonStyle="ButtonStyle.Success"
+                                            Size="ButtonSize.Small"
+                                            Tooltip="Ver pago"
+                                            Click="@(() => EditUser(cuotaCasa))"
+                                            @onclick:stopPropagation="true"
+                                            Visible="@(!isAdmin)" />
+                                        }
+                                        else
+                                        {
+
+                                            <RadzenButton Text="Pagar"
+                                            Icon="payment"
+                                            ButtonStyle="ButtonStyle.Secondary"
+                                            Size="ButtonSize.Small"
+                                            Tooltip="Realizar pago"
+                                            Click="@(() => EditUser(cuotaCasa))"
+                                            @onclick:stopPropagation="true"
+                                            Visible="@(!isAdmin)" />
+
+                                        }
+                                        @if (isAdmin)
+                                        {
+                                            <div style="position: relative; display: inline-block;">
+                                                <RadzenButton Icon="visibility"
+                                                ButtonStyle="ButtonStyle.Secondary"
+                                                Size="ButtonSize.Small"
+                                                Tooltip="Ver detalles"
+                                                Click="@(() => AddPagosList(cuotaCasa))"
+                                                @onclick:stopPropagation="true" />
+
+                                                @if (cuotaCasa.Payments?.Any(x => x.Estado == "Pendiente") == true)
+                                                {
+                                                    <!-- ✅ USAR SPAN EN LUGAR DE RADZENBADGE -->
+                                                    <span style="position: absolute;
                                                     top: -8px;
                                                     right: -8px;
                                                     background: #dc3545;
@@ -278,34 +291,142 @@
                                                     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
                                                     line-height: 1.4;
                                                     z-index: 1;">
-                                                    @cuotaCasa.Payments.Count(x => x.Estado == "Pendiente")
-                                                </span>
+                                                        @cuotaCasa.Payments.Count(x => x.Estado == "Pendiente")
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                    </Template>
+                                </RadzenDataGridColumn>
+
+
+
+                            </Columns>
+
+
+
+
+                            <EmptyTemplate>
+                                <div style="padding: 20px; text-align: center; color: #6c757d;">
+                                    <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                    <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                        No hay Cuotas registradas
+                                    </RadzenText>
+
+                                </div>
+                            </EmptyTemplate>
+                        </RadzenDataGrid>
+
+                        }
+                        else
+                        {
+                            <!-- ✅ VISTA MÓVIL: TARJETAS -->
+                            <RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
+                                @foreach (var cuota in items)
+                                {
+                                    // Calculamos el color del borde
+                                    var colorBorde = cuota.SaldoPendiente <= 0 ? "#28a745" : "#6f42c1";
+
+                                    <RadzenCard Style="@($"padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid {colorBorde};")">
+
+                                        <!-- 1. Encabezado: Casa y Estado -->
+                                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #1a2a3a;">
+                                                <RadzenIcon Icon="home_work" Style="font-size: 20px; margin-right: 5px; color: #666;" />
+                                                Casa @cuota.House?.Number
+                                            </RadzenText>
+
+                                            @if (cuota.Estado == EstadoCuotaCasa.Pendiente)
+                                            {
+                                                <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Pendiente</span>
+                                            }
+                                            else if (cuota.Estado == EstadoCuotaCasa.PagoParcial)
+                                            {
+                                                <span style="background: #cce5ff; color: #004085; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Abonado</span>
+                                            }
+                                            else if (cuota.Estado == EstadoCuotaCasa.Confirmada)
+                                            {
+                                                <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Pagado</span>
+                                            }
+                                        </RadzenStack>
+
+                                        <!-- 2. Período y Motivo -->
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-top: 6px; font-size: 14px;">
+                                            <RadzenIcon Icon="calendar_today" Style="font-size: 14px; margin-right: 4px;" /> @cuota.PeriodoCompleto
+                                        </RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-top: 2px; font-size: 14px;">
+                                            <RadzenIcon Icon="request_quote" Style="font-size: 14px; margin-right: 4px; color: #6f42c1;" /> @(cuota.CuotaEspecial?.Motivo ?? "-")
+                                        </RadzenText>
+
+                                        <!-- 3. Montos -->
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
+                                            <div>
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Monto Total</RadzenText>
+                                                <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600; color: #333; margin: 0;">@cuota.MontoTotal.ToString("N2") $</RadzenText>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Saldo Pendiente</RadzenText>
+                                                <RadzenText TextStyle="TextStyle.H6"
+                                                            Style="@($"font-weight: 800; color: {(cuota.SaldoPendiente <= 0 ? "#28a745" : "#dc3545")}; margin: 0;")">
+                                                    @cuota.SaldoPendiente.ToString("N2") $
+                                                </RadzenText>
+                                            </div>
+                                        </div>
+
+                                        <!-- 4. Botones de Acción -->
+                                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                            @if (isAdmin)
+                                            {
+                                                <!-- ✅ AQUÍ ESTÁ EL CAMBIO: Contenedor relativo -->
+                                                <div style="position: relative; flex: 1; display: inline-block;">
+                                                    <RadzenButton Text="Ver Pagos" Icon="visibility" ButtonStyle="ButtonStyle.Secondary"
+                                                                  Style="width: 100%; border-radius: 8px;" Size="ButtonSize.Small"
+                                                                  Click="@(() => AddPagosList(cuota))" />
+
+                                                    <!-- ✅ EL BADGE ROJO -->
+                                                    @if (cuota.Payments?.Any(x => x.Estado == "Pendiente") == true)
+                                                    {
+                                                        <span style="position: absolute;
+                                                            top: -8px;
+                                                            right: -8px;
+                                                            background: #dc3545;
+                                                            color: white;
+                                                            font-size: 11px;
+                                                            font-weight: bold;
+                                                            padding: 2px 7px;
+                                                            border-radius: 10px;
+                                                            min-width: 20px;
+                                                            text-align: center;
+                                                            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                                                            line-height: 1.4;
+                                                            z-index: 1;">
+                                                            @cuota.Payments.Count(x => x.Estado == "Pendiente")
+                                                        </span>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                @if (cuota.SaldoPendiente > 0)
+                                                {
+                                                    <RadzenButton Text="Pagar" Icon="payment" ButtonStyle="ButtonStyle.Success"
+                                                                  Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
+                                                                  Click="@(() => EditUser(cuota))" />
+                                                }
+                                                else
+                                                {
+                                                    <RadzenButton Text="Ver Comprobante" Icon="receipt" ButtonStyle="ButtonStyle.Light"
+                                                                  Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
+                                                                  Click="@(() => EditUser(cuota))" />
+                                                }
                                             }
                                         </div>
-                                    }
-                                </Template>
-                            </RadzenDataGridColumn>
 
-                   
-
-                        </Columns>
-
-
-
-
-                        <EmptyTemplate>
-                            <div style="padding: 20px; text-align: center; color: #6c757d;">
-                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
-                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
-                                    No hay Cuotas registradas
-                                </RadzenText>
-
-                            </div>
-                        </EmptyTemplate>
-                    </RadzenDataGrid>
-
-
-            
+                                    </RadzenCard>
+                                }
+                            </RadzenStack>
+                        }
+                    }
                 </RadzenTabsItem>
                 <RadzenTabsItem Text="Formulario" Disabled="true">
 
