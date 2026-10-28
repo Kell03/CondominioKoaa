@@ -1,0 +1,131 @@
+﻿@using Condominio.Domain.Entities
+
+<!-- ✅ BUSCADOR -->
+<div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
+    <RadzenTextBox Placeholder="Buscar por mes, año, motivo o casa..."
+                   Value="@filtroBusqueda"
+                   ValueChanged="@( (string val) => { filtroBusqueda = val; } )"
+                   Immediate="true"
+                   Style="width: 100%; border-radius: 20px; padding: 12px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; font-size: 15px;" />
+</div>
+
+<RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
+    @foreach (var cuota in ItemsFiltrados)
+    {
+        // Calculamos el color del borde
+        var colorBorde = cuota.SaldoPendiente <= 0 ? "#28a745" : "#6f42c1";
+
+        <RadzenCard Style="@($"padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid {colorBorde};")">
+
+            <!-- 1. Encabezado: Casa y Estado -->
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #1a2a3a;">
+                    <RadzenIcon Icon="home_work" Style="font-size: 20px; margin-right: 5px; color: #666;" />
+                    Casa @cuota.House?.Number
+                </RadzenText>
+
+                @if (cuota.Estado == EstadoCuotaCasa.Pendiente)
+                {
+                    <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Pendiente</span>
+                }
+                else if (cuota.Estado == EstadoCuotaCasa.PagoParcial)
+                {
+                    <span style="background: #cce5ff; color: #004085; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Abonado</span>
+                }
+                else if (cuota.Estado == EstadoCuotaCasa.Confirmada)
+                {
+                    <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Pagado</span>
+                }
+            </RadzenStack>
+
+            <!-- 2. Período y Motivo -->
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-top: 6px; font-size: 14px;">
+                <RadzenIcon Icon="calendar_today" Style="font-size: 14px; margin-right: 4px;" /> @cuota.PeriodoCompleto
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-top: 2px; font-size: 14px;">
+                <RadzenIcon Icon="request_quote" Style="font-size: 14px; margin-right: 4px; color: #6f42c1;" /> @(cuota.CuotaEspecial?.Motivo ?? "-")
+            </RadzenText>
+
+            <!-- 3. Montos -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
+                <div>
+                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Monto Total</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600; color: #333; margin: 0;">@cuota.MontoTotal.ToString("N2") $</RadzenText>
+                </div>
+                <div style="text-align: right;">
+                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Saldo Pendiente</RadzenText>
+                    <RadzenText TextStyle="TextStyle.H6"
+                                Style="@($"font-weight: 800; color: {(cuota.SaldoPendiente <= 0 ? "#28a745" : "#dc3545")}; margin: 0;")">
+                        @cuota.SaldoPendiente.ToString("N2") $
+                    </RadzenText>
+                </div>
+            </div>
+
+            <!-- 4. Botones de Acción -->
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                @if (IsAdmin)
+                {
+                    <div style="position: relative; flex: 1; display: inline-block;">
+                        <RadzenButton Text="Ver Pagos" Icon="visibility" ButtonStyle="ButtonStyle.Secondary"
+                                      Style="width: 100%; border-radius: 8px;" Size="ButtonSize.Small"
+                                      Click="@(() => OnVerPagos.InvokeAsync(cuota))" />
+
+                        @if (cuota.Payments?.Any(x => x.Estado == "Pendiente") == true)
+                        {
+                            <span style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; font-size: 11px; font-weight: bold; padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); line-height: 1.4; z-index: 1;">
+                                @cuota.Payments.Count(x => x.Estado == "Pendiente")
+                            </span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @if (cuota.SaldoPendiente > 0)
+                    {
+                        <RadzenButton Text="Pagar" Icon="payment" ButtonStyle="ButtonStyle.Success"
+                                      Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
+                                      Click="@(() => OnPagar.InvokeAsync(cuota))" />
+                    }
+                    else
+                    {
+                        <RadzenButton Text="Ver Comprobante" Icon="receipt" ButtonStyle="ButtonStyle.Light"
+                                      Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
+                                      Click="@(() => OnPagar.InvokeAsync(cuota))" />
+                    }
+                }
+            </div>
+
+        </RadzenCard>
+    }
+</RadzenStack>
+
+@code {
+    // ✅ Parámetros
+    [Parameter] public List<CuotaEspecialCasa> Items { get; set; } = new();
+    [Parameter] public bool IsAdmin { get; set; }
+
+    // ✅ Eventos para conectar con la página principal
+    [Parameter] public EventCallback<CuotaEspecialCasa> OnPagar { get; set; }
+    [Parameter] public EventCallback<CuotaEspecialCasa> OnVerPagos { get; set; }
+
+    // ✅ Lógica del buscador
+    private string filtroBusqueda = "";
+
+  
+
+    private IEnumerable<CuotaEspecialCasa> ItemsFiltrados
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filtroBusqueda))
+                return Items;
+
+            var texto = filtroBusqueda.ToLower();
+            return Items.Where(x =>
+                (x.PeriodoCompleto != null && x.PeriodoCompleto.ToLower().Contains(texto)) ||
+                (x.CuotaEspecial?.Motivo != null && x.CuotaEspecial.Motivo.ToLower().Contains(texto)) ||
+                (x.House?.Number != null && x.House.Number.ToLower().Contains(texto))
+            );
+        }
+    }
+}
