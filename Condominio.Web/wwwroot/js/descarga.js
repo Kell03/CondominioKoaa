@@ -6,3 +6,7 @@
     link.click();
     document.body.removeChild(link);
 };
+
+window.esPantallaMovil = () => {
+    return window.matchMedia("(max-width: 768px)").matches;
+};

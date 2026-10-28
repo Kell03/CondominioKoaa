@@ -1,6 +1,7 @@
 using Condominio.Application.Services;
 using Condominio.Domain.Entities;
 using Condominio.Web.Components.Dialogs;
+using Microsoft.JSInterop;
 using Radzen;
 using Radzen.Blazor;
 using System.Data;
@@ -35,6 +36,38 @@ namespace Condominio.Web.Components.Pages
         private IQueryable<FacturaMesCasa> items;
 
         private bool isUploading = false;
+
+        private bool _esMobile = false;
+        private bool _cargando = true;
+
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                try
+                {
+                    // ✅ Un pequeño delay para asegurar que la pantalla esté renderizada
+                    await Task.Delay(100);
+
+                    _esMobile = await JSRuntime.InvokeAsync<bool>("esPantallaMovil");
+                    Console.WriteLine($"📱 Mobile: {_esMobile}");
+
+                    // Forzamos a Blazor a redibujar la pantalla con el nuevo valor
+                    StateHasChanged();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error al detectar mobile: {ex.Message}");
+                }
+                finally
+                {
+                    _cargando = false;
+                    StateHasChanged();
+                }
+            }
+        }
+
         private void AgregarItem()
         {
             itemEditando = new FacturaMesHijo();

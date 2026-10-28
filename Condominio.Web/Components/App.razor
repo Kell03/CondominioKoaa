@@ -22,6 +22,16 @@
     <script src="js/descarga.js"></script>
 
     <script>
+
+
+            // ✅ 1. Función para detectar si es móvil
+            window.esPantallaMovil = () => {
+                return window.matchMedia("(max-width: 768px)").matches;
+            };
+
+            
+
+
         (function() {
         console.log('🔄 Verificando Radzen 11...');
         

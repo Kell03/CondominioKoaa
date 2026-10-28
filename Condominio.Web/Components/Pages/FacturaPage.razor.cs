@@ -19,6 +19,12 @@ namespace Condominio.Web.Components.Pages
         IEnumerable<FacturaMes> Invoices = [];
 
 
+        private bool _esMobile = false;
+        private bool _cargando = true;
+
+
+
+
         protected override async Task OnInitializedAsync()
         {
             try
@@ -50,12 +56,36 @@ namespace Condominio.Web.Components.Pages
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await base.OnAfterRenderAsync(firstRender);
-
-            if (firstRender && Invoices != null && Invoices.Any())
+            if (firstRender)
             {
-                await grid.ExpandRow(Invoices.First());
+                try
+                {
+                    // ✅ Un pequeño delay para asegurar que la pantalla esté renderizada
+                    await Task.Delay(100);
+
+                    _esMobile = await JSRuntime.InvokeAsync<bool>("esPantallaMovil");
+                    Console.WriteLine($"📱 Mobile: {_esMobile}");
+
+
+                    if (firstRender && Invoices != null && Invoices.Any())
+                    {
+                        await grid.ExpandRow(Invoices.First());
+                    }
+                    // Forzamos a Blazor a redibujar la pantalla con el nuevo valor
+                    StateHasChanged();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error al detectar mobile: {ex.Message}");
+                }
+                finally
+                {
+                    _cargando = false;
+                    StateHasChanged();
+                }
             }
+
+            
         }
 
 
