@@ -3,6 +3,7 @@
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
+@using Condominio.Web.Components.ComponentsMobile
 @using Microsoft.AspNetCore.Authorization
 @inject FacturaMesRepository FacturaMesRepository
 @using Radzen.Blazor
@@ -46,84 +47,11 @@
 
                 @if (_esMobile)
                 {
-                    <RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
-                        @foreach (var factura in Invoices)
-                        {
-                            <RadzenCard Style="@($"padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid {(factura.IsActive ? "#28a745" : "#dc3545")};")">
-                                <!-- Encabezado: Período y Estado -->
-                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                                    <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #1a2a3a;">
-                                        <RadzenIcon Icon="calendar_month" Style="font-size: 20px; margin-right: 5px; color: #666;" />
-                                        @factura.NombreMes @factura.Year
-                                    </RadzenText>
-
-                                    @if (factura.IsActive)
-                                    {
-                                        <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Pagada</span>
-                                    }
-                                    else
-                                    {
-                                        <span style="background: #f8d7da; color: #721c24; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Pendiente</span>
-                                    }
-                                </RadzenStack>
-
-                                <!-- Montos -->
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
-                                    <div>
-                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Monto Total</RadzenText>
-                                        <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600; color: #333; margin: 0;">@ObtenerMontoTotal(factura).ToString("N2") $</RadzenText>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Recaudado</RadzenText>
-                                        <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 800; color: #007bff; margin: 0;">
-                                            @(factura.MontoRecaudado?.ToString("N2") ?? "0.00") $
-                                        </RadzenText>
-                                    </div>
-                                </div>
-
-                                <!-- Botones de Acción -->
-                                <div style="margin-top: 15px; display: flex; gap: 10px;">
-                                    @if (!factura.Enviado)
-                                    {
-                                        <RadzenButton Text="Enviar a Todos" Icon="send" ButtonStyle="ButtonStyle.Primary"
-                                                      Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
-                                                      Click="@(() => ConfirmSend(factura))" />
-                                    }
-                                    else
-                                    {
-                                        <RadzenButton Text="Enviado" Icon="check_circle" ButtonStyle="ButtonStyle.Success"
-                                                      Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small" Disabled="true" />
-                                    }
-
-                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger"
-                                                  Style="border-radius: 8px;" Size="ButtonSize.Small"
-                                                  Click="@(() => ConfirmDelete(factura))" />
-                                </div>
-
-                                <!-- Detalles desplegables (Opcional en móvil) -->
-                                <div style="margin-top: 15px;">
-                                    <RadzenButton Text="Ver Detalle de Factura" Icon="expand_more"
-                                                  ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
-                                                  Style="width: 100%; border-radius: 8px;"
-                                                  Click="@(() => ToggleDetalle(factura.Id))" />
-
-                                    @if (facturaExpandidaId == factura.Id)
-                                    {
-                                        <div style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
-                                            @foreach (var hijo in factura.FacturaMesHijos)
-                                            {
-                                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
-                                                    <span style="color: #555;">@(hijo.CategoriaGasto?.Nombre ?? hijo.Motivo)</span>
-                                                    <span style="font-weight: 600;">@hijo.Monto.ToString("N2") $</span>
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-
-                            </RadzenCard>
-                        }
-                    </RadzenStack>
+                   <GridFacturaMes Items="Invoices.ToList()" 
+                    FacturaExpandidaId="facturaExpandidaId"
+                    OnEnviar="@((factura) => ConfirmSend(factura))"
+                    OnEliminar="@((factura) => ConfirmDelete(factura))"
+                    OnToggleDetalle="@((id) => ToggleDetalle(id))" />
                 }
                 else
                 {

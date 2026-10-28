@@ -13,7 +13,7 @@
     @foreach (var cuota in ItemsFiltrados)
     {
         // Calculamos el color del borde
-        var colorBorde = cuota.SaldoPendiente <= 0 ? "#28a745" : "#6f42c1";
+        var colorBorde =  "#6f42c1";
 
         <RadzenCard Style="@($"padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid {colorBorde};")">
 
