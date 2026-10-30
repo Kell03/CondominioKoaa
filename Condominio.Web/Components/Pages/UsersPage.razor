@@ -1,15 +1,17 @@
 ﻿@page "/users"
 @attribute [Authorize]
+@using ClosedXML.Excel
 @using Condominio.Application.Services
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
 @using Microsoft.AspNetCore.Authorization
 @inject UserRepository UserRepository
-@inject IGenericRepository<Houses> HouseRepository
+@inject HouseRepository HouseRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @inject AppState AppState
+@inject Radzen.NotificationService NotificationService
 @rendermode InteractiveServer
 
 
@@ -24,6 +26,31 @@
             <RadzenText TextStyle="TextStyle.Body2" Style="margin: 4px 0 0 0; color: #6c757d;">
                 Gestión de Usuarios
             </RadzenText>
+        </RadzenCard>
+
+        <RadzenCard Style="padding: 15px; margin-bottom: 15px;">
+            <RadzenText TextStyle="TextStyle.H6">Carga Masiva desde Excel</RadzenText>
+
+            @if (isUploading)
+            {
+                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem" Style="margin-top: 15px;">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #0056b3; font-weight: 500;">
+                        Procesando archivo Excel, por favor espera...
+                    </RadzenText>
+                    <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Info"
+                                       Value="100"
+                                       ShowValue="false"
+                                       Mode="ProgressBarMode.Indeterminate"
+                                       AriaLabel="Cargando Excel" />
+                </RadzenStack>
+            }
+            else
+            {
+                <InputFile OnChange="@SubirExcel" accept=".xlsx" style="margin-top: 10px; display: block;" />
+                <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; margin-top: 5px; display: block;">
+                    Formato: Nro Casa | Cédula | Correo
+                </RadzenText>
+            }
         </RadzenCard>
 
 <RadzenTabs @bind-SelectedIndex=@selectedIndex>
@@ -192,6 +219,131 @@
 @code {
     int selectedIndex = 0;
 
-    
-    
+
+    // ✅ Método que se ejecuta al subir el archivo (InputFile nativo)
+    private async Task SubirExcel(InputFileChangeEventArgs e)
+    {
+        var archivo = e.File;
+        if (archivo is null) return;
+
+        isUploading = true;
+
+        try
+        {
+            // 1. Leer archivo a un MemoryStream (ClosedXML necesita stream seekable)
+            long maxFileSize = 1024 * 1024 * 10; // 10 MB
+            using var stream = archivo.OpenReadStream(maxFileSize);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            // 2. Abrir el libro y la primera hoja
+            using var workbook = new XLWorkbook(memoryStream);
+            var worksheet = workbook.Worksheet(1);
+
+            // 3. Precargar casas y usuarios existentes para validar rápido
+            var lista = await HouseRepository.GetAllAsync();
+            var housesList = (await HouseRepository.GetAllAsync()).ToList();
+            var housesByNumber = housesList
+                .GroupBy(h => h.Number)
+                .ToDictionary(g => g.Key, g => g.First().Id);
+
+            var existentes = (await UserRepository.GetAllAsync())
+                             .Select(u => u.Email.ToLowerInvariant())
+                             .ToHashSet();
+
+            var nuevos = new List<Users>();
+            var errores = new List<string>();
+            int rowIndex = 1;
+
+            // 4. Leer fila por fila (Skip(1) para saltar encabezado)
+            foreach (var row in worksheet.RowsUsed().Skip(1))
+            {
+                rowIndex++;
+
+                var nroCasa = row.Cell(1).GetString().Trim();
+                var cedula = row.Cell(2).GetString().Trim();
+                var correo = row.Cell(3).GetString().Trim();
+
+                // Fila completamente vacía → se ignora
+                if (string.IsNullOrWhiteSpace(nroCasa) &&
+                    string.IsNullOrWhiteSpace(cedula) &&
+                    string.IsNullOrWhiteSpace(correo))
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(nroCasa))
+                {
+                    errores.Add($"Fila {rowIndex}: Nro Casa vacío.");
+                    continue;
+                }
+
+                if (!housesByNumber.TryGetValue(nroCasa, out var houseId))
+                {
+                    errores.Add($"Fila {rowIndex}: No existe la casa '{nroCasa}'.");
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(cedula))
+                {
+                    errores.Add($"Fila {rowIndex}: Cédula vacía.");
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(correo) || !correo.Contains('@'))
+                {
+                    errores.Add($"Fila {rowIndex}: Correo inválido.");
+                    continue;
+                }
+
+                if (existentes.Contains(correo.ToLowerInvariant()))
+                {
+                    errores.Add($"Fila {rowIndex}: El correo '{correo}' ya está registrado.");
+                    continue;
+                }
+
+                nuevos.Add(new Users
+                {
+                    Name = cedula,                    // ✅ Cédula mapeada a Name (ajusta si tienes campo Cedula)
+                    Email = correo,
+                    Role = "Usuaio",
+                    HouseId = houseId,
+                    IsActive = true,
+                    PasswordHash = GenerarPasswordTemporal()   // ⚠️ ver nota abajo
+                });
+
+                existentes.Add(correo.ToLowerInvariant()); // evitar duplicados dentro del mismo archivo
+            }
+
+            // 5. Guardar en batch
+            if (nuevos.Count > 0)
+            {
+                foreach (var u in nuevos)
+                    await UserRepository.AddAsync(u);   // Solo agrega al ChangeTracker
+
+                await UserRepository.SaveChangesAsync(); // Un único SaveChanges
+            }
+
+            // 6. Refrescar la lista
+            await LoadUsers();
+            // 7. Notificaciones (mismo estilo que saldos-iniciales)
+            if (nuevos.Count > 0)
+                NotificationService.Notify(NotificationSeverity.Success, "Éxito",
+                    $"Se importaron {nuevos.Count} usuarios.");
+
+            if (errores.Count > 0)
+                NotificationService.Notify(NotificationSeverity.Warning, "Advertencias",
+                    $"{errores.Count} fila(s) con problemas:\n" + string.Join("\n", errores.Take(10)));
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error al leer Excel", ex.Message);
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    // Contraseña temporal simple (⚠️ reemplaza por tu hasher real)
+    private string GenerarPasswordTemporal() => "Temporal123!";
 }

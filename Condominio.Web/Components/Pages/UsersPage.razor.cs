@@ -36,6 +36,8 @@ namespace Condominio.Web.Components.Pages
 
         private IQueryable<Users> users;
 
+        private bool isUploading = false;
+
         protected override async Task OnInitializedAsync()
         {
 

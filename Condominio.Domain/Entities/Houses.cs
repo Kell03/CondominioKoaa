@@ -9,7 +9,7 @@ namespace Condominio.Domain.Entities
     {
 
         public string Number { get; set; }
-        public string Street { get; set; }
+        public string? Street { get; set; } = "";
         public string? AddressComplement { get; set; }
         public bool IsActive { get; set; } = true;
     }
