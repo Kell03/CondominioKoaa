@@ -1,5 +1,6 @@
 ﻿using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
+using Condominio.Web.Components.Dialogs;
 using Radzen;
 
 namespace Condominio.Web.Components.Pages
@@ -116,8 +117,76 @@ namespace Condominio.Web.Components.Pages
 
 
 
+        private async Task OpenCreateDefaultHousesDialog()
+        {
+            var result = await DialogService.OpenAsync<CreateDefaultHousesDialog>(
+                "Crear casas por defecto",
+                new Dictionary<string, object>(),
+                new DialogOptions
+                {
+                    Width = "400px",
+                    CloseDialogOnOverlayClick = true,
+                    Draggable = true,
+                    Resizable = true
+                });
 
+            if (result is int cantidad && cantidad > 0)
+            {
+                await GenerateDefaultHouses(cantidad);
+            }
+        }
+
+
+        private async Task GenerateDefaultHouses(int cantidad)
+        {
+            try
+            {
+                var creadas = await HouseRepository.CreateDefaultHousesAsync(cantidad);
+
+                if (creadas == 0)
+                {
+
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Warning,
+                        Summary = $"No se creó ninguna casa",
+                        Duration = 3000 // ⏱️ 3000 milisegundos = 3 segundos
+                    });
+                    return;
+                }
+            
+
+                await HouseRepository.SaveChangesAsync();
+
+                // Recargar la lista
+                await LoadUsers();
+
+                StateHasChanged();
+                // Opcional: notificación
+
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = $"Se crearon {cantidad} casas correctamente",
+                    Duration = 3000 // ⏱️ 3000 milisegundos = 3 segundos
+                });
+
+            }
+            catch (Exception ex)
+            {
+
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = $"Error al crear casas",
+                    Duration = 3000 // ⏱️ 3000 milisegundos = 3 segundos
+                });
+            }
+        }
     }
 
+
 }
+
+
 

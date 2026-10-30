@@ -1,0 +1,28 @@
+﻿@using Radzen
+@using Radzen.Blazor
+@inject DialogService DialogService
+
+<RadzenStack Gap="1rem">
+    <RadzenText TextStyle="TextStyle.Body2">
+        Indica cuántas casas deseas crear por defecto. Se numerarán del 1 al N.
+    </RadzenText>
+
+    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+        <RadzenLabel Component="CantidadInput">Cantidad de casas</RadzenLabel>
+        <RadzenNumeric Name="CantidadInput" @bind-Value="cantidad" Min="1" Max="500" Style="width: 100%;" />
+        <RadzenRequiredValidator Component="CantidadInput" Text="Debes indicar una cantidad mayor a 0" />
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+        <RadzenButton Text="Cancelar"
+                      ButtonStyle="ButtonStyle.Light"
+                      Click="@(() => DialogService.Close(null))" />
+        <RadzenButton Text="Crear"
+                      ButtonStyle="ButtonStyle.Primary"
+                      Click="@(() => DialogService.Close(cantidad))" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    int cantidad = 1;
+}
