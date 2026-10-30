@@ -1,0 +1,89 @@
+﻿@using Condominio.Domain.Entities
+
+<!-- ✅ BUSCADOR -->
+<div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
+    <RadzenTextBox Placeholder="Buscar por descripción o fecha..."
+                   Value="@filtroBusqueda"
+                   ValueChanged="@( (string val) => { filtroBusqueda = val; } )"
+                   Immediate="true"
+                   Style="width: 100%; border-radius: 20px; padding: 12px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; font-size: 15px;" />
+</div>
+
+<RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
+    @foreach (var item in ItemsFiltrados)
+    {
+        <!-- ✅ BORDE GRIS FIJO PARA MOVIMIENTOS -->
+        <RadzenCard Style="padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #6c757d;">
+
+            <!-- 1. Encabezado: Tipo y Fecha -->
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+
+                <!-- Badge de Entrada o Salida -->
+                @if (item.Tipo == TipoMovimiento.Entrada)
+                {
+                    <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
+                        <RadzenIcon Icon="arrow_downward" Style="font-size: 12px; margin-right: 2px;" /> Entrada
+                    </span>
+                }
+                else
+                {
+                    <span style="background: #f8d7da; color: #721c24; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">
+                        <RadzenIcon Icon="arrow_upward" Style="font-size: 12px; margin-right: 2px;" /> Salida
+                    </span>
+                }
+
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin: 0; font-size: 13px;">
+                    <RadzenIcon Icon="calendar_today" Style="font-size: 14px; margin-right: 4px;" /> @item.Fecha.ToString("dd/MM/yyyy")
+                </RadzenText>
+            </RadzenStack>
+
+            <!-- 2. Descripción -->
+            <div style="margin-top: 10px;">
+                <RadzenText TextStyle="TextStyle.Body1" Style="@($"font-weight: 600; color: {(item.IdGasto.HasValue ? "#dc3545" : "#333")}; white-space: normal; font-size: 15px;")">
+                    @item.Descripcion
+                </RadzenText>
+            </div>
+
+            <!-- 3. Montos -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
+                <div>
+                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Monto ($)</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" Style="@($"font-weight: 800; margin: 0; color: {(item.Tipo == TipoMovimiento.Entrada ? "#28a745" : "#dc3545")};")">
+                        @(item.Tipo == TipoMovimiento.Entrada ? "+" : "-")@item.Monto.ToString("N2") $
+                    </RadzenText>
+                </div>
+                <div style="text-align: right;">
+                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Monto (Bs)</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600; color: #333; margin: 0;">
+                        @(item.MontoBs.HasValue ? item.MontoBs.Value.ToString("N2") : "-") Bs
+                    </RadzenText>
+                </div>
+            </div>
+
+        </RadzenCard>
+    }
+</RadzenStack>
+
+@code {
+    // ✅ Parámetros
+    [Parameter] public List<Movimientos> Items { get; set; } = new();
+
+    // ✅ Buscador
+    private string filtroBusqueda = "";
+
+    private IEnumerable<Movimientos> ItemsFiltrados
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filtroBusqueda))
+                return Items;
+
+            var texto = filtroBusqueda.ToLower();
+            return Items.Where(x =>
+                (x.Descripcion != null && x.Descripcion.ToLower().Contains(texto)) ||
+                (x.Fecha.ToString("dd/MM/yyyy").Contains(texto)) ||
+                (x.Tipo == TipoMovimiento.Entrada ? "entrada".Contains(texto) : "salida".Contains(texto))
+            );
+        }
+    }
+}

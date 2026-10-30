@@ -31,7 +31,7 @@ namespace Condominio.Web.Components.Pages
             {
                 await base.OnInitializedAsync();
 
-                Invoices = await FacturaMesRepository.GetAllAsync();
+                Invoices = await FacturaMesRepository.GetAllForGastosAsync();
             }
             catch (Exception ex)
             {

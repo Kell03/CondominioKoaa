@@ -1,0 +1,134 @@
+﻿@using Condominio.Domain.Entities
+
+<!-- ✅ BUSCADOR -->
+<div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
+    <RadzenTextBox Placeholder="Buscar por factura o estado..."
+                   Value="@filtroBusqueda"
+                   ValueChanged="@( (string val) => { filtroBusqueda = val; } )"
+                   Immediate="true"
+                   Style="width: 100%; border-radius: 20px; padding: 12px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; font-size: 15px;" />
+</div>
+
+<RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
+    @foreach (var factura in ItemsFiltrados)
+    {
+        <!-- ✅ BORDE ROJO FIJO PARA GASTOS -->
+        <RadzenCard Style="@($"padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #dc3545;")">
+
+            <!-- 1. Encabezado: Período y Estado -->
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #1a2a3a;">
+                    <RadzenIcon Icon="receipt_long" Style="font-size: 20px; margin-right: 5px; color: #666;" />
+                    @factura.NombreMesCompleto
+                </RadzenText>
+
+                @if (factura.EstadoPago == EstadoPagoFactura.Pagada)
+                {
+                    <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Pagada</span>
+                }
+                else
+                {
+                    <span style="background: #f8d7da; color: #721c24; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">@factura.EstadoPago</span>
+                }
+            </RadzenStack>
+
+            <!-- 2. Montos -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
+                <div>
+                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Monto Total</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600; color: #333; margin: 0;">@factura.MontoTotal.ToString("N2") $</RadzenText>
+                </div>
+                <div style="text-align: right;">
+                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Recaudado</RadzenText>
+                    <RadzenText TextStyle="TextStyle.H6"
+                                Style="@($"font-weight: 800; color: {(factura.MontoRecaudado >= (decimal)factura.MontoTotal ? "#28a745" : "#dc3545")}; margin: 0;")">
+                        @(factura.MontoRecaudado?.ToString("N2") ?? "0.00") $
+                    </RadzenText>
+                </div>
+            </div>
+
+            <!-- 3. Detalles desplegables (Interno del componente) -->
+            <div style="margin-top: 15px;">
+                <RadzenButton Text="Ver Conceptos / Pagar"
+                              Icon="@(mostrarDetalle ? "expand_less" : "expand_more")"
+                              ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+                              Style="width: 100%; border-radius: 8px; border: 1px solid #ddd;"
+                              Click="@ToggleDetalle" />
+
+                @if (mostrarDetalle)
+                {
+                    <div style="margin-top: 10px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+                        @foreach (var item in factura.FacturaMesHijos)
+                        {
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; border-bottom: 1px dashed #eee; padding-bottom: 8px;">
+                                <div style="white-space: normal; padding-right: 10px;">
+                                    <span style="color: #555;">@(item.CategoriaGasto?.Nombre ?? item.Motivo ?? "-")</span>
+                                    <br />
+                                    @if (item.Pagado)
+                                    {
+                                        <span style="color: #28a745; font-size: 11px; font-weight: 600;"><RadzenIcon Icon="check_circle" Style="font-size: 12px;" /> Pagado</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #dc3545; font-size: 11px; font-weight: 600;"><RadzenIcon Icon="pending" Style="font-size: 12px;" /> Pendiente</span>
+                                    }
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-weight: 600; color: #333; display: block;">@item.Monto.ToString("N2") $</span>
+                                    @if (!item.Pagado)
+                                    {
+                                        <RadzenButton Text="Pagar"
+                                                      Icon="payment"
+                                                      ButtonStyle="ButtonStyle.Success"
+                                                      Size="ButtonSize.Small"
+                                                      Style="margin-top: 5px; padding: 2px 8px; font-size: 11px;"
+                                                      Click="@(() => OnPagar.InvokeAsync((factura, item)))" />
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                            <span style="font-weight: bold; color: #1a2a3a;">Total Pendiente</span>
+                            <span style="font-weight: bold; color: #dc3545;">
+                                @factura.FacturaMesHijos.Where(x => x.Pagado == false).Sum(h => h.Monto).ToString("N2") $
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+        </RadzenCard>
+    }
+</RadzenStack>
+
+@code {
+    // ✅ Parámetros
+    [Parameter] public List<FacturaMes> Items { get; set; } = new();
+    [Parameter] public EventCallback<(FacturaMes Factura, FacturaMesHijo Hijo)> OnPagar { get; set; }
+
+    // ✅ Variables locales para controlar la expansión de la tarjeta
+    private bool mostrarDetalle = false;
+    private string filtroBusqueda = "";
+
+    private void ToggleDetalle()
+    {
+        mostrarDetalle = !mostrarDetalle;
+    }
+
+    // ✅ Lógica del buscador
+    private IEnumerable<FacturaMes> ItemsFiltrados
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filtroBusqueda))
+                return Items;
+
+            var texto = filtroBusqueda.ToLower();
+            return Items.Where(x =>
+                (x.NombreMesCompleto != null && x.NombreMesCompleto.ToLower().Contains(texto)) ||
+                (x.EstadoPago.ToString().ToLower().Contains(texto))
+            );
+        }
+    }
+}

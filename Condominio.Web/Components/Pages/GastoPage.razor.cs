@@ -2,6 +2,7 @@ using Condominio.Application.Services;
 using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.JSInterop;
 using Radzen;
 using Radzen.Blazor;
 
@@ -32,6 +33,36 @@ namespace Condominio.Web.Components.Pages
         private bool cargandoRates = true;
 
         string Moneda = "USD";
+        private bool _esMobile = false;
+        private bool _cargando = true;
+
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                try
+                {
+                    // ✅ Un pequeño delay para asegurar que la pantalla esté renderizada
+                    await Task.Delay(100);
+
+                    _esMobile = await JSRuntime.InvokeAsync<bool>("esPantallaMovil");
+                    Console.WriteLine($"📱 Mobile: {_esMobile}");
+
+                    // Forzamos a Blazor a redibujar la pantalla con el nuevo valor
+                    StateHasChanged();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error al detectar mobile: {ex.Message}");
+                }
+                finally
+                {
+                    _cargando = false;
+                    StateHasChanged();
+                }
+            }
+        }
 
         protected override async Task OnInitializedAsync()
         {
@@ -57,7 +88,7 @@ namespace Condominio.Web.Components.Pages
             selectedEmployees = new List<Gasto>() { items.FirstOrDefault() };
 
             cuotasEspeciales = (await cuotaEspecialRepository.GetAllAsync()).ToList();
-            facturas = (await facturaMesRepository.GetAllAsync()).ToList();
+            facturas = (await facturaMesRepository.GetAllForGastosAsync()).ToList();
 
             var monedas = await MonedaRepository.GetAllAsync();
             Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();

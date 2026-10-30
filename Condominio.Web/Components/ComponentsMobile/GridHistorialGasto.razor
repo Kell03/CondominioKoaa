@@ -1,0 +1,100 @@
+﻿@using Condominio.Domain.Entities
+
+<!-- ✅ BUSCADOR -->
+<div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
+    <RadzenTextBox Placeholder="Buscar por concepto, fecha o nota..."
+                   Value="@filtroBusqueda"
+                   ValueChanged="@( (string val) => { filtroBusqueda = val; } )"
+                   Immediate="true"
+                   Style="width: 100%; border-radius: 20px; padding: 12px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; font-size: 15px;" />
+</div>
+
+<RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
+    @foreach (var item in ItemsFiltrados)
+    {
+        <!-- ✅ BORDE ROJO FIJO -->
+        <RadzenCard Style="padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #dc3545;">
+
+            <!-- 1. Encabezado: Concepto y Monto -->
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #1a2a3a;">
+                    <RadzenIcon Icon="receipt_long" Style="font-size: 20px; margin-right: 5px; color: #dc3545;" />
+                    @(item.FacturaMesHijo?.CategoriaGasto?.Nombre
+                      ?? item.CuotaEspecial?.Motivo
+                      ?? item.Motivo
+                      ?? "Gasto")
+                </RadzenText>
+
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #dc3545;">
+                    -@item.Monto.ToString("N2") $
+                </RadzenText>
+            </RadzenStack>
+
+            <!-- 2. Fecha y Comprobante -->
+            <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-top: 6px; font-size: 14px;">
+                <RadzenIcon Icon="calendar_today" Style="font-size: 14px; margin-right: 4px;" />
+                @item.FechaPago.ToString("dd/MM/yyyy")
+            </RadzenText>
+
+            @if (!string.IsNullOrWhiteSpace(item.Comprobante))
+            {
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-top: 2px; font-size: 14px;">
+                    <RadzenIcon Icon="attachment" Style="font-size: 14px; margin-right: 4px;" />
+                    @item.Comprobante
+                </RadzenText>
+            }
+
+            <!-- 3. Notas (si existen) -->
+            @if (!string.IsNullOrWhiteSpace(item.Notas))
+            {
+                <div style="margin-top: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e9ecef; font-size: 13px; color: #555;">
+                    <strong>Nota:</strong> @item.Notas
+                </div>
+            }
+
+            <!-- 4. Botones de Acción -->
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <!-- Botón Editar (Llama al evento) -->
+                <RadzenButton Text="Editar" Icon="edit" ButtonStyle="ButtonStyle.Info"
+                              Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
+                              Click="@(() => OnEditar.InvokeAsync(item))" />
+
+                <!-- Botón Eliminar (Llama al evento) -->
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger"
+                              Style="border-radius: 8px;" Size="ButtonSize.Small"
+                              Click="@(() => OnEliminar.InvokeAsync(item))" />
+            </div>
+
+        </RadzenCard>
+    }
+</RadzenStack>
+
+@code {
+    // ✅ Parámetros
+    [Parameter] public List<Gasto> Items { get; set; } = new();
+
+    // ✅ Eventos
+    [Parameter] public EventCallback<Gasto> OnEditar { get; set; }
+    [Parameter] public EventCallback<Gasto> OnEliminar { get; set; }
+
+    // ✅ Buscador
+    private string filtroBusqueda = "";
+
+    private IEnumerable<Gasto> ItemsFiltrados
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filtroBusqueda))
+                return Items;
+
+            var texto = filtroBusqueda.ToLower();
+            return Items.Where(x =>
+                (x.FacturaMesHijo?.CategoriaGasto?.Nombre != null && x.FacturaMesHijo.CategoriaGasto.Nombre.ToLower().Contains(texto)) ||
+                (x.CuotaEspecial?.Motivo != null && x.CuotaEspecial.Motivo.ToLower().Contains(texto)) ||
+                (x.Motivo != null && x.Motivo.ToLower().Contains(texto)) ||
+                (x.Notas != null && x.Notas.ToLower().Contains(texto)) ||
+                (x.FechaPago.ToString("dd/MM/yyyy").Contains(texto))
+            );
+        }
+    }
+}

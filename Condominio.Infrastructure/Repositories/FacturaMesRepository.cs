@@ -26,9 +26,19 @@ namespace Condominio.Infrastructure.Repositories
         {
             _context.ChangeTracker.Clear();
 
-            return await _dbSet.Include(x => x.FacturaMesHijos).ThenInclude(x => x.CategoriaGasto).ThenInclude(x => x.Proveedor).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            return await _dbSet.Include(x => x.FacturaMesHijos).ThenInclude(x => x.CategoriaGasto).ThenInclude(x => x.Proveedor).OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
         }
 
+
+        public  async Task<IEnumerable<FacturaMes>> GetAllForGastosAsync()
+        {
+            _context.ChangeTracker.Clear();
+
+            return await _dbSet.Include(x => x.FacturaMesHijos).ThenInclude(x => x.CategoriaGasto).ThenInclude(x => x.Proveedor).OrderByDescending(x => x.CreatedAt)
+                .Where(x => x.Motivo == null || x.Motivo == "")
+                .ToListAsync();
+        }
 
 
         public async Task DeleteWithHijos(FacturaMes entity)
