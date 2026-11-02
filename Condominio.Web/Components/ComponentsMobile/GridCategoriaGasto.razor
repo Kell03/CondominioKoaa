@@ -1,0 +1,78 @@
+﻿@using Condominio.Domain.Entities
+
+<!-- ✅ BUSCADOR -->
+<div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
+    <RadzenTextBox Placeholder="Buscar por nombre o descripción..."
+                   Value="@filtroBusqueda"
+                   ValueChanged="@( (string val) => { filtroBusqueda = val; } )"
+                   Immediate="true"
+                   Style="width: 100%; border-radius: 20px; padding: 12px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; font-size: 15px;" />
+</div>
+
+<RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
+    @foreach (var categoria in ItemsFiltrados)
+    {
+        <!-- ✅ BORDE AZUL -->
+        <RadzenCard Style="padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #007bff;">
+
+            <!-- 1. Encabezado: Nombre -->
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #1a2a3a; white-space: normal;">
+                    <RadzenIcon Icon="category" Style="font-size: 20px; margin-right: 5px; color: #007bff;" />
+                    @categoria.Nombre
+                </RadzenText>
+            </RadzenStack>
+
+            <!-- 2. Descripción -->
+            @if (!string.IsNullOrWhiteSpace(categoria.Descripcion))
+            {
+                <div style="margin-top: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e9ecef;">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; font-size: 13px; margin: 0;">
+                        @categoria.Descripcion
+                    </RadzenText>
+                </div>
+            }
+
+            <!-- 3. Botones de Acción -->
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <!-- Botón Editar -->
+                <RadzenButton Text="Editar" Icon="edit" ButtonStyle="ButtonStyle.Info"
+                              Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
+                              Click="@(() => OnEditar.InvokeAsync(categoria))" />
+
+                <!-- Botón Eliminar -->
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger"
+                              Style="border-radius: 8px;" Size="ButtonSize.Small"
+                              Click="@(() => OnEliminar.InvokeAsync(categoria))" />
+            </div>
+
+        </RadzenCard>
+    }
+</RadzenStack>
+
+@code {
+    // ✅ Parámetros
+    [Parameter] public List<CategoriasGasto> Items { get; set; } = new();
+
+    // ✅ Eventos
+    [Parameter] public EventCallback<CategoriasGasto> OnEditar { get; set; }
+    [Parameter] public EventCallback<CategoriasGasto> OnEliminar { get; set; }
+
+    // ✅ Buscador
+    private string filtroBusqueda = "";
+
+    private IEnumerable<CategoriasGasto> ItemsFiltrados
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filtroBusqueda))
+                return Items;
+
+            var texto = filtroBusqueda.ToLower();
+            return Items.Where(x =>
+                (x.Nombre != null && x.Nombre.ToLower().Contains(texto)) ||
+                (x.Descripcion != null && x.Descripcion.ToLower().Contains(texto))
+            );
+        }
+    }
+}

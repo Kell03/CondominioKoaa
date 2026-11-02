@@ -1,0 +1,95 @@
+﻿@using Condominio.Domain.Entities
+
+<!-- ✅ BUSCADOR -->
+<div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
+    <RadzenTextBox Placeholder="Buscar por número o calle..."
+                   Value="@filtroBusqueda"
+                   ValueChanged="@( (string val) => { filtroBusqueda = val; } )"
+                   Immediate="true"
+                   Style="width: 100%; border-radius: 20px; padding: 12px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; font-size: 15px;" />
+</div>
+
+<RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
+    @foreach (var casa in ItemsFiltrados)
+    {
+        <!-- ✅ BORDE AZUL FIJO -->
+        <RadzenCard Style="padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #007bff;">
+
+            <!-- 1. Encabezado: Número de Casa -->
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #1a2a3a;">
+                    <RadzenIcon Icon="home" Style="font-size: 22px; margin-right: 5px; color: #007bff;" />
+                    @casa.Number
+                </RadzenText>
+            </RadzenStack>
+
+            <!-- 2. Detalles: Calle y Dirección (Solo si existen) -->
+            @if (!string.IsNullOrWhiteSpace(casa.Street) || !string.IsNullOrWhiteSpace(casa.AddressComplement))
+            {
+                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 4px;">
+                    @if (!string.IsNullOrWhiteSpace(casa.Street))
+                    {
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; font-size: 14px;">
+                            <RadzenIcon Icon="signpost" Style="font-size: 14px; margin-right: 4px;" />
+                            @casa.Street
+                        </RadzenText>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(casa.AddressComplement))
+                    {
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; font-size: 14px;">
+                            <RadzenIcon Icon="location_on" Style="font-size: 14px; margin-right: 4px;" />
+                            @casa.AddressComplement
+                        </RadzenText>
+                    }
+                </div>
+            }
+            else
+            {
+                <!-- Si no hay dirección, mostramos un texto sutil -->
+                <div style="margin-top: 8px;">
+                    <span style="color: #adb5bd; font-size: 12px; font-style: italic;">Sin dirección registrada</span>
+                </div>
+            }
+
+            <!-- 3. Botones de Acción -->
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <RadzenButton Text="Editar" Icon="edit" ButtonStyle="ButtonStyle.Info"
+                              Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
+                              Click="@(() => OnEditar.InvokeAsync(casa))" />
+
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger"
+                              Style="border-radius: 8px;" Size="ButtonSize.Small"
+                              Click="@(() => OnEliminar.InvokeAsync(casa))" />
+            </div>
+
+        </RadzenCard>
+    }
+</RadzenStack>
+
+@code {
+    // ✅ Parámetros
+    [Parameter] public List<Houses> Items { get; set; } = new();
+
+    // ✅ Eventos
+    [Parameter] public EventCallback<Houses> OnEditar { get; set; }
+    [Parameter] public EventCallback<Houses> OnEliminar { get; set; }
+
+    // ✅ Buscador
+    private string filtroBusqueda = "";
+
+    private IEnumerable<Houses> ItemsFiltrados
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filtroBusqueda))
+                return Items;
+
+            var texto = filtroBusqueda.ToLower();
+            return Items.Where(x =>
+                (x.Number != null && x.Number.ToLower().Contains(texto)) ||
+                (x.Street != null && x.Street.ToLower().Contains(texto)) ||
+                (x.AddressComplement != null && x.AddressComplement.ToLower().Contains(texto))
+            );
+        }
+    }
+}

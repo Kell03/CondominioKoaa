@@ -4,10 +4,12 @@
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
+@using Condominio.Web.Components.ComponentsMobile
 @using Microsoft.AspNetCore.Authorization
 @inject CategoriaRepository categoriaRepository
 @inject ProveedorRepository proveedorRepository
 @using Radzen.Blazor
+@inject IJSRuntime JSRuntime
 @inject Radzen.DialogService DialogService
 @rendermode InteractiveServer
 <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
@@ -35,44 +37,65 @@
                                   Style="margin-bottom: 0.5rem;"
                                   Click="@(() => AddUser())" />
 
-  
-                    <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
-                                    Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
-                                    RowSelect="@((CategoriasGasto item) => EditUser(item))">
-                        <Columns>
 
-                            <RadzenDataGridColumn Property="@nameof(CategoriasGasto.Nombre)" Title="Nombre" Width="160px" />
-                            <RadzenDataGridColumn Property="@nameof(CategoriasGasto.Descripcion)" Title="Descripción" Width="200px" />
-                            <RadzenDataGridColumn TItem="CategoriasGasto" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
-                                <Template Context="item">
-
-                                    <RadzenButton Icon="delete"
-                                                  ButtonStyle="ButtonStyle.Danger"
-                                                  Size="ButtonSize.Small"
-                                                  Tooltip="Eliminar Categoria"
-                                                  Click="@(() => ConfirmDelete(item))"
-                                                  @onclick:stopPropagation="true" />
+                                  
+@if (_cargando)
+                    {
+                        <div style="text-align: center; padding: 50px;">
+                            <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                            <RadzenText TextStyle="TextStyle.Body2" Style="margin-top: 10px; color: #666;">Cargando...</RadzenText>
+                        </div>
+                    }
+                    else
+                    {
 
 
-                                </Template>
-                            </RadzenDataGridColumn>
+                        @if(!_esMobile){
 
-                        </Columns>
+                            <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="5" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                            Data="@items" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedEmployees
+                            RowSelect="@((CategoriasGasto item) => EditUser(item))">
+                                <Columns>
+
+                                    <RadzenDataGridColumn Property="@nameof(CategoriasGasto.Nombre)" Title="Nombre" Width="160px" />
+                                    <RadzenDataGridColumn Property="@nameof(CategoriasGasto.Descripcion)" Title="Descripción" Width="200px" />
+                                    <RadzenDataGridColumn TItem="CategoriasGasto" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
+                                        <Template Context="item">
+
+                                            <RadzenButton Icon="delete"
+                                            ButtonStyle="ButtonStyle.Danger"
+                                            Size="ButtonSize.Small"
+                                            Tooltip="Eliminar Categoria"
+                                            Click="@(() => ConfirmDelete(item))"
+                                            @onclick:stopPropagation="true" />
 
 
-                        <EmptyTemplate>
-                            <div style="padding: 20px; text-align: center; color: #6c757d;">
-                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
-                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
-                                    No hay Casas registradas
-                                </RadzenText>
+                                        </Template>
+                                    </RadzenDataGridColumn>
 
-                            </div>
-                        </EmptyTemplate>
-                    </RadzenDataGrid>
+                                </Columns>
 
 
-            
+                                <EmptyTemplate>
+                                    <div style="padding: 20px; text-align: center; color: #6c757d;">
+                                        <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                        <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                            No hay Casas registradas
+                                        </RadzenText>
+
+                                    </div>
+                                </EmptyTemplate>
+                            </RadzenDataGrid>
+
+                        }
+                        else
+                        {
+                            <!-- ✅ VISTA MÓVIL: TARJETAS -->
+                            <GridCategoriaGasto Items="items.ToList()" 
+                            OnEditar="@((categoria) => EditUser(categoria))"
+                            OnEliminar="@((categoria) => ConfirmDelete(categoria))" />
+                        }
+                    }
                 </RadzenTabsItem>
                 <RadzenTabsItem Text="Formulario">
 

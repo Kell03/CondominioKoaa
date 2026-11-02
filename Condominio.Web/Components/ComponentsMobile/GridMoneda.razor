@@ -1,0 +1,68 @@
+﻿@using Condominio.Domain.Entities
+
+<!-- ✅ BUSCADOR -->
+<div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
+    <RadzenTextBox Placeholder="Buscar moneda..."
+                   Value="@filtroBusqueda"
+                   ValueChanged="@( (string val) => { filtroBusqueda = val; } )"
+                   Immediate="true"
+                   Style="width: 100%; border-radius: 20px; padding: 12px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; font-size: 15px;" />
+</div>
+
+<RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
+    @foreach (var moneda in ItemsFiltrados)
+    {
+        <!-- ✅ BORDE AZUL FIJO -->
+        <RadzenCard Style="padding: 16px; border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #007bff;">
+
+            <!-- 1. Encabezado: Nombre de la Moneda -->
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #1a2a3a;">
+                    <RadzenIcon Icon="attach_money" Style="font-size: 20px; margin-right: 5px; color: #28a745;" />
+                    @moneda.Moneda
+                </RadzenText>
+            </RadzenStack>
+
+            <!-- 2. Detalles: Fecha de Actualización -->
+            <div style="margin-top: 10px;">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; font-size: 14px;">
+                    <RadzenIcon Icon="update" Style="font-size: 14px; margin-right: 4px;" />
+                    Última actualización: <strong>@moneda.FechaActualizacion.ToString("dd/MM/yyyy HH:mm")</strong>
+                </RadzenText>
+            </div>
+
+            <!-- 3. Botones de Acción -->
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <RadzenButton Text="Editar" Icon="edit" ButtonStyle="ButtonStyle.Info"
+                              Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
+                              Click="@(() => OnEditar.InvokeAsync(moneda))" />
+            </div>
+
+        </RadzenCard>
+    }
+</RadzenStack>
+
+@code {
+    // ✅ Parámetros
+    [Parameter] public List<ConfiguracionMoneda> Items { get; set; } = new();
+
+    // ✅ Eventos
+    [Parameter] public EventCallback<ConfiguracionMoneda> OnEditar { get; set; }
+
+    // ✅ Buscador
+    private string filtroBusqueda = "";
+
+    private IEnumerable<ConfiguracionMoneda> ItemsFiltrados
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(filtroBusqueda))
+                return Items;
+
+            var texto = filtroBusqueda.ToLower();
+            return Items.Where(x =>
+                (x.Moneda != null && x.Moneda.ToLower().Contains(texto))
+            );
+        }
+    }
+}
