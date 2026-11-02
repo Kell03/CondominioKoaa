@@ -82,3 +82,6 @@ obj/
 # Archivos de paquetes
 packages/
 *.nupkg
+
+
+**/Credentials/
