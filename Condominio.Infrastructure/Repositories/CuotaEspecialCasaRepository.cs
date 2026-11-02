@@ -159,9 +159,9 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
-        public async Task<bool> RegistrarMultiplesPagoFactura(List<Payments> pagos)
+        public async  Task<List<Payments>> RegistrarMultiplesPagoFactura(List<Payments> pagos)
         {
-            if (pagos == null || !pagos.Any()) return false;
+            if (pagos == null || !pagos.Any()) return new List<Payments>();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -185,14 +185,15 @@ namespace Condominio.Infrastructure.Repositories
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
-                return true;
+                return listaPayments;
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 Console.WriteLine($"❌ Error: {ex.Message}");
-                return false;
+                throw;
             }
+
         }
         public async Task<IEnumerable<Payments>> GetPaymentsForUserAsync(int userId, int idCuotaCasaMes)
         {

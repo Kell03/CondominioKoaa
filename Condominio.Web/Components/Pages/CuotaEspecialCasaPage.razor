@@ -56,17 +56,7 @@
             <Tabs>
                 <RadzenTabsItem Text="Lista">
 
-                    @if (isAdmin)
-                    {
-                        <div style="margin-bottom: 15px; display: flex; justify-content: flex-start;">
-                            <RadzenButton Text="Confirmar por Lote"
-                                          Icon="playlist_add_check"
-                                          ButtonStyle="ButtonStyle.Success"
-                                          Size="ButtonSize.Small"
-                                          Click="@(() => NavigationManager.NavigateTo("/recibocuotaespecial/confirmar"))" />
-                        </div>
-
-                    }
+                   
                     @if (cuotas != null && cuotas.Count >= 1)
                     {
                         <div style="margin-bottom: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #007bff; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -105,7 +95,7 @@
                         {
 
                             <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="10" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
-                                            Data="@items" TItem="CuotaEspecialCasa" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Multiple" @bind-Value=@selectedEmployees>
+                                            Data="@items" TItem="CuotaEspecialCasa" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
                                 <Columns>
 
 
@@ -116,29 +106,29 @@
                                                             InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
                                                             Value="@(cuotas == null || !cuotas.Any() ? false : !grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).All(i => cuotas.Contains(i)) ? null : grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).Any(i => cuotas.Contains(i)))"
                                                             Change="@(args =>
-                                                                                                                                        {
-                                                                                                                                            if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
+                                                                                                                                                                                {
+                                                                                                                                                                                    if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
 
-                                                                                                                                            // ✅ FILTRAMOS: Solo tomamos las cuotas que tienen saldo pendiente
-                                                                                                                                            var visiblesParaPagar = grid.View.Cast<CuotaEspecialCasa>()
-                                                                                                                                                                        .Where(x => x.SaldoPendiente > 0)
-                                                                                                                                                                        .ToList();
+                                                                                                                                                                                    // ✅ FILTRAMOS: Solo tomamos las cuotas que tienen saldo pendiente
+                                                                                                                                                                                    var visiblesParaPagar = grid.View.Cast<CuotaEspecialCasa>()
+                                                                                                                                                                                                                .Where(x => x.SaldoPendiente > 0)
+                                                                                                                                                                                                                .ToList();
 
-                                                                                                                                            if (args == true)
-                                                                                                                                            {
-                                                                                                                                                foreach (var item in visiblesParaPagar)
-                                                                                                                                                {
-                                                                                                                                                    if (!cuotas.Contains(item)) cuotas.Add(item);
-                                                                                                                                                }
-                                                                                                                                            }
-                                                                                                                                            else
-                                                                                                                                            {
-                                                                                                                                                foreach (var item in visiblesParaPagar)
-                                                                                                                                                {
-                                                                                                                                                    cuotas.Remove(item);
-                                                                                                                                                }
-                                                                                                                                            }
-                                                                                                                                        })" />
+                                                                                                                                                                                    if (args == true)
+                                                                                                                                                                                    {
+                                                                                                                                                                                        foreach (var item in visiblesParaPagar)
+                                                                                                                                                                                        {
+                                                                                                                                                                                            if (!cuotas.Contains(item)) cuotas.Add(item);
+                                                                                                                                                                                        }
+                                                                                                                                                                                    }
+                                                                                                                                                                                    else
+                                                                                                                                                                                    {
+                                                                                                                                                                                        foreach (var item in visiblesParaPagar)
+                                                                                                                                                                                        {
+                                                                                                                                                                                            cuotas.Remove(item);
+                                                                                                                                                                                        }
+                                                                                                                                                                                    }
+                                                                                                                                                                                })" />
                                         </HeaderTemplate>
                                         <Template Context="data">
                                             @if (data.SaldoPendiente > 0)
@@ -149,18 +139,18 @@
                                                                 InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
                                                                 TValue="bool"
                                                                 Change="@(args =>
-                                                                                                                                                        {
-                                                                                                                                                            if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
+                                                                                                                                                                                                    {
+                                                                                                                                                                                                        if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
 
-                                                                                                                                                            if (args == true)
-                                                                                                                                                            {
-                                                                                                                                                                if (!cuotas.Contains(data)) cuotas.Add(data);
-                                                                                                                                                            }
-                                                                                                                                                            else
-                                                                                                                                                            {
-                                                                                                                                                                cuotas.Remove(data);
-                                                                                                                                                            }
-                                                                                                                                                        })" />
+                                                                                                                                                                                                        if (args == true)
+                                                                                                                                                                                                        {
+                                                                                                                                                                                                            if (!cuotas.Contains(data)) cuotas.Add(data);
+                                                                                                                                                                                                        }
+                                                                                                                                                                                                        else
+                                                                                                                                                                                                        {
+                                                                                                                                                                                                            cuotas.Remove(data);
+                                                                                                                                                                                                        }
+                                                                                                                                                                                                    })" />
                                             }
                                             else
                                             {
@@ -633,15 +623,22 @@
 
             var result = await CuotaEspecialCasaRepository.RegistrarMultiplesPagoFactura(pagos);
             // await FacturaMesCasaRepository.SaveChangesAsync();
-            if (result)
+
+            if (result.Count() > 0)
             {
-                NotificationService.Notify(new NotificationMessage
+
+                bool exito = await CuotaEspecialCasaRepository.MasiveConfirmPayment(result);
+
+                if (exito)
                 {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Pagos Guardados",
-                    Detail = $"Pagos registrado correctamente.",
-                    Duration = 3000 // ⏱️ 3000 milisegundos = 3 segundos
-                });
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Pagos Guardados",
+                        Detail = $"Pagos registrado correctamente.",
+                        Duration = 3000 // ⏱️ 3000 milisegundos = 3 segundos
+                    });
+                }
             }
 
             await LoadData();

@@ -54,16 +54,7 @@
             <Tabs>
                 <RadzenTabsItem Text="Lista">
 
-                    @if (isAdmin)
-                    {
-                        <div style="margin-bottom: 15px; display: flex; justify-content: flex-start;">
-                            <RadzenButton Text="Confirmar por Lote"
-                                          Icon="playlist_add_check"
-                                          ButtonStyle="ButtonStyle.Success"
-                                          Size="ButtonSize.Small"
-                                          Click="@(() => NavigationManager.NavigateTo("/recibofactura/confirmar"))" />
-                        </div>
-                    }
+
 
                     <!-- ✅ 2. EL CUADRO AZUL SOLO SI HAY SELECCIÓN MÚLTIPLE -->
                     @if (invoices != null && invoices.Count >= 1)
@@ -104,8 +95,7 @@
                         @if (!_esMobile)
                         {
                             <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
-                                            SelectionMode="DataGridSelectionMode.Multiple"
-                                            Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or" @bind-Value=@invoices>
+                                            Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
 
 
                                 <Template Context="order">
@@ -163,63 +153,76 @@
 
                                     <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
                                         <HeaderTemplate>
-                                            <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
-                                                            InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
-                                                            Value="@(invoices == null || !invoices.Any() ? false : !grid.View.Cast<FacturaMesCasa>().Where(x => x.SaldoPendiente > 0).All(i => invoices.Contains(i)) ? null : grid.View.Cast<FacturaMesCasa>().Where(x => x.SaldoPendiente > 0).Any(i => invoices.Contains(i)))"
+                                            @{
+                                                var itemsVisibles = grid.View.Cast<FacturaMesCasa>().ToList();
+                                                var seleccionadosVisibles = itemsVisibles.Where(x => invoices != null && invoices.Contains(x)).ToList();
+
+                                                bool? headerState = false;
+                                                if (itemsVisibles.Any())
+                                                {
+                                                    if (seleccionadosVisibles.Count == itemsVisibles.Count && itemsVisibles.Count > 0)
+                                                        headerState = true;
+                                                    else if (seleccionadosVisibles.Count > 0)
+                                                        headerState = null;
+                                                }
+                                            }
+
+                                            <RadzenCheckBox TabIndex="-1"
+                                                            TriState="true"
+                                                            TValue="bool?"
+                                                            Value="@headerState"
                                                             Change="@(args =>
-                                                                                                                                                                                                                        {
-                                                                                                                                                                                                                            if (invoices == null) invoices = new List<FacturaMesCasa>();
+                                                                                                        {
+                                                                                                            if (invoices == null) invoices = new List<FacturaMesCasa>();
+                                                                                                            var itemsVisibles = grid.View.Cast<FacturaMesCasa>().ToList();
 
-                                                                                                                                                                                                                            // ✅ FILTRAMOS: Solo tomamos las que tienen saldo pendiente
-                                                                                                                                                                                                                            var visiblesParaPagar = grid.View.Cast<FacturaMesCasa>()
-                                                                                                                                                                                                                                                        .Where(x => x.SaldoPendiente > 0)
-                                                                                                                                                                                                                                                        .ToList();
-
-                                                                                                                                                                                                                            if (args == true)
-                                                                                                                                                                                                                            {
-                                                                                                                                                                                                                                foreach (var item in visiblesParaPagar)
-                                                                                                                                                                                                                                {
-                                                                                                                                                                                                                                    if (!invoices.Contains(item)) invoices.Add(item);
-                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                            else
-                                                                                                                                                                                                                            {
-                                                                                                                                                                                                                                foreach (var item in visiblesParaPagar)
-                                                                                                                                                                                                                                {
-                                                                                                                                                                                                                                    invoices.Remove(item);
-                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                        })" />
+                                                                                                            // ✅ SI EL CHECKBOX DEL HEADER ESTABA LLENO O A MEDIAS, LO VACIAMOS
+                                                                                                            if (headerState == true || headerState == null)
+                                                                                                            {
+                                                                                                                foreach (var item in itemsVisibles)
+                                                                                                                {
+                                                                                                                    invoices.Remove(item);
+                                                                                                                }
+                                                                                                            }
+                                                                                                            // ✅ SI ESTABA VACÍO, LO LLENAMOS
+                                                                                                            else
+                                                                                                            {
+                                                                                                                foreach (var item in itemsVisibles)
+                                                                                                                {
+                                                                                                                    if (!invoices.Contains(item)) invoices.Add(item);
+                                                                                                                }
+                                                                                                            }
+                                                                                                            StateHasChanged();
+                                                                                                        })" />
                                         </HeaderTemplate>
                                         <Template Context="data">
                                             @if (data.SaldoPendiente > 0)
                                             {
-                                                <!-- ✅ Si tiene saldo pendiente, mostramos el checkbox -->
-                                                <RadzenCheckBox TabIndex="-1" TriState="false"
+                                                <RadzenCheckBox TabIndex="-1"
+                                                                TriState="false"
                                                                 Value="@(invoices != null && invoices.Contains(data))"
-                                                                InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
                                                                 TValue="bool"
-                                                                Change=@(args =>
-                                                                                                                                                                                                                                                {
-                                                                                                                                                                                                                                                    if (invoices == null) invoices = new List<FacturaMesCasa>();
-                                                                                                                                                                                                                                                    if (args == true)
-                                                                                                                                                                                                                                                    {
-                                                                                                                                                                                                                                                        if (!invoices.Contains(data)) invoices.Add(data);
-                                                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                                                    else
-                                                                                                                                                                                                                                                    {
-                                                                                                                                                                                                                                                        invoices.Remove(data);
-                                                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                                                }) />
+                                                                Change="@(args =>
+                                                                                                                    {
+                                                                                                                        if (invoices == null) invoices = new List<FacturaMesCasa>();
+
+                                                                                                                        if (args == true)
+                                                                                                                        {
+                                                                                                                            if (!invoices.Contains(data)) invoices.Add(data);
+                                                                                                                        }
+                                                                                                                        else
+                                                                                                                        {
+                                                                                                                            invoices.Remove(data);
+                                                                                                                        }
+                                                                                                                        StateHasChanged();
+                                                                                                                    })" />
                                             }
                                             else
                                             {
-                                                <!-- ❌ Si ya está pagada, no mostramos nada (o un check deshabilitado) -->
                                                 <RadzenIcon Icon="check_circle" Style="color: #155724; font-size: 20px;" Tooltip="Ya está pagada" />
                                             }
                                         </Template>
                                     </RadzenDataGridColumn>
-
 
                                     <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Nro Casa" Width="160px">
                                         <Template Context="FacturaMesCasa">
@@ -716,16 +719,24 @@
             }
 
             var result = await FacturaMesCasaRepository.RegistrarMultiplesPagoFactura(pagos);
+
+
             // await FacturaMesCasaRepository.SaveChangesAsync();
-            if (result)
+            if (result.Count() > 0)
             {
-                NotificationService.Notify(new NotificationMessage
+
+                bool exito = await FacturaMesCasaRepository.MasiveConfirmPayment(result);
+                if (exito)
                 {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Pagos Guardados",
-                    Detail = $"Pagos registrado correctamente.",
-                    Duration = 3000 // ⏱️ 3000 milisegundos = 3 segundos
-                });
+
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Pagos Guardados",
+                        Detail = $"Pagos registrado correctamente.",
+                        Duration = 3000 // ⏱️ 3000 milisegundos = 3 segundos
+                    });
+                }
             }
 
             await LoadData();
