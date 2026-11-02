@@ -38,7 +38,7 @@ namespace Condominio.Infrastructure.Repositories
                         from owner in ownerGroup.DefaultIfEmpty()
                         join payments in _context.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
 
-                        // 🔥 1. AGREGAMOS EL JOIN A FACTURAMES
+                        //  1. AGREGAMOS EL JOIN A FACTURAMES
                         join facturaMes in _context.FacturaMes on factura.FacturaMesId equals facturaMes.Id
                         select new FacturaMesCasa
                         {
@@ -55,7 +55,7 @@ namespace Condominio.Infrastructure.Repositories
                             UpdatedAt = factura.UpdatedAt,
                             House = house,
 
-                            // 🔥 2. ASIGNAMOS LA ENTIDAD QUE ACABAMOS DE TRAER EN EL JOIN
+                            //  2. ASIGNAMOS LA ENTIDAD QUE ACABAMOS DE TRAER EN EL JOIN
                             FacturaMes = facturaMes,
 
                             Payments = paymentGroup.ToList(),
@@ -103,7 +103,7 @@ namespace Condominio.Infrastructure.Repositories
                         from owner in ownerGroup.DefaultIfEmpty()
                         join payments in _context.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
 
-                        // 🔥 1. AGREGAMOS EL JOIN A FACTURAMES
+                        //  1. AGREGAMOS EL JOIN A FACTURAMES
                         join facturaMes in _context.FacturaMes on factura.FacturaMesId equals facturaMes.Id
                         select new FacturaMesCasa
                         {
@@ -120,7 +120,7 @@ namespace Condominio.Infrastructure.Repositories
                             UpdatedAt = factura.UpdatedAt,
                             House = house,
 
-                            // 🔥 2. ASIGNAMOS LA ENTIDAD QUE ACABAMOS DE TRAER EN EL JOIN
+                            //  2. ASIGNAMOS LA ENTIDAD QUE ACABAMOS DE TRAER EN EL JOIN
                             FacturaMes = facturaMes,
 
                             Payments = paymentGroup.ToList(),

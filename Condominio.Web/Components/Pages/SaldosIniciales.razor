@@ -666,35 +666,44 @@
     }
 
     // Aquí conectamos con tu método de guardado
-    private async Task ProcesarCargaMasiva(List<DeudaExcelDto> deudas, HashSet<string> casasAfectadas)
+  private async Task ProcesarCargaMasiva(List<DeudaExcelDto> deudas, HashSet<string> casasAfectadas)
+{
+    // Por cada casa en el Excel
+    foreach (var casaNumero in casasAfectadas)
     {
-        // Por cada casa en el Excel, creamos su factura
-        foreach (var casaNumero in casasAfectadas)
+        // 1. Buscamos la casa en la BD
+        var casa = houses.FirstOrDefault(h => h.Number == casaNumero);
+        if (casa == null) continue;
+
+        // 2. Filtramos las deudas de esta casa
+        var deudasDeEstaCasa = deudas.Where(d => d.NroCasa == casaNumero).ToList();
+
+        // 3. ✅ AGRUPAMOS POR AÑO
+        var deudasPorAnio = deudasDeEstaCasa.GroupBy(d => d.Anio);
+
+        // 4. Por cada año que tenga esta casa, creamos una factura
+        foreach (var grupoAnio in deudasPorAnio)
         {
-            // 1. Buscamos la casa en la BD por su número
-            var casa = houses.FirstOrDefault(h => h.Number == casaNumero);
-            if (casa == null) continue; // Si no existe, la saltamos
+            var anioFactura = grupoAnio.Key;
+            var deudasDelAnio = grupoAnio.ToList();
 
-            // 2. Filtramos las deudas de esta casa específica
-            var deudasDeEstaCasa = deudas.Where(d => d.NroCasa == casaNumero).ToList();
-
-            // 3. Creamos la Factura Cabecera
+            // 5. Creamos la Factura Cabecera para este año
             var facturaOriginal = new FacturaMes
             {
-                Mes = DateTime.Now.Month,
-                Year = deudasDeEstaCasa.First().Anio, // Tomamos el año de la deuda
-                Motivo = "Deuda Inicial Excel",
+                Mes = DateTime.Now.Month, // El mes en que se hace la carga (ej. Octubre)
+                Year = anioFactura,       // ✅ El año de la deuda (ej. 2023)
+                Motivo = $"Deuda Inicial {anioFactura}", // Para que se identifique fácil
                 IsActive = false,
                 EstadoPago = EstadoPagoFactura.Pendiente
             };
 
-            // 4. Creamos los hijos (los meses)
+            // 6. Creamos los hijos (los meses de ESE año)
             var children = new List<FacturaMesHijo>();
-            foreach (var deuda in deudasDeEstaCasa)
+            foreach (var deuda in deudasDelAnio)
             {
                 children.Add(new FacturaMesHijo
                 {
-                    Motivo = deuda.NombreMes, // "Octubre", "Noviembre", etc.
+                    Motivo = deuda.NombreMes, // Solo el mes (Enero, Febrero...)
                     Monto = (double)deuda.Monto,
                     IdCategoria = null,
                     IdProveedor = null,
@@ -702,18 +711,20 @@
                 });
             }
 
-            // 5. Llamamos a tu método (pasando la casa en una lista de 1 elemento)
+            // 7. Guardamos la factura con su casa
             await FacturaMesRepository.SaveListWithFacturaHijo(
                 facturaOriginal,
                 children,
                 new List<int> { casa.Id }
             );
         }
-
-        NotificationService.Notify(NotificationSeverity.Success, "Éxito", "Las facturas se generaron correctamente desde el Excel.");
-        await OnInitializedAsync();
-        StateHasChanged();
     }
+
+    NotificationService.Notify(NotificationSeverity.Success, "Éxito", "Las facturas se generaron correctamente desde el Excel.");
+    await OnInitializedAsync();
+    StateHasChanged();
+}
+    
 
     // DTO para manejar los datos del Excel
     public class DeudaExcelDto
