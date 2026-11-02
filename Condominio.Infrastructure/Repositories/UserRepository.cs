@@ -18,7 +18,66 @@ namespace Condominio.Infrastructure.Repositories
             return await _dbSet.Include(u => u.House).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 
-        public  async Task<IEnumerable<Users>> GetAllByUserAsync(int id)
+
+        public  async Task UpdateAsync(Users entity)
+        {
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            try
+            {
+                // ✅ 1. Buscar el usuario actual en la BD
+                var existingUser = await _dbSet
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == entity.Id);
+
+                if (existingUser == null)
+                    throw new InvalidOperationException($"El usuario con Id {entity.Id} no existe");
+
+                // ✅ 2. Verificar que el email no esté ocupado por otro usuario
+                var emailDuplicado = await _dbSet
+                    .AnyAsync(u => u.Email == entity.Email && u.Id != entity.Id);
+
+                if (emailDuplicado)
+                    throw new InvalidOperationException($"El email {entity.Email} ya está registrado por otro usuario");
+
+                // ✅ 3. Hashear la contraseña SOLO si cambió
+                //    - Si viene vacía o nula → conservar el hash anterior
+                //    - Si es igual al hash almacenado → ya está hasheada, no rehashear
+                //    - Si es texto plano distinto → hashear
+                if (string.IsNullOrWhiteSpace(entity.PasswordHash))
+                {
+                    entity.PasswordHash = existingUser.PasswordHash;
+                }
+                else if (!entity.PasswordHash.StartsWith("$2") || entity.PasswordHash != existingUser.PasswordHash)
+                {
+                    // BCrypt siempre empieza con "$2a$", "$2b$" o "$2y$"
+                    // Si no es un hash BCrypt válido, asumimos texto plano y hasheamos
+                    if (!EsHashBCrypt(entity.PasswordHash))
+                    {
+                        entity.PasswordHash = HashPassword(entity.PasswordHash);
+                    }
+                }
+
+                // ✅ 4. Actualizar
+                _dbSet.Update(entity);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al actualizar usuario: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        private bool EsHashBCrypt(string valor)
+        {
+            return !string.IsNullOrWhiteSpace(valor)
+                && valor.StartsWith("$2")
+                && valor.Length >= 55;   // longitud típica de un hash BCrypt
+        }
+
+        public async Task<IEnumerable<Users>> GetAllByUserAsync(int id)
         {
             return await _dbSet.Where(x => x.Id == id).Include(u => u.House).OrderByDescending(x => x.CreatedAt).ToListAsync();
         }

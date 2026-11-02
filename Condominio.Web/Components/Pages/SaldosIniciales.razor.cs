@@ -136,7 +136,7 @@ namespace Condominio.Web.Components.Pages
             IEnumerable<FacturaMesCasa> itemList;
             var housesList = await HouseRepository.GetAllAsync();
             houses = housesList.ToList();
-            itemList = await FacturaMesCasaRepository.GetAllAsync();
+            itemList = await FacturaMesCasaRepository.GetAllSaldoAsync();
             itemList = itemList.Where(x => x.FacturaMes.Motivo != null).ToList();
             items = itemList.AsQueryable();
             employees = itemList.Any()

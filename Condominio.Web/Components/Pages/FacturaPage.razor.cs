@@ -67,9 +67,15 @@ namespace Condominio.Web.Components.Pages
                     Console.WriteLine($"📱 Mobile: {_esMobile}");
 
 
-                    if (firstRender && Invoices != null && Invoices.Any())
+                    if (firstRender && !_esMobile && grid != null && Invoices != null && Invoices.Any())
                     {
-                        await grid.ExpandRow(Invoices.First());
+                        // 2. Buscamos la primera factura que tenga hijos
+                        var primeraConHijos = Invoices.FirstOrDefault(x => x.FacturaMesHijos != null && x.FacturaMesHijos.Any());
+
+                        if (primeraConHijos != null)
+                        {
+                            await grid.ExpandRow(primeraConHijos);
+                        }
                     }
                     // Forzamos a Blazor a redibujar la pantalla con el nuevo valor
                     StateHasChanged();

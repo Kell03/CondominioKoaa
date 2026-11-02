@@ -106,7 +106,8 @@ namespace Condominio.Web.Components.Pages
                 {
                     var prop = rates.GetType().GetProperty(Moneda);
                     var tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
-                    fondoDisponible = fondoBs / tasa;
+                    // = fondoBs / tasa;
+                    fondoDisponible = fondoBs;
                 }
 
             }

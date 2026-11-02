@@ -40,7 +40,6 @@ namespace Condominio.Infrastructure.Repositories
 
                         // 🔥 1. AGREGAMOS EL JOIN A FACTURAMES
                         join facturaMes in _context.FacturaMes on factura.FacturaMesId equals facturaMes.Id
-
                         select new FacturaMesCasa
                         {
                             Id = factura.Id,
@@ -65,6 +64,71 @@ namespace Condominio.Infrastructure.Repositories
 
             // ✅ Incluir hijos
             var result = await query
+                .OrderByDescending(x => x.FacturaMes.Year)
+                .ThenByDescending(x => x.FacturaMes.Mes)
+                .ToListAsync();
+
+            // ✅ Cargar hijos por separado (1 consulta adicional)
+            var facturaIds = result.Select(x => x.FacturaMesId).Distinct().ToList();
+            if (facturaIds.Any())
+            {
+                var hijos = await _context.FacturaMesHijo
+                    .Where(h => facturaIds.Contains(h.FacturaMesId))
+                    .ToListAsync();
+
+                foreach (var factura in result)
+                {
+                    // ✅ Validamos que FacturaMes no sea nulo para evitar NullReferenceException
+                    if (factura.FacturaMes != null)
+                    {
+                        factura.FacturaMes.FacturaMesHijos = hijos
+                            .Where(h => h.FacturaMesId == factura.FacturaMesId)
+                            .ToList();
+                    }
+                }
+            }
+
+            return result;
+        }
+
+
+        public  async Task<IEnumerable<FacturaMesCasa>> GetAllSaldoAsync()
+        {
+            _context.ChangeTracker.Clear();
+
+            // ✅ UNA SOLA CONSULTA CON JOIN (más eficiente)
+            var query = from factura in _dbSet
+                        join house in _context.Houses on factura.HouseId equals house.Id
+                        join user in _context.Users on house.Id equals user.HouseId into ownerGroup
+                        from owner in ownerGroup.DefaultIfEmpty()
+                        join payments in _context.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
+
+                        // 🔥 1. AGREGAMOS EL JOIN A FACTURAMES
+                        join facturaMes in _context.FacturaMes on factura.FacturaMesId equals facturaMes.Id
+                        select new FacturaMesCasa
+                        {
+                            Id = factura.Id,
+                            FacturaMesId = factura.FacturaMesId,
+                            HouseId = factura.HouseId,
+                            MontoTotal = factura.MontoTotal,
+                            MontoPagado = factura.MontoPagado,
+                            SaldoPendiente = factura.SaldoPendiente,
+                            MontoBs = factura.MontoBs,
+                            Estado = factura.Estado,
+                            Comentario = factura.Comentario,
+                            CreatedAt = factura.CreatedAt,
+                            UpdatedAt = factura.UpdatedAt,
+                            House = house,
+
+                            // 🔥 2. ASIGNAMOS LA ENTIDAD QUE ACABAMOS DE TRAER EN EL JOIN
+                            FacturaMes = facturaMes,
+
+                            Payments = paymentGroup.ToList(),
+                            User = owner
+                        };
+
+            // ✅ Incluir hijos
+            var result = await query.Where(x => x.FacturaMes.Motivo != null && x.FacturaMes.Motivo != "")
                 .OrderByDescending(x => x.FacturaMes.Year)
                 .ThenByDescending(x => x.FacturaMes.Mes)
                 .ToListAsync();

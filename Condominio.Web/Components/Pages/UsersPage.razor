@@ -48,7 +48,7 @@
             {
                 <InputFile OnChange="@SubirExcel" accept=".xlsx" style="margin-top: 10px; display: block;" />
                 <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; margin-top: 5px; display: block;">
-                    Formato: Nro Casa | Cédula | Correo
+                    Formato: Nro Casa | Nombre y Apellido | Cédula | Correo
                 </RadzenText>
             }
         </RadzenCard>
@@ -262,8 +262,9 @@
                 rowIndex++;
 
                 var nroCasa = row.Cell(1).GetString().Trim();
-                var cedula = row.Cell(2).GetString().Trim();
-                var correo = row.Cell(3).GetString().Trim();
+                var nombre = row.Cell(2).GetString().Trim();
+                var cedula = row.Cell(3).GetString().Trim();
+                var correo = row.Cell(4).GetString().Trim();
 
                 // Fila completamente vacía → se ignora
                 if (string.IsNullOrWhiteSpace(nroCasa) &&
@@ -274,6 +275,13 @@
                 if (string.IsNullOrWhiteSpace(nroCasa))
                 {
                     errores.Add($"Fila {rowIndex}: Nro Casa vacío.");
+                    continue;
+                }
+
+
+                if (string.IsNullOrWhiteSpace(nombre))
+                {
+                    errores.Add($"Fila {rowIndex}: Nombre vacío.");
                     continue;
                 }
 
@@ -303,12 +311,12 @@
 
                 nuevos.Add(new Users
                 {
-                    Name = cedula,                    // ✅ Cédula mapeada a Name (ajusta si tienes campo Cedula)
+                    Name = nombre,                    // ✅ Cédula mapeada a Name (ajusta si tienes campo Cedula)
                     Email = correo,
                     Role = "Usuaio",
                     HouseId = houseId,
                     IsActive = true,
-                    PasswordHash = GenerarPasswordTemporal()   // ⚠️ ver nota abajo
+                    PasswordHash = cedula
                 });
 
                 existentes.Add(correo.ToLowerInvariant()); // evitar duplicados dentro del mismo archivo

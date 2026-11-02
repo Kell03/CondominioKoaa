@@ -42,10 +42,10 @@
             {
                 <!-- TÍTULO PARA EL RESIDENTE -->
                 <RadzenText TextStyle="TextStyle.H4" Style="margin: 0; color: #1a2a3a; font-weight: 500;">
-                    Mis Cuotas Especiales
+                    Mis Recibos y Pagos
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body2" Style="margin: 4px 0 0 0; color: #6c757d;">
-                    Consulta tus aportes pendientes para proyectos especiales y reporta tu pago.
+                    Consulta tus recibos pendientes y reporta tu pago.
                 </RadzenText>
             }
         </RadzenCard>
@@ -167,29 +167,29 @@
                                                             InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
                                                             Value="@(invoices == null || !invoices.Any() ? false : !grid.View.Cast<FacturaMesCasa>().Where(x => x.SaldoPendiente > 0).All(i => invoices.Contains(i)) ? null : grid.View.Cast<FacturaMesCasa>().Where(x => x.SaldoPendiente > 0).Any(i => invoices.Contains(i)))"
                                                             Change="@(args =>
-                                                                                                                                                                                {
-                                                                                                                                                                                    if (invoices == null) invoices = new List<FacturaMesCasa>();
+                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                            if (invoices == null) invoices = new List<FacturaMesCasa>();
 
-                                                                                                                                                                                    // ✅ FILTRAMOS: Solo tomamos las que tienen saldo pendiente
-                                                                                                                                                                                    var visiblesParaPagar = grid.View.Cast<FacturaMesCasa>()
-                                                                                                                                                                                                                .Where(x => x.SaldoPendiente > 0)
-                                                                                                                                                                                                                .ToList();
+                                                                                                                                                                                                                            // ✅ FILTRAMOS: Solo tomamos las que tienen saldo pendiente
+                                                                                                                                                                                                                            var visiblesParaPagar = grid.View.Cast<FacturaMesCasa>()
+                                                                                                                                                                                                                                                        .Where(x => x.SaldoPendiente > 0)
+                                                                                                                                                                                                                                                        .ToList();
 
-                                                                                                                                                                                    if (args == true)
-                                                                                                                                                                                    {
-                                                                                                                                                                                        foreach (var item in visiblesParaPagar)
-                                                                                                                                                                                        {
-                                                                                                                                                                                            if (!invoices.Contains(item)) invoices.Add(item);
-                                                                                                                                                                                        }
-                                                                                                                                                                                    }
-                                                                                                                                                                                    else
-                                                                                                                                                                                    {
-                                                                                                                                                                                        foreach (var item in visiblesParaPagar)
-                                                                                                                                                                                        {
-                                                                                                                                                                                            invoices.Remove(item);
-                                                                                                                                                                                        }
-                                                                                                                                                                                    }
-                                                                                                                                                                                })" />
+                                                                                                                                                                                                                            if (args == true)
+                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                foreach (var item in visiblesParaPagar)
+                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                    if (!invoices.Contains(item)) invoices.Add(item);
+                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                            else
+                                                                                                                                                                                                                            {
+                                                                                                                                                                                                                                foreach (var item in visiblesParaPagar)
+                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                    invoices.Remove(item);
+                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                        })" />
                                         </HeaderTemplate>
                                         <Template Context="data">
                                             @if (data.SaldoPendiente > 0)
@@ -200,17 +200,17 @@
                                                                 InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
                                                                 TValue="bool"
                                                                 Change=@(args =>
-                                                                                                                                                                                                    {
-                                                                                                                                                                                                        if (invoices == null) invoices = new List<FacturaMesCasa>();
-                                                                                                                                                                                                        if (args == true)
-                                                                                                                                                                                                        {
-                                                                                                                                                                                                            if (!invoices.Contains(data)) invoices.Add(data);
-                                                                                                                                                                                                        }
-                                                                                                                                                                                                        else
-                                                                                                                                                                                                        {
-                                                                                                                                                                                                            invoices.Remove(data);
-                                                                                                                                                                                                        }
-                                                                                                                                                                                                    }) />
+                                                                                                                                                                                                                                                {
+                                                                                                                                                                                                                                                    if (invoices == null) invoices = new List<FacturaMesCasa>();
+                                                                                                                                                                                                                                                    if (args == true)
+                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                        if (!invoices.Contains(data)) invoices.Add(data);
+                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                    else
+                                                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                                                        invoices.Remove(data);
+                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                }) />
                                             }
                                             else
                                             {
@@ -388,11 +388,11 @@
                         else
                         {
                             <GridFacturaMesCasa Items="items.ToList()"
-                   IsAdmin="isAdmin" 
-                   FacturaExpandidaId="facturaExpandidaId"
-                   OnPagar="@((cuota) => EditUser(cuota))"
-                   OnVerPagos="@((cuota) => AddPagosList(cuota))"
-                   OnToggleDetalle="@((id) => ToggleDetalle(id))" />
+                                                IsAdmin="isAdmin"
+                                                FacturaExpandidaId="facturaExpandidaId"
+                                                OnPagar="@((cuota) => EditUser(cuota))"
+                                                OnVerPagos="@((cuota) => AddPagosList(cuota))"
+                                                OnToggleDetalle="@((id) => ToggleDetalle(id))" />
                         }
 
 

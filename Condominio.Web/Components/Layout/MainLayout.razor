@@ -56,16 +56,15 @@
 
                     @if (mostrarPanel)
                     {
+                        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9998;"
+                             @onclick="CerrarPanel"></div>
+                    }
+
+                    @if (mostrarPanel)
+                    {
 
 
-                        <RadzenCard Style="position: absolute;
-                            top: 45px;
-                            right: 0;
-                            width: 350px;
-                            max-height: 400px;
-                            overflow-y: auto;
-                            z-index: 9999;
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        <RadzenCard Style="position: absolute; top: 45px; right: 0; width: 350px; max-height: 400px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <RadzenText TextStyle="TextStyle.H6">🔔 Notificaciones</RadzenText>
                                 @if (contadorNoLeidas > 0)
@@ -543,6 +542,12 @@
             StateHasChanged();
         }
         return Task.CompletedTask;
+    }
+
+    private void CerrarPanel()
+    {
+        mostrarPanel = false;
+        StateHasChanged();
     }
 }
 

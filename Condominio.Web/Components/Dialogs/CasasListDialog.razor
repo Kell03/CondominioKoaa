@@ -76,8 +76,7 @@
         else
         {
             casasFiltradas = todasLasCasas
-                .Where(c => c.Number.Contains(filtro, StringComparison.OrdinalIgnoreCase) ||
-                            c.Street.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+                .Where(c => c.Number.Contains(filtro, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
     }

@@ -14,7 +14,7 @@ namespace Condominio.Domain.Entities
        public bool Enviado { get; set; } = false;
        public double MontoTotal { get; set; } = 0;
 
-        public string? Motivo { get; set; }
+        public string? Motivo { get; set; } = "";
 
         public decimal? MontoRecaudado { get; set; } = 0;// Nullable
 

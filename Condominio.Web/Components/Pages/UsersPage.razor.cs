@@ -90,7 +90,7 @@ namespace Condominio.Web.Components.Pages
             if (selectedUser.Id != 0)
             {
                 selectedUser.UpdatedAt = DateTime.Now;
-                UserRepository.Update(selectedUser);
+                await UserRepository.UpdateAsync(selectedUser);
                 await UserRepository.SaveChangesAsync();
                 // Si tienes SaveChanges en el repositorio
                 await LoadUsers(); // Recargar la lista

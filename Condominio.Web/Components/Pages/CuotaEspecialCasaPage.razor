@@ -26,6 +26,8 @@
 <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
 
     <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+
+
         <RadzenCard Style="background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
 
             @if (isAdmin)
@@ -42,10 +44,10 @@
             {
                 <!-- TÍTULO PARA EL RESIDENTE -->
                 <RadzenText TextStyle="TextStyle.H4" Style="margin: 0; color: #1a2a3a; font-weight: 500;">
-                    Mis Recibos y Pagos
+                    Mis Cuotas Especiales
                 </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body2" Style="margin: 4px 0 0 0; color: #6c757d;">
-                    Consulta tus recibos pendientes y reporta tu pago.
+                    Consulta tus aportes pendientes para proyectos especiales y reporta tu pago.
                 </RadzenText>
             }
         </RadzenCard>
@@ -53,15 +55,18 @@
         <RadzenTabs @bind-SelectedIndex=@selectedIndex>
             <Tabs>
                 <RadzenTabsItem Text="Lista">
-                    <div style="margin-bottom: 15px; display: flex; justify-content: flex-start;">
-                        <RadzenButton Text="Confirmar por Lote"
-                                      Icon="playlist_add_check"
-                                      ButtonStyle="ButtonStyle.Success"
-                                      Size="ButtonSize.Small"
-                                      Click="@(() => NavigationManager.NavigateTo("/recibocuotaespecial/confirmar"))" />
-                    </div>
 
+                    @if (isAdmin)
+                    {
+                        <div style="margin-bottom: 15px; display: flex; justify-content: flex-start;">
+                            <RadzenButton Text="Confirmar por Lote"
+                                          Icon="playlist_add_check"
+                                          ButtonStyle="ButtonStyle.Success"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => NavigationManager.NavigateTo("/recibocuotaespecial/confirmar"))" />
+                        </div>
 
+                    }
                     @if (cuotas != null && cuotas.Count >= 1)
                     {
                         <div style="margin-bottom: 15px; padding: 10px; background: #e7f3ff; border: 1px solid #007bff; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -111,29 +116,29 @@
                                                             InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"
                                                             Value="@(cuotas == null || !cuotas.Any() ? false : !grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).All(i => cuotas.Contains(i)) ? null : grid.View.Cast<CuotaEspecialCasa>().Where(x => x.SaldoPendiente > 0).Any(i => cuotas.Contains(i)))"
                                                             Change="@(args =>
-                                                                                                {
-                                                                                                    if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
+                                                                                                                                        {
+                                                                                                                                            if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
 
-                                                                                                    // ✅ FILTRAMOS: Solo tomamos las cuotas que tienen saldo pendiente
-                                                                                                    var visiblesParaPagar = grid.View.Cast<CuotaEspecialCasa>()
-                                                                                                                                .Where(x => x.SaldoPendiente > 0)
-                                                                                                                                .ToList();
+                                                                                                                                            // ✅ FILTRAMOS: Solo tomamos las cuotas que tienen saldo pendiente
+                                                                                                                                            var visiblesParaPagar = grid.View.Cast<CuotaEspecialCasa>()
+                                                                                                                                                                        .Where(x => x.SaldoPendiente > 0)
+                                                                                                                                                                        .ToList();
 
-                                                                                                    if (args == true)
-                                                                                                    {
-                                                                                                        foreach (var item in visiblesParaPagar)
-                                                                                                        {
-                                                                                                            if (!cuotas.Contains(item)) cuotas.Add(item);
-                                                                                                        }
-                                                                                                    }
-                                                                                                    else
-                                                                                                    {
-                                                                                                        foreach (var item in visiblesParaPagar)
-                                                                                                        {
-                                                                                                            cuotas.Remove(item);
-                                                                                                        }
-                                                                                                    }
-                                                                                                })" />
+                                                                                                                                            if (args == true)
+                                                                                                                                            {
+                                                                                                                                                foreach (var item in visiblesParaPagar)
+                                                                                                                                                {
+                                                                                                                                                    if (!cuotas.Contains(item)) cuotas.Add(item);
+                                                                                                                                                }
+                                                                                                                                            }
+                                                                                                                                            else
+                                                                                                                                            {
+                                                                                                                                                foreach (var item in visiblesParaPagar)
+                                                                                                                                                {
+                                                                                                                                                    cuotas.Remove(item);
+                                                                                                                                                }
+                                                                                                                                            }
+                                                                                                                                        })" />
                                         </HeaderTemplate>
                                         <Template Context="data">
                                             @if (data.SaldoPendiente > 0)
@@ -144,18 +149,18 @@
                                                                 InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select item" }})"
                                                                 TValue="bool"
                                                                 Change="@(args =>
-                                                                                                            {
-                                                                                                                if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
+                                                                                                                                                        {
+                                                                                                                                                            if (cuotas == null) cuotas = new List<CuotaEspecialCasa>();
 
-                                                                                                                if (args == true)
-                                                                                                                {
-                                                                                                                    if (!cuotas.Contains(data)) cuotas.Add(data);
-                                                                                                                }
-                                                                                                                else
-                                                                                                                {
-                                                                                                                    cuotas.Remove(data);
-                                                                                                                }
-                                                                                                            })" />
+                                                                                                                                                            if (args == true)
+                                                                                                                                                            {
+                                                                                                                                                                if (!cuotas.Contains(data)) cuotas.Add(data);
+                                                                                                                                                            }
+                                                                                                                                                            else
+                                                                                                                                                            {
+                                                                                                                                                                cuotas.Remove(data);
+                                                                                                                                                            }
+                                                                                                                                                        })" />
                                             }
                                             else
                                             {
