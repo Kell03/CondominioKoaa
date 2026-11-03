@@ -29,7 +29,8 @@ namespace Condominio.Web.Components.Pages
         private IEnumerable<Payments> PagosList;
         private List<string> MetodosPago = new List<string>
         {
-        "Pago Movil"
+        "Pago Movil",
+        "Efectivo"
         };
         private IQueryable<FacturaMesCasa> items;
         private BcvRates rates;

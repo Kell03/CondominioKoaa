@@ -170,8 +170,8 @@
                 @if (isAdmin)
                 {
                     <RadzenPanelMenuItem Text="Configuración" Icon="settings" class="menu-padre">
-                        <RadzenPanelMenuItem Text="Houses" Path="houses" Icon="home" class="submenu-item" Click="@CerrarSidebarSiMobile" />
-                        <RadzenPanelMenuItem Text="Users" Path="users" Icon="account_box" class="submenu-item" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Casas" Path="houses" Icon="home" class="submenu-item" Click="@CerrarSidebarSiMobile" />
+                        <RadzenPanelMenuItem Text="Usuarios" Path="users" Icon="account_box" class="submenu-item" Click="@CerrarSidebarSiMobile" />
                         <RadzenPanelMenuItem Text="Configuración Moneda"
                                              Path="configuracionMoneda"
                                              Icon="currency_exchange" class="submenu-item" Click="@CerrarSidebarSiMobile"/>
@@ -205,6 +205,12 @@
                 }
                 else
                 {
+
+                    <RadzenPanelMenuItem Text="Configuración" Icon="settings" class="menu-padre">
+                        <RadzenPanelMenuItem Text="Usuarios" Path="users" Icon="account_box" class="submenu-item" Click="@CerrarSidebarSiMobile" />
+                    </RadzenPanelMenuItem>
+
+
                     <RadzenPanelMenuItem Text="Recibos" Icon="receipt" class="menu-padre">
 
                         <RadzenPanelMenuItem Text="Cuota Especial" Path="recibocuotaespecial" Icon="article" class="submenu-item" Click="@CerrarSidebarSiMobile" />
