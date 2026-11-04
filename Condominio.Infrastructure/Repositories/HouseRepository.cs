@@ -9,12 +9,16 @@ namespace Condominio.Infrastructure.Repositories
 {
     public class HouseRepository : GenericRepository<Houses>
     {
-
-        public HouseRepository(AppDbContext context) : base(context) { }
+        public HouseRepository(IDbContextFactory<AppDbContext> factory) : base(factory) { }
 
         public override async Task<IEnumerable<Houses>> GetAllAsync()
         {
-            return await _dbSet.OrderByDescending(x => x.CreatedAt).ToListAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+
+            return await db.Set<Houses>()
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task<int> CreateDefaultHousesAsync(int cantidad)
@@ -22,8 +26,9 @@ namespace Condominio.Infrastructure.Repositories
             if (cantidad <= 0)
                 return 0;
 
-            // Evita duplicados: solo genera las que no existan ya por Number
-            var existingNumbers = await _dbSet
+            await using var db = await _factory.CreateDbContextAsync();
+
+            var existingNumbers = await db.Set<Houses>()
                 .Select(h => h.Number)
                 .ToListAsync();
 
@@ -42,11 +47,10 @@ namespace Condominio.Infrastructure.Repositories
             if (newHouses.Count == 0)
                 return 0;
 
-            await _dbSet.AddRangeAsync(newHouses);
-            await _context.SaveChangesAsync();
+            db.Set<Houses>().AddRange(newHouses);
+            await db.SaveChangesAsync();
 
             return newHouses.Count;
         }
-
     }
 }

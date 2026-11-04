@@ -96,8 +96,7 @@ namespace Condominio.Web.Components.SubPages
 
         private async Task DeleteUser(Users user)
         {
-            UserRepository.Delete(user);
-            await UserRepository.SaveChangesAsync();
+            await UserRepository.Delete(user);
             // Si tienes SaveChanges en el repositorio
             await LoadUsers(); // Recargar la lista
             StateHasChanged();

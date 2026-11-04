@@ -29,7 +29,6 @@
     private async Task Guardar()
     {
         await CategoriaRepository.AddAsync(categoria);
-        await CategoriaRepository.SaveChangesAsync();
 
         // Cerramos el diálogo devolviendo la categoría recién creada
         DialogService.Close(categoria);

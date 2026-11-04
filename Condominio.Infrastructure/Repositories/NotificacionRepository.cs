@@ -4,71 +4,54 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Condominio.Infrastructure.Repositories
 {
     public class NotificacionRepository : GenericRepository<Notificaciones>
     {
-
-        public NotificacionRepository(AppDbContext context) : base(context) { }
+        public NotificacionRepository(IDbContextFactory<AppDbContext> factory) : base(factory) { }
 
         public async Task<IEnumerable<Notificaciones>> GetByUserAsync(int userId)
         {
-            try
-            {
-                return await _dbSet
-               .AsNoTracking()
-               .Where(n => n.UserId == userId)
-               .OrderByDescending(n => n.FechaCreacion)
-               .Take(50)  // Últimas 50
-               .ToListAsync();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            }
-            catch(Exception ex)
-            {
-                throw;
-            }
-           
+            return await db.Set<Notificaciones>()
+                .AsNoTracking()
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.FechaCreacion)
+                .Take(50)
+                .ToListAsync();
         }
 
-        // ✅ CONTAR NO LEÍDAS
         public async Task<int> CountUnreadAsync(int userId)
         {
+            await using var db = await _factory.CreateDbContextAsync();
 
-            try
-            {
-
-                return await _dbSet
+            return await db.Set<Notificaciones>()
                 .AsNoTracking()
                 .CountAsync(n => n.UserId == userId && !n.IsRead);
-
-            }
-            catch(Exception ex)
-            {
-                throw;
-            }
-            
         }
 
-        // ✅ MARCAR COMO LEÍDA
         public async Task MarcarComoLeidaAsync(int notificacionId)
         {
-            var notif = await _dbSet.FindAsync(notificacionId);
+            await using var db = await _factory.CreateDbContextAsync();
+
+            var notif = await db.Set<Notificaciones>().FindAsync(notificacionId);
             if (notif != null)
             {
                 notif.IsRead = true;
                 notif.FechaLeida = DateTime.Now;
-                _dbSet.Update(notif);
-                await _context.SaveChangesAsync();
+                db.Set<Notificaciones>().Update(notif);
+                await db.SaveChangesAsync();
             }
         }
 
-        // ✅ MARCAR TODAS COMO LEÍDAS
         public async Task MarcarTodasComoLeidasAsync(int userId)
         {
-            var notifs = await _dbSet
+            await using var db = await _factory.CreateDbContextAsync();
+
+            var notifs = await db.Set<Notificaciones>()
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .ToListAsync();
 
@@ -78,8 +61,7 @@ namespace Condominio.Infrastructure.Repositories
                 notif.FechaLeida = DateTime.Now;
             }
 
-            await _context.SaveChangesAsync();
+            await db.SaveChangesAsync();
         }
-
     }
 }

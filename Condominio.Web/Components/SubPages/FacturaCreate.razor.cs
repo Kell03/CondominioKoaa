@@ -151,7 +151,6 @@ namespace Condominio.Web.Components.SubPages
             await FacturaMesRepository.SaveWithFacturaHijo(Item, orders);
 
 
-            await FacturaMesRepository.SaveChangesAsync();
             DialogService.Close(true);
             Volver();
 

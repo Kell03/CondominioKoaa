@@ -84,8 +84,7 @@ namespace Condominio.Web.Components.Pages
             if (selectedItem.Id != 0)
             {
                 selectedItem.UpdatedAt = DateTime.Now;
-                CuotaEspecialRepository.Update(selectedItem);
-                await CuotaEspecialRepository.SaveChangesAsync();
+                await CuotaEspecialRepository.Update(selectedItem);
                 // Si tienes SaveChanges en el repositorio
                 await LoadData(); // Recargar la lista
                 selectedIndex = 0;
@@ -100,7 +99,6 @@ namespace Condominio.Web.Components.Pages
                 {
 
                     await CuotaEspecialRepository.AddAsync(selectedItem);
-                    await CuotaEspecialRepository.SaveChangesAsync();
                     // Si tienes SaveChanges en el repositorio
                     await LoadData(); // Recargar la lista
                     selectedIndex = 0;
@@ -136,8 +134,7 @@ namespace Condominio.Web.Components.Pages
         {
             try
             {
-                CuotaEspecialRepository.Delete(item);
-                await CuotaEspecialRepository.SaveChangesAsync();
+               await CuotaEspecialRepository.Delete(item);
                 // Si tienes SaveChanges en el repositorio
                 await LoadData(); // Recargar la lista
                 StateHasChanged();
@@ -199,7 +196,6 @@ namespace Condominio.Web.Components.Pages
 
             // 2. Guardar en la base de datos
             await CuotaEspecialRepository.DistribuirCuotaEspecialEntreCasas(item);
-            await CuotaEspecialRepository.SaveChangesAsync();
 
             // 3. Recargar la lista para actualizar la UI
             await LoadData();

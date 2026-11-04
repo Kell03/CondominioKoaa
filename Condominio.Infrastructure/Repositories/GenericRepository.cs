@@ -14,33 +14,25 @@ namespace Condominio.Infrastructure.Repositories
     {
         protected readonly AppDbContext _context;
         protected readonly DbSet<TEntity> _dbSet;
+        protected readonly IDbContextFactory<AppDbContext> _factory;
 
-        public GenericRepository(AppDbContext context)
+        public GenericRepository(IDbContextFactory<AppDbContext> factory)
         {
-            _context = context;
-            _dbSet = context.Set<TEntity>();
+            _factory = factory;
         }
-
-
 
 
         // VIRTUAL → permite sobrescritura
         public virtual async Task<TEntity> GetByIdAsync(int id)
         {
-            return await _dbSet.FindAsync(id);
+            await using var db = await _factory.CreateDbContextAsync();
+            return await db.Set<TEntity>().FindAsync(id);
         }
 
         public virtual async Task<IEnumerable<TEntity>> GetAllAsync()
         {
-            try
-            {
-                return await _dbSet.ToListAsync();
-            }
-            catch(Exception ex)
-            {
-               throw;
-            }
-            
+            await using var db = await _factory.CreateDbContextAsync();
+            return await db.Set<TEntity>().AsNoTracking().ToListAsync();
         }
 
         public virtual void ClearTracker()
@@ -60,88 +52,48 @@ namespace Condominio.Infrastructure.Repositories
 
         public virtual async Task AddAsync(TEntity entity)
         {
-            try
+            if (entity == null) throw new ArgumentNullException(nameof(entity));
+
+            await using var db = await _factory.CreateDbContextAsync();
+
+            var idProperty = typeof(TEntity).GetProperty("Id");
+            if (idProperty != null)
             {
-                ClearTracker();
-
-
-                if (entity == null)
-                    throw new ArgumentNullException(nameof(entity));
-
-                // ✅ VERIFICAR EL ID
-                var idProperty = typeof(TEntity).GetProperty("Id");
-                if (idProperty != null)
-                {
-                    var id = (int)idProperty.GetValue(entity);
-                    Console.WriteLine($"📊 Id de la entidad: {id}");
-
-                    // ✅ SI EL ID ES 0, AGREGAR
-                    if (id == 0)
-                    {
-                        await _dbSet.AddAsync(entity);
-                        Console.WriteLine("✅ Entidad agregada como Added");
-                    }
-                    else
-                    {
-                        // ❌ SI EL ID NO ES 0, NO SE PUEDE AGREGAR
-                        Console.WriteLine($"⚠️ La entidad ya tiene Id: {id}. No se puede agregar.");
-                        throw new Exception($"La entidad ya tiene Id: {id}. Use Update en lugar de Add.");
-                    }
-                }
-                else
-                {
-                    await _dbSet.AddAsync(entity);
-                }
+                var id = (int)idProperty.GetValue(entity)!;
+                if (id != 0)
+                    throw new InvalidOperationException(
+                        $"La entidad ya tiene Id: {id}. Use Update en lugar de Add.");
             }
-            catch (Exception ex)
-            {
 
-                Console.WriteLine($"❌ Error en AddAsync: {ex.Message}");
-                throw;
-            }
+            db.Set<TEntity>().Add(entity);
+            await db.SaveChangesAsync();
         }
 
-        public virtual void Update(TEntity entity)
+        public virtual async Task Update(TEntity entity)
         {
-            try
-            {
+            await using var db = await _factory.CreateDbContextAsync();
 
-                ClearTracker();
+            var idProperty = typeof(TEntity).GetProperty("Id")
+                ?? throw new InvalidOperationException("La entidad no tiene propiedad Id");
 
-                // 1. OBTENER EL ID
-                var idProperty = typeof(TEntity).GetProperty("Id");
-                if (idProperty == null)
-                    throw new Exception("La entidad no tiene propiedad Id");
+            var id = (int)idProperty.GetValue(entity)!;
 
-                var id = (int)idProperty.GetValue(entity);
+            var existing = await db.Set<TEntity>().FindAsync(id)
+                ?? throw new InvalidOperationException($"Entidad con ID {id} no encontrada");
 
-                // 2. BUSCAR LA ENTIDAD EXISTENTE EN LA BASE DE DATOS
-                var existingEntity = _dbSet.Find(id);
-
-                if (existingEntity == null)
-                    throw new Exception($"Entidad con ID {id} no encontrada");
-
-                // 3. ACTUALIZAR LOS VALORES DE LA ENTIDAD EXISTENTE
-                _context.Entry(existingEntity).CurrentValues.SetValues(entity);
-                _context.Entry(existingEntity).State = EntityState.Modified;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error al actualizar: {ex.Message}");
-                throw;
-            }
+            db.Entry(existing).CurrentValues.SetValues(entity);
+            await db.SaveChangesAsync();
         }
 
-        public virtual void Delete(TEntity entity)
+        public virtual async Task Delete(TEntity entity)
         {
-            _context.ChangeTracker.Clear();
-
-            _dbSet.Remove(entity);
+            await using var db = await _factory.CreateDbContextAsync();
+            db.Set<TEntity>().Remove(entity);
+            await db.SaveChangesAsync();
         }
 
 
 
-        public async Task<int> SaveChangesAsync()
-            => await _context.SaveChangesAsync();
+
     }
 }

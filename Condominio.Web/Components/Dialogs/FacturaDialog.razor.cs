@@ -136,7 +136,6 @@ namespace Condominio.Web.Components.Dialogs
             await FacturaMesRepository.SaveWithFacturaHijo(Item, ordersToInsert);
 
 
-            await FacturaMesRepository.SaveChangesAsync();
             DialogService.Close(true);
 
         }

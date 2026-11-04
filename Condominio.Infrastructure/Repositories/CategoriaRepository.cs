@@ -11,15 +11,18 @@ namespace Condominio.Infrastructure.Repositories
 {
     public class CategoriaRepository : GenericRepository<CategoriasGasto>
     {
-
-        public CategoriaRepository(AppDbContext context) : base(context) { }
+        public CategoriaRepository(IDbContextFactory<AppDbContext> factory) : base(factory) { }
 
 
         public override async Task<IEnumerable<CategoriasGasto>> GetAllAsync()
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            return await _dbSet.Include(c => c.Proveedor).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            return await db.Set<CategoriasGasto>()
+                .Include(c => c.Proveedor)
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
         }
     }
 }

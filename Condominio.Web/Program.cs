@@ -44,12 +44,12 @@ builder.Services.AddRadzenComponents();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 
+var serverVersion = new MySqlServerVersion(new Version(8, 0, 36));
+
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
-    options.UseMySql(connectionString,
-        ServerVersion.AutoDetect(connectionString))
+    options.UseMySql(connectionString, serverVersion)
     .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
     .EnableDetailedErrors(builder.Environment.IsDevelopment()));
-
 builder.Services.AddSignalR();
 
 builder.Services.AddScoped<CustomAuthStateProvider>();  // ← ESTO ES CLAVE

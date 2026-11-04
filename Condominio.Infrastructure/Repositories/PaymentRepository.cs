@@ -4,31 +4,48 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Condominio.Infrastructure.Repositories
 {
     public class PaymentRepository : GenericRepository<Payments>
     {
-
-        public PaymentRepository(AppDbContext context) : base(context) { }
+        public PaymentRepository(IDbContextFactory<AppDbContext> factory) : base(factory) { }
 
         public override async Task<IEnumerable<Payments>> GetAllAsync()
         {
-            return await _dbSet.Include(x => x.FacturaMesCasa).Include(x => x.CuotaEspecialCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+
+            return await db.Set<Payments>()
+                .Include(x => x.FacturaMesCasa)
+                .Include(x => x.CuotaEspecialCasa)
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
         }
 
-
-        public  async Task<List<Payments>> GetAllPaymentFacturaAsync()
+        public async Task<List<Payments>> GetAllPaymentFacturaAsync()
         {
-            return await _dbSet.Where(x => x.FacturaMesCasaId > 0).Include(x => x.FacturaMesCasa).ThenInclude(x => x.FacturaMes).OrderByDescending(x => x.CreatedAt).ToListAsync();
-        }
+            await using var db = await _factory.CreateDbContextAsync();
 
+            return await db.Set<Payments>()
+                .Where(x => x.FacturaMesCasaId > 0)
+                .Include(x => x.FacturaMesCasa).ThenInclude(x => x.FacturaMes)
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+        }
 
         public async Task<List<Payments>> GetAllPaymentCuotasAsync()
         {
-            return await _dbSet.Where(x => x.CuotaEspecialCasaId > 0).Include(x => x.CuotaEspecialCasa).ThenInclude(x => x.CuotaEspecial).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+
+            return await db.Set<Payments>()
+                .Where(x => x.CuotaEspecialCasaId > 0)
+                .Include(x => x.CuotaEspecialCasa).ThenInclude(x => x.CuotaEspecial)
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
         }
     }
 }

@@ -12,29 +12,28 @@ namespace Condominio.Infrastructure.Repositories
 {
     public class CuotaEspecialRepository : GenericRepository<CuotaEspecial>
     {
-
         private readonly NotificacionRepository _notifRepo;
         private readonly INotificacionRealTimeService _notificacionService;
 
-
-        public CuotaEspecialRepository(AppDbContext context, NotificacionRepository notifRepo, INotificacionRealTimeService notificacionService) : base(context) {
+        public CuotaEspecialRepository(
+            IDbContextFactory<AppDbContext> factory,
+            NotificacionRepository notifRepo,
+            INotificacionRealTimeService notificacionService) : base(factory)
+        {
             _notifRepo = notifRepo;
             _notificacionService = notificacionService;
-
         }
 
         public override async Task<IEnumerable<CuotaEspecial>> GetAllAsync()
         {
-            try
-            {
-                _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-                return await _dbSet.Include(x => x.CuotaEspecialCasas).Include(x => x.Proveedor).OrderByDescending(x => x.CreatedAt).ToListAsync();
-            }
-            catch(Exception ex)
-            {
-                throw;
-            }
+            return await db.Set<CuotaEspecial>()
+                .Include(x => x.CuotaEspecialCasas)
+                .Include(x => x.Proveedor)
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task DeleteWithHijos(CuotaEspecial entity)
@@ -42,30 +41,26 @@ namespace Condominio.Infrastructure.Repositories
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. Buscar la cuota especial con sus asignaciones a casas
-                var cuota = await _context.CuotaEspecial
+                var cuota = await db.CuotaEspecial
                     .Include(c => c.CuotaEspecialCasas)
                     .FirstOrDefaultAsync(c => c.Id == entity.Id);
 
                 if (cuota == null)
                     throw new Exception("Cuota especial no encontrada");
 
-                // 2. Eliminar TODAS las asignaciones a casas (CuotaEspecialCasa)
                 if (cuota.CuotaEspecialCasas != null && cuota.CuotaEspecialCasas.Any())
                 {
-                    _context.CuotaEspecialCasa.RemoveRange(cuota.CuotaEspecialCasas);
+                    db.CuotaEspecialCasa.RemoveRange(cuota.CuotaEspecialCasas);
                 }
 
-                // 3. Eliminar la cuota especial
-                _context.CuotaEspecial.Remove(cuota);
+                db.CuotaEspecial.Remove(cuota);
 
-                // 4. Guardar cambios
-                await _context.SaveChangesAsync();
-
+                await db.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             catch (Exception ex)
@@ -76,18 +71,17 @@ namespace Condominio.Infrastructure.Repositories
             }
         }
 
-
         public async Task DistribuirCuotaEspecialEntreCasas(CuotaEspecial entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. Buscar la cuota especial
-                var cuota = await _context.CuotaEspecial
+                var cuota = await db.CuotaEspecial
                     .FirstOrDefaultAsync(c => c.Id == entity.Id);
 
                 if (cuota == null)
@@ -96,8 +90,7 @@ namespace Condominio.Infrastructure.Repositories
                 if (cuota.MontoTotal == 0)
                     throw new Exception("El monto total de la cuota es 0");
 
-                // 2. Obtener SOLO IDs de casas activas
-                var casasIds = await _context.Houses
+                var casasIds = await db.Houses
                     .Where(h => h.IsActive)
                     .Select(h => h.Id)
                     .ToListAsync();
@@ -107,10 +100,8 @@ namespace Condominio.Infrastructure.Repositories
                 if (totalCasas == 0)
                     throw new Exception("No hay casas activas");
 
-                // 3. ✅ TODOS PAGAN EL MISMO MONTO (SIN CONVERSIONES INNECESARIAS)
                 decimal montoPorCasa = decimal.Round((decimal)cuota.MontoTotal / totalCasas, 2);
 
-                // 4. CREAR REGISTROS (TODOS CON EL MISMO MONTO)
                 var cuotasCasas = new List<CuotaEspecialCasa>(totalCasas);
                 var listIdUsers = new List<int>();
 
@@ -127,13 +118,13 @@ namespace Condominio.Infrastructure.Repositories
                         Estado = EstadoCuotaCasa.Pendiente,
                     });
 
-                    var usuario = await _context.Users
+                    var usuario = await db.Users
                         .AsNoTracking()
                         .FirstOrDefaultAsync(u => u.HouseId == houseId);
 
                     if (usuario != null)
                     {
-                        await _context.Notificaciones.AddAsync(new Notificaciones
+                        await db.Notificaciones.AddAsync(new Notificaciones
                         {
                             UserId = usuario.Id,
                             Titulo = "Nueva Cuota Especial",
@@ -143,27 +134,21 @@ namespace Condominio.Infrastructure.Repositories
                         });
                         listIdUsers.Add(usuario.Id);
                     }
-
                 }
-             
-                // 5. INSERTAR TODOS DE UNA VEZ (UNA SOLA LLAMADA A BD)
-                await _context.CuotaEspecialCasa.AddRangeAsync(cuotasCasas);
 
-                // 6. Actualizar estado de la cuota
+                await db.CuotaEspecialCasa.AddRangeAsync(cuotasCasas);
+
                 cuota.Enviado = true;
-                cuota.Motivo = entity.Motivo; // Actualizar el motivo si es necesario
-                _context.CuotaEspecial.Update(cuota);
+                cuota.Motivo = entity.Motivo;
+                db.CuotaEspecial.Update(cuota);
 
-                // 7. GUARDAR TODOS LOS CAMBIOS (UNA SOLA VEZ)
-                await _context.SaveChangesAsync();
-
+                await db.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 if (listIdUsers.Any())
                 {
                     await _notificacionService.EnviarNotificacionMultipleAsync(listIdUsers);
                 }
-
             }
             catch (Exception ex)
             {
@@ -172,6 +157,5 @@ namespace Condominio.Infrastructure.Repositories
                 throw;
             }
         }
-
     }
 }

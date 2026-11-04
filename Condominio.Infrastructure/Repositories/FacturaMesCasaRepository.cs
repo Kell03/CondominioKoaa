@@ -1,12 +1,13 @@
 ﻿using Condominio.Domain.DB;
 using Condominio.Domain.Entities;
 using Condominio.Domain.Interfaces;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Condominio.Infrastructure.Repositories
 {
@@ -14,32 +15,29 @@ namespace Condominio.Infrastructure.Repositories
     {
         private readonly NotificacionRepository _notifRepo;
         private readonly INotificacionRealTimeService _notificacionService;
-        private readonly MovimientosRepository _movimientoRepo;   // ← NUEVO
+        private readonly MovimientosRepository _movimientoRepo;
 
         public FacturaMesCasaRepository(
-       AppDbContext context,
-       NotificacionRepository notifRepo,
-       INotificacionRealTimeService notificacionService,
-       MovimientosRepository movimientoRepo) : base(context)  // ← NUEVO
+            IDbContextFactory<AppDbContext> factory,
+            NotificacionRepository notifRepo,
+            INotificacionRealTimeService notificacionService,
+            MovimientosRepository movimientoRepo) : base(factory)
         {
             _notifRepo = notifRepo;
             _notificacionService = notificacionService;
-            _movimientoRepo = movimientoRepo;   // ← NUEVO
+            _movimientoRepo = movimientoRepo;
         }
 
         public override async Task<IEnumerable<FacturaMesCasa>> GetAllAsync()
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            // ✅ UNA SOLA CONSULTA CON JOIN (más eficiente)
-            var query = from factura in _dbSet
-                        join house in _context.Houses on factura.HouseId equals house.Id
-                        join user in _context.Users on house.Id equals user.HouseId into ownerGroup
+            var query = from factura in db.Set<FacturaMesCasa>()
+                        join house in db.Houses on factura.HouseId equals house.Id
+                        join user in db.Users on house.Id equals user.HouseId into ownerGroup
                         from owner in ownerGroup.DefaultIfEmpty()
-                        join payments in _context.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
-
-                        //  1. AGREGAMOS EL JOIN A FACTURAMES
-                        join facturaMes in _context.FacturaMes on factura.FacturaMesId equals facturaMes.Id
+                        join payments in db.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
+                        join facturaMes in db.FacturaMes on factura.FacturaMesId equals facturaMes.Id
                         select new FacturaMesCasa
                         {
                             Id = factura.Id,
@@ -54,31 +52,26 @@ namespace Condominio.Infrastructure.Repositories
                             CreatedAt = factura.CreatedAt,
                             UpdatedAt = factura.UpdatedAt,
                             House = house,
-
-                            //  2. ASIGNAMOS LA ENTIDAD QUE ACABAMOS DE TRAER EN EL JOIN
                             FacturaMes = facturaMes,
-
                             Payments = paymentGroup.ToList(),
                             User = owner
                         };
 
-            // ✅ Incluir hijos
             var result = await query
                 .OrderByDescending(x => x.FacturaMes.Year)
                 .ThenByDescending(x => x.FacturaMes.Mes)
                 .ToListAsync();
 
-            // ✅ Cargar hijos por separado (1 consulta adicional)
             var facturaIds = result.Select(x => x.FacturaMesId).Distinct().ToList();
             if (facturaIds.Any())
             {
-                var hijos = await _context.FacturaMesHijo
+                var hijos = await db.FacturaMesHijo
                     .Where(h => facturaIds.Contains(h.FacturaMesId))
+                    .AsNoTracking()
                     .ToListAsync();
 
                 foreach (var factura in result)
                 {
-                    // ✅ Validamos que FacturaMes no sea nulo para evitar NullReferenceException
                     if (factura.FacturaMes != null)
                     {
                         factura.FacturaMes.FacturaMesHijos = hijos
@@ -91,20 +84,16 @@ namespace Condominio.Infrastructure.Repositories
             return result;
         }
 
-
-        public  async Task<IEnumerable<FacturaMesCasa>> GetAllSaldoAsync()
+        public async Task<IEnumerable<FacturaMesCasa>> GetAllSaldoAsync()
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            // ✅ UNA SOLA CONSULTA CON JOIN (más eficiente)
-            var query = from factura in _dbSet
-                        join house in _context.Houses on factura.HouseId equals house.Id
-                        join user in _context.Users on house.Id equals user.HouseId into ownerGroup
+            var query = from factura in db.Set<FacturaMesCasa>()
+                        join house in db.Houses on factura.HouseId equals house.Id
+                        join user in db.Users on house.Id equals user.HouseId into ownerGroup
                         from owner in ownerGroup.DefaultIfEmpty()
-                        join payments in _context.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
-
-                        //  1. AGREGAMOS EL JOIN A FACTURAMES
-                        join facturaMes in _context.FacturaMes on factura.FacturaMesId equals facturaMes.Id
+                        join payments in db.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
+                        join facturaMes in db.FacturaMes on factura.FacturaMesId equals facturaMes.Id
                         select new FacturaMesCasa
                         {
                             Id = factura.Id,
@@ -119,31 +108,27 @@ namespace Condominio.Infrastructure.Repositories
                             CreatedAt = factura.CreatedAt,
                             UpdatedAt = factura.UpdatedAt,
                             House = house,
-
-                            //  2. ASIGNAMOS LA ENTIDAD QUE ACABAMOS DE TRAER EN EL JOIN
                             FacturaMes = facturaMes,
-
                             Payments = paymentGroup.ToList(),
                             User = owner
                         };
 
-            // ✅ Incluir hijos
-            var result = await query.Where(x => x.FacturaMes.Motivo != null && x.FacturaMes.Motivo != "")
+            var result = await query
+                .Where(x => x.FacturaMes.Motivo != null && x.FacturaMes.Motivo != "")
                 .OrderByDescending(x => x.FacturaMes.Year)
                 .ThenByDescending(x => x.FacturaMes.Mes)
                 .ToListAsync();
 
-            // ✅ Cargar hijos por separado (1 consulta adicional)
             var facturaIds = result.Select(x => x.FacturaMesId).Distinct().ToList();
             if (facturaIds.Any())
             {
-                var hijos = await _context.FacturaMesHijo
+                var hijos = await db.FacturaMesHijo
                     .Where(h => facturaIds.Contains(h.FacturaMesId))
+                    .AsNoTracking()
                     .ToListAsync();
 
                 foreach (var factura in result)
                 {
-                    // ✅ Validamos que FacturaMes no sea nulo para evitar NullReferenceException
                     if (factura.FacturaMes != null)
                     {
                         factura.FacturaMes.FacturaMesHijos = hijos
@@ -156,69 +141,56 @@ namespace Condominio.Infrastructure.Repositories
             return result;
         }
 
-
         public async Task<IEnumerable<FacturaMesCasa>> GetAllForUserAsync(int id)
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            var idCasa = await _context.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
-            return await _dbSet.Include(x => x.House).Include(x => x.FacturaMes).ThenInclude(x => x.FacturaMesHijos)
-                .ThenInclude(x => x.CategoriaGasto).Where(x => x.House.Id == idCasa)
+            var idCasa = await db.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
+
+            return await db.Set<FacturaMesCasa>()
+                .Include(x => x.House)
+                .Include(x => x.FacturaMes).ThenInclude(x => x.FacturaMesHijos).ThenInclude(x => x.CategoriaGasto)
+                .Where(x => x.House.Id == idCasa)
+                .AsNoTracking()
                 .OrderByDescending(x => x.FacturaMes.Year)
-                .ThenByDescending(x => x.FacturaMes.Mes).ToListAsync();
+                .ThenByDescending(x => x.FacturaMes.Mes)
+                .ToListAsync();
         }
-
-
 
         public async Task<bool> ConfirmarPagoFacturaCasa(FacturaMesCasa item)
         {
-            // ✅ INICIAR TRANSACCIÓN
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
-
-                // 1. Buscar la factura principal
-                var factura = await _context.FacturaMes
-                    .FirstOrDefaultAsync(x => x.Id == item.FacturaMesId);
-
+                var factura = await db.FacturaMes.FirstOrDefaultAsync(x => x.Id == item.FacturaMesId);
                 if (factura == null)
                     throw new Exception("Factura no encontrada");
 
-                // 2. ✅ SUMAR el monto recaudado (NO asignar)
                 factura.MontoRecaudado += item.MontoTotal;
-
                 item.Estado = "Confirmada";
 
-                _context.FacturaMesCasa.Update(item);
+                db.FacturaMesCasa.Update(item);
+                db.FacturaMes.Update(factura);
 
-                _context.FacturaMes.Update(factura);
-
-                await _context.SaveChangesAsync();
-
-                // ✅ CONFIRMAR TRANSACCIÓN
+                await db.SaveChangesAsync();
                 await transaction.CommitAsync();
-
-                return true; // Éxito
+                return true;
             }
             catch (Exception ex)
             {
-                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
                 await transaction.RollbackAsync();
-
-                // Opcional: guardar el error en un log
                 Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return false; // Falló
+                return false;
             }
         }
 
-
         public async Task<bool> RegistrarPagoFactura(Payments pago)
         {
+            await using var db = await _factory.CreateDbContextAsync();
             try
             {
-
                 var payment = new Payments
                 {
                     FacturaMesCasaId = pago.FacturaMesCasaId,
@@ -230,34 +202,26 @@ namespace Condominio.Infrastructure.Repositories
                     Estado = "Pendiente"
                 };
 
-                await _context.Payments.AddAsync(payment);
-                await _context.SaveChangesAsync();
-
-                // ✅ Actualizar saldo de la factura
-                // ... (código anterior)
-
+                db.Payments.Add(payment);
+                await db.SaveChangesAsync();
                 return true;
-
             }
             catch (Exception ex)
             {
-
-                // Opcional: guardar el error en un log
                 Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return false; // Falló
+                return false;
             }
         }
-
 
         public async Task<List<Payments>> RegistrarMultiplesPagoFactura(List<Payments> pagos)
         {
             if (pagos == null || !pagos.Any()) return new List<Payments>();
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+
             try
             {
-                // ✅ 1. Transformamos la lista usando LINQ (Select)
                 var listaPayments = pagos.Select(item => new Payments
                 {
                     FacturaMesCasaId = item.FacturaMesCasaId,
@@ -269,12 +233,8 @@ namespace Condominio.Infrastructure.Repositories
                     Estado = "Pendiente"
                 }).ToList();
 
-                // ✅ 2. Agregamos TODA la lista al contexto de una vez
-                await _context.Payments.AddRangeAsync(listaPayments);
-
-                // ✅ 3. Guardamos (EF Core optimiza los inserts masivos internamente)
-                await _context.SaveChangesAsync();
-
+                await db.Payments.AddRangeAsync(listaPayments);
+                await db.SaveChangesAsync();
                 await transaction.CommitAsync();
                 return listaPayments;
             }
@@ -288,247 +248,158 @@ namespace Condominio.Infrastructure.Repositories
 
         public async Task<IEnumerable<Payments>> GetPaymentsForUserAsync(int userId, int idFacturaMes)
         {
-            try
-            {
-                _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-                // 1. Obtener la casa del usuario
-                var houseId = await _context.Users
-                    .Where(u => u.Id == userId)
-                    .Select(u => u.HouseId)
-                    .FirstOrDefaultAsync();
+            var houseId = await db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.HouseId)
+                .FirstOrDefaultAsync();
 
-                if (houseId == null || houseId == 0)
-                    return new List<Payments>();
+            if (houseId == null || houseId == 0)
+                return new List<Payments>();
 
-                // 2. Obtener todos los pagos de esa casa
-                // Un pago puede estar asociado a FacturaMesCasa o CuotaEspecialCasa
-                // Ambos tienen HouseId
-
-                var payments = await _context.Payments
-                    .Include(p => p.FacturaMesCasa)
-                        .ThenInclude(f => f.FacturaMes)
-                    .Include(p => p.FacturaMesCasa)
-                        .ThenInclude(f => f.House)
-                    .Where(p =>
-                        (p.FacturaMesCasa != null && p.FacturaMesCasa.HouseId == houseId && p.FacturaMesCasaId == idFacturaMes)
-                    )
-                    .OrderByDescending(p => p.FechaPago)
-                    .ToListAsync();
-
-                return payments;
-
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-
+            return await db.Payments
+                .Include(p => p.FacturaMesCasa).ThenInclude(f => f.FacturaMes)
+                .Include(p => p.FacturaMesCasa).ThenInclude(f => f.House)
+                .Where(p => p.FacturaMesCasa != null
+                         && p.FacturaMesCasa.HouseId == houseId
+                         && p.FacturaMesCasaId == idFacturaMes)
+                .AsNoTracking()
+                .OrderByDescending(p => p.FechaPago)
+                .ToListAsync();
         }
-
 
         public async Task<IEnumerable<Payments>> GetPaymentsForInvoiceAsync(int idFacturaMes)
         {
-            try
-            {
-                _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-                var payments = await _context.Payments
-                    .Include(p => p.FacturaMesCasa)
-                        .ThenInclude(f => f.FacturaMes)
-                    .Include(p => p.FacturaMesCasa)
-                        .ThenInclude(f => f.House)
-                    .Where(p =>
-                         p.FacturaMesCasaId == idFacturaMes
-                    )
-                    .OrderByDescending(p => p.FechaPago)
-                    .ToListAsync();
-
-                return payments;
-
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-
+            return await db.Payments
+                .Include(p => p.FacturaMesCasa).ThenInclude(f => f.FacturaMes)
+                .Include(p => p.FacturaMesCasa).ThenInclude(f => f.House)
+                .Where(p => p.FacturaMesCasaId == idFacturaMes)
+                .AsNoTracking()
+                .OrderByDescending(p => p.FechaPago)
+                .ToListAsync();
         }
 
-
-       
         public async Task<bool> ConfirmPayment(Payments payment)
         {
-            // ✅ INICIAR TRANSACCIÓN
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
+                int usuarioId = await PaymentConfirm(db, payment);
 
-                int usuarioId = await PaymentConfirm(payment, transaction);
+                await transaction.CommitAsync();
+                await _notificacionService.EnviarNotificacionAsync(usuarioId);
 
-
-                if(usuarioId > 0)
-                {
-                    await transaction.CommitAsync();
-
-
-                    await _notificacionService.EnviarNotificacionAsync(usuarioId);
-
-                    return true; // Éxito
-
-                }
-                else
-                {
-                    throw new Exception($"Falló al confirmar");
-                }
-
+                return true;
             }
             catch (Exception ex)
             {
-                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
                 await transaction.RollbackAsync();
-
-                // Opcional: guardar el error en un log
                 Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return false; // Falló
+                return false;
             }
         }
-
-
 
         public async Task<bool> MasiveConfirmPayment(List<Payments> payments)
         {
             if (payments == null || !payments.Any()) return false;
 
-            // ✅ 1. Iniciar transacción UNA SOLA VEZ
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
             var usuariosA_Notificar = new List<int>();
 
             try
             {
-                // ✅ 2. Recorrer TODOS los pagos
                 foreach (var payment in payments)
                 {
-                    int usuarioId = await PaymentConfirm(payment, transaction);
-
-                    if (usuarioId > 0)
-                    {
-                        usuariosA_Notificar.Add(usuarioId);
-                    }
-                    else
-                    {
-                        // Si uno falla, lanzamos la excepción para abortar TODO
-                        throw new Exception($"Falló al confirmar el pago con ID {payment.Id}");
-                    }
+                    int usuarioId = await PaymentConfirm(db, payment);
+                    usuariosA_Notificar.Add(usuarioId);
                 }
 
-                // ✅ 3. Si el bucle termina sin errores, hacemos el Commit GLOBAL
                 await transaction.CommitAsync();
 
-                // ✅ 4. Enviamos las notificaciones DESPUÉS del commit exitoso
                 foreach (var userId in usuariosA_Notificar.Distinct())
-                {
                     await _notificacionService.EnviarNotificacionAsync(userId);
-                }
 
-                return true; // Todo el lote fue exitoso
+                return true;
             }
             catch (Exception ex)
             {
-                // ❌ 5. Si algo falló, hacemos un único Rollback GLOBAL
                 await transaction.RollbackAsync();
                 Console.WriteLine($"❌ Error en lote masivo, se revirtió todo: {ex.Message}");
                 return false;
             }
         }
 
-        private async Task<int> PaymentConfirm(Payments payment, IDbContextTransaction transaction)
+        private async Task<int> PaymentConfirm(AppDbContext db, Payments payment)
         {
+            var facturaMesCasa = await db.FacturaMesCasa
+                .FirstOrDefaultAsync(x => x.Id == payment.FacturaMesCasaId);
 
-            try
+            if (facturaMesCasa == null)
+                throw new Exception("Factura no encontrada");
+
+            var factura = await db.FacturaMes
+                .FirstOrDefaultAsync(x => x.Id == facturaMesCasa.FacturaMesId);
+
+            if (factura == null)
+                throw new Exception("Factura no encontrada");
+
+            facturaMesCasa.MontoPagado += payment.Monto;
+            facturaMesCasa.SaldoPendiente = facturaMesCasa.MontoTotal - facturaMesCasa.MontoPagado;
+            factura.MontoRecaudado += payment.Monto;
+            facturaMesCasa.Estado = facturaMesCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pago Parcial";
+
+            string mensaje, titulo;
+            if (facturaMesCasa.Estado == "Pago Parcial")
             {
-                var facturaMesCasa = await _context.FacturaMesCasa
-              .FirstOrDefaultAsync(x => x.Id == payment.FacturaMesCasaId);
-
-                if (facturaMesCasa == null)
-                    throw new Exception("Factura no encontrada");
-
-
-
-                var factura = await _context.FacturaMes
-                    .FirstOrDefaultAsync(x => x.Id == facturaMesCasa.FacturaMesId);
-
-                if (factura == null)
-                    throw new Exception("Factura no encontrada");
-
-
-
-                // 2. ✅ SUMAR el monto recaudado (NO asignar)
-                facturaMesCasa.MontoPagado = facturaMesCasa.MontoPagado + payment.Monto;
-
-
-                facturaMesCasa.SaldoPendiente = facturaMesCasa.MontoTotal - facturaMesCasa.MontoPagado;
-
-                factura.MontoRecaudado += payment.Monto;
-
-                facturaMesCasa.Estado = facturaMesCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pago Parcial";
-
-                string mensaje = "";
-                string titulo = "";
-
-                if (facturaMesCasa.Estado == "Pago Parcial")
-                {
-                    mensaje = $"Pago parcial confirmado · {factura.NombreMes} {factura.Year} · Ref: {payment.Referencia}";
-                    titulo = $"Factura: Pago Parcial";
-                }
-                else
-                {
-                    mensaje = $"Pago confirmado · {factura.NombreMes} {factura.Year} · Ref: {payment.Referencia}";
-                    titulo = $"Factura: Pago Confirmado";
-
-                }
-
-                payment.Estado = "Confirmada";
-
-
-                _context.Payments.Update(payment);
-                _context.FacturaMesCasa.Update(facturaMesCasa);
-
-                _context.FacturaMes.Update(factura);
-
-                await _movimientoRepo.SaveMovimiento(
-                    monto: payment.Monto,
-                    montoBs: payment.MontoBs,
-                    tasa: payment.Tasa,
-                    idCasa: facturaMesCasa.HouseId,
-                    factura: factura,
-                    cuota: null
-                );
-
-                var usuario = await _context.Users
-        .AsNoTracking()
-        .FirstOrDefaultAsync(u => u.HouseId == facturaMesCasa.HouseId);
-
-                await _context.Notificaciones.AddAsync(new Notificaciones
-                {
-                    UserId = usuario.Id,
-                    Titulo = titulo,
-                    Mensaje = mensaje,
-                    Tipo = "Payments",
-                    ReferenciaId = payment.Id
-                });
-
-                await _context.SaveChangesAsync();
-                return usuario.Id;
+                mensaje = $"Pago parcial confirmado · {factura.NombreMes} {factura.Year} · Ref: {payment.Referencia}";
+                titulo = "Factura: Pago Parcial";
             }
-            catch (Exception ex)
+            else
             {
-                return 0;
+                mensaje = $"Pago confirmado · {factura.NombreMes} {factura.Year} · Ref: {payment.Referencia}";
+                titulo = "Factura: Pago Confirmado";
             }
 
+            payment.Estado = "Confirmada";
+
+            db.Payments.Update(payment);
+            db.FacturaMesCasa.Update(facturaMesCasa);
+            db.FacturaMes.Update(factura);
+
+            await _movimientoRepo.SaveMovimiento(
+                db,
+                monto: payment.Monto,
+                montoBs: payment.MontoBs,
+                tasa: payment.Tasa,
+                idCasa: facturaMesCasa.HouseId,
+                factura: factura,
+                cuota: null
+            );
+
+            var usuario = await db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.HouseId == facturaMesCasa.HouseId);
+
+            if (usuario == null)
+                throw new Exception("Usuario no encontrado para la casa");
+
+            await db.Notificaciones.AddAsync(new Notificaciones
+            {
+                UserId = usuario.Id,
+                Titulo = titulo,
+                Mensaje = mensaje,
+                Tipo = "Payments",
+                ReferenciaId = payment.Id
+            });
+
+            await db.SaveChangesAsync();
+            return usuario.Id;
         }
-
     }
 }

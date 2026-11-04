@@ -14,7 +14,7 @@ namespace Condominio.Infrastructure.Repositories
     public class CuotaEspecialCasaRepository : GenericRepository<CuotaEspecialCasa>
     {
 
-        public CuotaEspecialCasaRepository(AppDbContext context) : base(context) { }
+
         private readonly INotificacionRealTimeService _notificacionService;
         private readonly NotificacionRepository _notifRepo;
 
@@ -23,10 +23,10 @@ namespace Condominio.Infrastructure.Repositories
 
 
         public CuotaEspecialCasaRepository(
-      AppDbContext context,
+     IDbContextFactory<AppDbContext> factory,
       NotificacionRepository notifRepo,
       INotificacionRealTimeService notificacionService,
-      MovimientosRepository movimientoRepo) : base(context)  // ← NUEVO
+      MovimientosRepository movimientoRepo) : base(factory)  // ← NUEVO
         {
             _notifRepo = notifRepo;
             _notificacionService = notificacionService;
@@ -34,12 +34,12 @@ namespace Condominio.Infrastructure.Repositories
         }
         public override async Task<IEnumerable<CuotaEspecialCasa>> GetAllAsync()
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            var query = from item in _dbSet
-                        join user in _context.Users on item.HouseId equals user.HouseId into ownerGroup
+            var query = from item in db.Set<CuotaEspecialCasa>()
+                        join user in db.Users on item.HouseId equals user.HouseId into ownerGroup
                         from owner in ownerGroup.DefaultIfEmpty()
-                        join payments in _context.Payments on item.Id equals payments.CuotaEspecialCasaId into paymentGroup
+                        join payments in db.Payments on item.Id equals payments.CuotaEspecialCasaId into paymentGroup
                         select new CuotaEspecialCasa
                         {
                             Id = item.Id,
@@ -59,75 +59,63 @@ namespace Condominio.Infrastructure.Repositories
                             House = item.House,
                             CuotaEspecial = item.CuotaEspecial,
                             Payments = paymentGroup.ToList(),
-                            User = owner  // ✅ ASIGNACIÓN DIRECTA
+                            User = owner
                         };
 
-            return await query
-                .OrderByDescending(x => x.CreatedAt)
-                .ToListAsync();
+            return await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 
 
         public async Task<IEnumerable<CuotaEspecialCasa>> GetAllForUserAsync(int id)
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            var idCasa = await _context.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
-            return await _dbSet.Include(x => x.House).Include(x => x.CuotaEspecial).Where(x => x.House.Id == idCasa).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            var idCasa = await db.Users.Where(x => x.Id == id).Select(x => x.HouseId).FirstOrDefaultAsync();
+
+            return await db.Set<CuotaEspecialCasa>()
+                .Include(x => x.House)
+                .Include(x => x.CuotaEspecial)
+                .Where(x => x.House.Id == idCasa)
+                .OrderByDescending(x => x.CreatedAt)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
 
         public async Task<bool> ConfirmarPagoCuotaCasa(CuotaEspecialCasa item)
         {
-            // ✅ INICIAR TRANSACCIÓN
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
-
-                // 1. Buscar la factura principal
-                var cuota = await _context.CuotaEspecial
-                    .FirstOrDefaultAsync(x => x.Id == item.CuotaEspecialId);
-
+                var cuota = await db.CuotaEspecial.FirstOrDefaultAsync(x => x.Id == item.CuotaEspecialId);
                 if (cuota == null)
                     throw new Exception("Cuota Especial no encontrada");
 
-                // 2. ✅ SUMAR el monto recaudado (NO asignar)
                 cuota.MontoRecaudado += item.MontoTotal;
-
                 item.Estado = EstadoCuotaCasa.Confirmada;
 
-                _context.CuotaEspecialCasa.Update(item);
+                db.CuotaEspecialCasa.Update(item);
+                db.CuotaEspecial.Update(cuota);
 
-                _context.CuotaEspecial.Update(cuota);
-
-
-
-                await _context.SaveChangesAsync();
-
-                // ✅ CONFIRMAR TRANSACCIÓN
+                await db.SaveChangesAsync();
                 await transaction.CommitAsync();
-
-                return true; // Éxito
+                return true;
             }
             catch (Exception ex)
             {
-                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
                 await transaction.RollbackAsync();
-
-                // Opcional: guardar el error en un log
                 Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return false; // Falló
+                return false;
             }
         }
 
-
         public async Task<bool> RegistrarPagoCuota(Payments pago)
         {
+            await using var db = await _factory.CreateDbContextAsync();
             try
             {
-
                 var payment = new Payments
                 {
                     CuotaEspecialCasaId = pago.CuotaEspecialCasaId,
@@ -139,34 +127,27 @@ namespace Condominio.Infrastructure.Repositories
                     Estado = "Pendiente"
                 };
 
-                await _context.Payments.AddAsync(payment);
-                await _context.SaveChangesAsync();
-
-                // ✅ Actualizar saldo de la factura
-                // ... (código anterior)
-
+                db.Payments.Add(payment);
+                await db.SaveChangesAsync();
                 return true;
-
             }
             catch (Exception ex)
             {
-
-                // Opcional: guardar el error en un log
                 Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return false; // Falló
+                return false;
             }
         }
 
 
-        public async  Task<List<Payments>> RegistrarMultiplesPagoFactura(List<Payments> pagos)
+        public async Task<List<Payments>> RegistrarMultiplesPagoFactura(List<Payments> pagos)
         {
             if (pagos == null || !pagos.Any()) return new List<Payments>();
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+
             try
             {
-                // ✅ 1. Transformamos la lista usando LINQ (Select)
                 var listaPayments = pagos.Select(item => new Payments
                 {
                     CuotaEspecialCasaId = item.CuotaEspecialCasaId,
@@ -178,12 +159,8 @@ namespace Condominio.Infrastructure.Repositories
                     Estado = "Pendiente"
                 }).ToList();
 
-                // ✅ 2. Agregamos TODA la lista al contexto de una vez
-                await _context.Payments.AddRangeAsync(listaPayments);
-
-                // ✅ 3. Guardamos (EF Core optimiza los inserts masivos internamente)
-                await _context.SaveChangesAsync();
-
+                await db.Payments.AddRangeAsync(listaPayments);
+                await db.SaveChangesAsync();
                 await transaction.CommitAsync();
                 return listaPayments;
             }
@@ -193,268 +170,170 @@ namespace Condominio.Infrastructure.Repositories
                 Console.WriteLine($"❌ Error: {ex.Message}");
                 throw;
             }
-
         }
         public async Task<IEnumerable<Payments>> GetPaymentsForUserAsync(int userId, int idCuotaCasaMes)
         {
-            try
-            {
-                _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-                // 1. Obtener la casa del usuario
-                var houseId = await _context.Users
-                    .Where(u => u.Id == userId)
-                    .Select(u => u.HouseId)
-                    .FirstOrDefaultAsync();
+            var houseId = await db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.HouseId)
+                .FirstOrDefaultAsync();
 
-                if (houseId == null || houseId == 0)
-                    return new List<Payments>();
+            if (houseId == null || houseId == 0)
+                return new List<Payments>();
 
-                // 2. Obtener todos los pagos de esa casa
-                // Un pago puede estar asociado a FacturaMesCasa o CuotaEspecialCasa
-                // Ambos tienen HouseId
-
-                var payments = await _context.Payments
-                    .Include(p => p.CuotaEspecialCasa)
-                        .ThenInclude(c => c.CuotaEspecial)
-                    .Include(p => p.CuotaEspecialCasa)
-                        .ThenInclude(c => c.House)
-                    .Where(p =>
-                        (p.CuotaEspecialCasa != null && p.CuotaEspecialCasa.HouseId == houseId && p.CuotaEspecialCasaId == idCuotaCasaMes)
-                    )
-                    .OrderByDescending(p => p.FechaPago)
-                    .ToListAsync();
-
-                return payments;
-
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-
+            return await db.Payments
+                .Include(p => p.CuotaEspecialCasa).ThenInclude(c => c.CuotaEspecial)
+                .Include(p => p.CuotaEspecialCasa).ThenInclude(c => c.House)
+                .Where(p => p.CuotaEspecialCasa != null
+                         && p.CuotaEspecialCasa.HouseId == houseId
+                         && p.CuotaEspecialCasaId == idCuotaCasaMes)
+                .OrderByDescending(p => p.FechaPago)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
 
         public async Task<IEnumerable<Payments>> GetPaymentsForInvoiceAsync(int idCuotaCasaMes)
         {
-            try
-            {
-                _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-
-                var payments = await _context.Payments
-                    .Include(p => p.CuotaEspecialCasa)
-                        .ThenInclude(c => c.CuotaEspecial)
-                    .Include(p => p.CuotaEspecialCasa)
-                        .ThenInclude(c => c.House)
-                    .Where(p =>
-                         p.CuotaEspecialCasaId == idCuotaCasaMes
-                    )
-                    .OrderByDescending(p => p.FechaPago)
-                    .ToListAsync();
-
-                return payments;
-
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-
+            return await db.Payments
+                .Include(p => p.CuotaEspecialCasa).ThenInclude(c => c.CuotaEspecial)
+                .Include(p => p.CuotaEspecialCasa).ThenInclude(c => c.House)
+                .Where(p => p.CuotaEspecialCasaId == idCuotaCasaMes)
+                .OrderByDescending(p => p.FechaPago)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
 
         public async Task<bool> ConfirmPayment(Payments payment)
         {
-            // ✅ INICIAR TRANSACCIÓN
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
-
-                int usuarioId = await PaymentConfirm(payment, transaction);
-
+                int usuarioId = await PaymentConfirm(db, payment, transaction);
 
                 if (usuarioId > 0)
                 {
                     await transaction.CommitAsync();
-
-
                     await _notificacionService.EnviarNotificacionAsync(usuarioId);
-
-                    return true; // Éxito
-
+                    return true;
                 }
                 else
                 {
-                    throw new Exception($"Falló al confirmar");
+                    throw new Exception("Falló al confirmar");
                 }
-
             }
             catch (Exception ex)
             {
-                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
                 await transaction.RollbackAsync();
-
-                // Opcional: guardar el error en un log
                 Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return false; // Falló
+                return false;
             }
         }
-
         public async Task<bool> MasiveConfirmPayment(List<Payments> payments)
         {
-            // ✅ INICIAR TRANSACCIÓN
-
             if (payments == null || !payments.Any()) return false;
 
-
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
             var usuariosA_Notificar = new List<int>();
 
             try
             {
-
                 foreach (var payment in payments)
                 {
-                    int usuarioId = await PaymentConfirm(payment, transaction);
+                    int usuarioId = await PaymentConfirm(db, payment, transaction);
+                    usuariosA_Notificar.Add(usuarioId);
 
-                    if (usuarioId > 0)
-                    {
-                        usuariosA_Notificar.Add(usuarioId);
-                    }
-                    else
-                    {
-                        // Si uno falla, lanzamos la excepción para abortar TODO
-                        throw new Exception($"Falló al confirmar el pago con ID {payment.Id}");
-                    }
                 }
 
-
-                // ✅ 3. Si el bucle termina sin errores, hacemos el Commit GLOBAL
                 await transaction.CommitAsync();
 
-                // ✅ 4. Enviamos las notificaciones DESPUÉS del commit exitoso
                 foreach (var userId in usuariosA_Notificar.Distinct())
-                {
                     await _notificacionService.EnviarNotificacionAsync(userId);
-                }
 
-                return true; // Todo el lote fue exitoso
-
-                // 2. ✅ SUMAR el monto recaudado (NO asignar)
-
+                return true;
             }
             catch (Exception ex)
             {
-                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
                 await transaction.RollbackAsync();
-
-                // Opcional: guardar el error en un log
                 Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return false; // Falló
+                return false;
             }
         }
 
 
 
-
-        private async Task<int> PaymentConfirm(Payments payment, IDbContextTransaction transaction)
+        private async Task<int> PaymentConfirm(AppDbContext db, Payments payment, IDbContextTransaction transaction)
         {
-            try
+            var cuotaCasa = await db.CuotaEspecialCasa.FirstOrDefaultAsync(x => x.Id == payment.CuotaEspecialCasaId);
+            if (cuotaCasa == null)
+                throw new Exception("Cuota no encontrada");
+
+            var cuota = await db.CuotaEspecial.FirstOrDefaultAsync(x => x.Id == cuotaCasa.CuotaEspecialId);
+            if (cuota == null)
+                throw new Exception("Cuota no encontrada");
+
+            cuotaCasa.MontoPagado += payment.Monto;
+            cuotaCasa.SaldoPendiente = cuotaCasa.MontoTotal - cuotaCasa.MontoPagado;
+            cuota.MontoRecaudado += payment.Monto;
+            cuotaCasa.Estado = cuotaCasa.SaldoPendiente <= 0
+                ? EstadoCuotaCasa.Confirmada
+                : EstadoCuotaCasa.PagoParcial;
+
+            string mensaje, titulo;
+            if (cuotaCasa.Estado == EstadoCuotaCasa.PagoParcial)
             {
-
-                var cuotaCasa = await _context.CuotaEspecialCasa.FirstOrDefaultAsync(x => x.Id == payment.CuotaEspecialCasaId);
-
-                if (cuotaCasa == null)
-                    throw new Exception("Cuota no encontrada");
-
-
-
-                var cuota = await _context.CuotaEspecial
-                    .FirstOrDefaultAsync(x => x.Id == cuotaCasa.CuotaEspecialId);
-
-                if (cuota == null)
-                    throw new Exception("Cuota no encontrada");
-
-
-
-                // 2. ✅ SUMAR el monto recaudado (NO asignar)
-                cuotaCasa.MontoPagado = cuotaCasa.MontoPagado + payment.Monto;
-
-
-                cuotaCasa.SaldoPendiente = cuotaCasa.MontoTotal - cuotaCasa.MontoPagado;
-
-                cuota.MontoRecaudado += payment.Monto;
-
-                cuotaCasa.Estado = cuotaCasa.SaldoPendiente <= 0 ? EstadoCuotaCasa.Confirmada : EstadoCuotaCasa.PagoParcial;
-
-
-
-                string mensaje = "";
-                string titulo = "";
-
-                if (cuotaCasa.Estado == EstadoCuotaCasa.PagoParcial)
-                {
-                    mensaje = $"Pago parcial confirmado · {cuota.Motivo} · Ref: {payment.Referencia}";
-                    titulo = $"Cuota Especial: Pago Parcial";
-                }
-                else
-                {
-                    mensaje = $"Pago confirmado ·  {cuota.Motivo} · Ref: {payment.Referencia}";
-                    titulo = $"Cuota Especial: Pago Confirmado";
-
-                }
-
-                payment.Estado = "Confirmada";
-
-
-                _context.Payments.Update(payment);
-                _context.CuotaEspecialCasa.Update(cuotaCasa);
-
-                _context.CuotaEspecial.Update(cuota);
-
-
-                await _movimientoRepo.SaveMovimiento(
-                 monto: payment.Monto,
-                 montoBs: payment.MontoBs,
-                 tasa: payment.Tasa,
-                 idCasa: cuotaCasa.HouseId,
-                 cuota: cuota,
-                 factura: null
-             );
-
-                var usuario = await _context.Users
-        .AsNoTracking()
-        .FirstOrDefaultAsync(u => u.HouseId == cuotaCasa.HouseId);
-
-                await _context.Notificaciones.AddAsync(new Notificaciones
-                {
-                    UserId = usuario.Id,
-                    Titulo = titulo,
-                    Mensaje = mensaje,
-                    Tipo = "Payments",
-                    ReferenciaId = payment.Id
-                });
-
-                await _context.SaveChangesAsync();
-
-
-                return usuario.Id;
+                mensaje = $"Pago parcial confirmado · {cuota.Motivo} · Ref: {payment.Referencia}";
+                titulo = "Cuota Especial: Pago Parcial";
             }
-            catch (Exception ex)
+            else
             {
-                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
-                await transaction.RollbackAsync();
-
-                // Opcional: guardar el error en un log
-                Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return 0; // Falló
+                mensaje = $"Pago confirmado · {cuota.Motivo} · Ref: {payment.Referencia}";
+                titulo = "Cuota Especial: Pago Confirmado";
             }
+
+            payment.Estado = "Confirmada";
+
+            db.Payments.Update(payment);
+            db.CuotaEspecialCasa.Update(cuotaCasa);
+            db.CuotaEspecial.Update(cuota);
+
+            await _movimientoRepo.SaveMovimiento(
+                db,
+                monto: payment.Monto,
+                montoBs: payment.MontoBs,
+                tasa: payment.Tasa,
+                idCasa: cuotaCasa.HouseId,
+                cuota: cuota,
+                factura: null
+            );
+
+            var usuario = await db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.HouseId == cuotaCasa.HouseId);
+
+            if (usuario == null)
+                throw new Exception("Usuario no encontrado para la casa");
+
+            await db.Notificaciones.AddAsync(new Notificaciones
+            {
+                UserId = usuario.Id,
+                Titulo = titulo,
+                Mensaje = mensaje,
+                Tipo = "Payments",
+                ReferenciaId = payment.Id
+            });
+
+            await db.SaveChangesAsync();
+
+            return usuario.Id;
         }
     }
 }

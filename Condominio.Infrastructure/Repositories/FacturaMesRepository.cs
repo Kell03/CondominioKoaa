@@ -4,7 +4,8 @@ using Condominio.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Condominio.Infrastructure.Repositories
 {
@@ -13,132 +14,118 @@ namespace Condominio.Infrastructure.Repositories
         private readonly NotificacionRepository _notifRepo;
         private readonly INotificacionRealTimeService _notificacionService;
 
-        public FacturaMesRepository(AppDbContext context, NotificacionRepository notifRepo, INotificacionRealTimeService notificacionService) : base(context)
+        public FacturaMesRepository(
+            IDbContextFactory<AppDbContext> factory,
+            NotificacionRepository notifRepo,
+            INotificacionRealTimeService notificacionService) : base(factory)
         {
             _notifRepo = notifRepo;
             _notificacionService = notificacionService;
-
         }
-
-
 
         public override async Task<IEnumerable<FacturaMes>> GetAllAsync()
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            return await _dbSet.Include(x => x.FacturaMesHijos).ThenInclude(x => x.CategoriaGasto).ThenInclude(x => x.Proveedor).OrderByDescending(x => x.CreatedAt)
+            return await db.Set<FacturaMes>()
+                .Include(x => x.FacturaMesHijos).ThenInclude(x => x.CategoriaGasto).ThenInclude(x => x.Proveedor)
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
         }
 
-
-        public  async Task<IEnumerable<FacturaMes>> GetAllForGastosAsync()
+        public async Task<IEnumerable<FacturaMes>> GetAllForGastosAsync()
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            return await _dbSet.Include(x => x.FacturaMesHijos).ThenInclude(x => x.CategoriaGasto).ThenInclude(x => x.Proveedor).OrderByDescending(x => x.CreatedAt)
+            return await db.Set<FacturaMes>()
+                .Include(x => x.FacturaMesHijos).ThenInclude(x => x.CategoriaGasto).ThenInclude(x => x.Proveedor)
+                .AsNoTracking()
                 .Where(x => x.Motivo == null || x.Motivo == "")
+                .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
         }
-
 
         public async Task DeleteWithHijos(FacturaMes entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. Buscar la factura con sus hijos
-                var factura = await _context.FacturaMes
+                var factura = await db.FacturaMes
                     .Include(f => f.FacturaMesHijos)
                     .FirstOrDefaultAsync(f => f.Id == entity.Id);
 
                 if (factura == null)
                     throw new Exception("Factura no encontrada");
 
-                // 2. Eliminar TODOS los hijos
                 if (factura.FacturaMesHijos != null && factura.FacturaMesHijos.Any())
                 {
-                    _context.FacturaMesHijo.RemoveRange(factura.FacturaMesHijos);
+                    db.FacturaMesHijo.RemoveRange(factura.FacturaMesHijos);
                 }
 
-                // 3. Eliminar la factura
-                _context.FacturaMes.Remove(factura);
+                db.FacturaMes.Remove(factura);
 
-                // 4. Guardar cambios
-                await _context.SaveChangesAsync();
-
+                await db.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                Console.WriteLine($" Error al eliminar: {ex.Message}");
+                Console.WriteLine($"Error al eliminar: {ex.Message}");
                 throw;
             }
         }
 
         public async Task<bool> SaveWithFacturaHijo(FacturaMes item, List<FacturaMesHijo> children)
         {
-            // ✅ INICIAR TRANSACCIÓN
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. Guardar la factura
-                await _context.FacturaMes.AddAsync(item);
-                await _context.SaveChangesAsync(); // Guardar para obtener el ID
+                db.FacturaMes.Add(item);
+                await db.SaveChangesAsync();
 
-                // 2. Asignar el ID de la factura a los hijos
                 foreach (var child in children)
                 {
                     child.FacturaMesId = item.Id;
                 }
 
-                // 3. Guardar los hijos
-                await _context.FacturaMesHijo.AddRangeAsync(children);
-                await _context.SaveChangesAsync();
+                db.FacturaMesHijo.AddRange(children);
+                await db.SaveChangesAsync();
 
-                // 4. Actualizar el MontoTotal de la factura
                 item.MontoTotal = children.Sum(c => c.Monto);
-                _context.FacturaMes.Update(item);
-                await _context.SaveChangesAsync();
+                db.FacturaMes.Update(item);
+                await db.SaveChangesAsync();
 
-                // ✅ CONFIRMAR TRANSACCIÓN
                 await transaction.CommitAsync();
-
-                return true; // Éxito
+                return true;
             }
             catch (Exception ex)
             {
-                // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
                 await transaction.RollbackAsync();
-
-                // Opcional: guardar el error en un log
                 Console.WriteLine($"Error al guardar: {ex.Message}");
-
-                return false; // Falló
+                return false;
             }
         }
 
-
-
         public async Task<bool> SaveListWithFacturaHijo(FacturaMes itemOriginal, List<FacturaMesHijo> childrenOriginal, List<int> houseIds)
         {
-
             var listIdUsers = new List<int>();
             int guardadasExitosamente = 0;
 
             foreach (var idcasa in houseIds)
             {
-
-                using var transaction = await _context.Database.BeginTransactionAsync();
+                await using var db = await _factory.CreateDbContextAsync();
+                await using var transaction = await db.Database.BeginTransactionAsync();
 
                 try
                 {
-
                     var item = new FacturaMes
                     {
                         Mes = itemOriginal.Mes,
@@ -148,11 +135,9 @@ namespace Condominio.Infrastructure.Repositories
                         EstadoPago = itemOriginal.EstadoPago
                     };
 
+                    db.FacturaMes.Add(item);
+                    await db.SaveChangesAsync();
 
-                    await _context.FacturaMes.AddAsync(item);
-                    await _context.SaveChangesAsync(); // Guardar para obtener el ID
-
-                    // 2. Asignar el ID de la factura a los hijos
                     var children = new List<FacturaMesHijo>();
                     foreach (var child in childrenOriginal)
                     {
@@ -167,17 +152,14 @@ namespace Condominio.Infrastructure.Repositories
                         });
                     }
 
-                    // 3. Guardar los hijos
-                    await _context.FacturaMesHijo.AddRangeAsync(children);
-                    await _context.SaveChangesAsync();
+                    db.FacturaMesHijo.AddRange(children);
+                    await db.SaveChangesAsync();
 
-                    // 4. Actualizar el MontoTotal de la factura
                     item.MontoTotal = children.Sum(c => c.Monto);
-                    _context.FacturaMes.Update(item);
-                    await _context.SaveChangesAsync();
+                    db.FacturaMes.Update(item);
+                    await db.SaveChangesAsync();
 
-
-                    FacturaMesCasa facturaCasa = new FacturaMesCasa
+                    var facturaCasa = new FacturaMesCasa
                     {
                         FacturaMesId = item.Id,
                         HouseId = idcasa,
@@ -187,12 +169,12 @@ namespace Condominio.Infrastructure.Repositories
                         Estado = "Pendiente"
                     };
 
-                    await _context.FacturaMesCasa.AddAsync(facturaCasa);
+                    db.FacturaMesCasa.Add(facturaCasa);
 
-                    var usuario = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.HouseId == idcasa);
+                    var usuario = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.HouseId == idcasa);
                     if (usuario != null)
                     {
-                        await _context.Notificaciones.AddAsync(new Notificaciones
+                        await db.Notificaciones.AddAsync(new Notificaciones
                         {
                             UserId = usuario.Id,
                             Titulo = "Nueva factura",
@@ -200,52 +182,39 @@ namespace Condominio.Infrastructure.Repositories
                             Tipo = "Factura",
                             ReferenciaId = item.Id
                         });
-                        listIdUsers.Add(usuario.Id); // ✅ Movido aquí adentro
+                        listIdUsers.Add(usuario.Id);
                     }
 
-                    await _context.SaveChangesAsync();
-                    // ✅ CONFIRMAR TRANSACCIÓN
+                    await db.SaveChangesAsync();
                     await transaction.CommitAsync();
- 
                     guardadasExitosamente++;
-
                 }
                 catch (Exception ex)
                 {
-                    // ❌ REVERTIR TRANSACCIÓN (ROLLBACK)
                     await transaction.RollbackAsync();
                     Console.WriteLine($"Error al guardar factura para la casa {idcasa}: {ex.Message}");
-
-                    _context.ChangeTracker.Clear();
                 }
             }
-
 
             if (listIdUsers.Any())
             {
                 await _notificacionService.EnviarNotificacionMultipleAsync(listIdUsers);
             }
-            // 1. Guardar la factura
-
 
             return guardadasExitosamente > 0;
-
-
         }
-
 
         public async Task DistribuirFacturaEntreCasas(FacturaMes entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. Buscar la factura
-                var factura = await _context.FacturaMes
-                    .FirstOrDefaultAsync(f => f.Id == entity.Id);
+                var factura = await db.FacturaMes.FirstOrDefaultAsync(f => f.Id == entity.Id);
 
                 if (factura == null)
                     throw new Exception("Factura no encontrada");
@@ -253,8 +222,7 @@ namespace Condominio.Infrastructure.Repositories
                 if (factura.MontoTotal == 0)
                     throw new Exception("El monto total de la factura es 0");
 
-                // 2. Obtener SOLO IDs de casas activas (más eficiente)
-                var casasIds = await _context.Houses
+                var casasIds = await db.Houses
                     .Where(h => h.IsActive)
                     .Select(h => h.Id)
                     .ToListAsync();
@@ -264,10 +232,8 @@ namespace Condominio.Infrastructure.Repositories
                 if (totalCasas == 0)
                     throw new Exception("No hay casas activas");
 
-                // 3. ✅ TODOS PAGAN EL MISMO MONTO (SIN CONVERSIONES INNECESARIAS)
                 decimal montoPorCasa = decimal.Round((decimal)factura.MontoTotal / totalCasas, 2);
 
-                // 4. CREAR REGISTROS (TODOS CON EL MISMO MONTO)
                 var facturasCasas = new List<FacturaMesCasa>(totalCasas);
                 var listIdUsers = new List<int>();
 
@@ -282,14 +248,13 @@ namespace Condominio.Infrastructure.Repositories
                         Estado = "Pendiente"
                     });
 
-
-                    var usuario = await _context.Users
+                    var usuario = await db.Users
                         .AsNoTracking()
                         .FirstOrDefaultAsync(u => u.HouseId == houseId);
 
                     if (usuario != null)
                     {
-                        await _context.Notificaciones.AddAsync(new Notificaciones
+                        await db.Notificaciones.AddAsync(new Notificaciones
                         {
                             UserId = usuario.Id,
                             Titulo = "Nueva factura",
@@ -299,21 +264,14 @@ namespace Condominio.Infrastructure.Repositories
                         });
                         listIdUsers.Add(usuario.Id);
                     }
-
                 }
 
+                await db.FacturaMesCasa.AddRangeAsync(facturasCasas);
 
-
-                // 5. INSERTAR TODOS DE UNA VEZ (UNA SOLA LLAMADA A BD)
-                await _context.FacturaMesCasa.AddRangeAsync(facturasCasas);
-
-                // 6. Marcar como enviada
                 factura.Enviado = true;
-                _context.FacturaMes.Update(factura);
+                db.FacturaMes.Update(factura);
 
-                // 7. GUARDAR TODOS LOS CAMBIOS (UNA SOLA VEZ)
-                await _context.SaveChangesAsync();
-
+                await db.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 if (listIdUsers.Any())
@@ -331,8 +289,5 @@ namespace Condominio.Infrastructure.Repositories
                 throw;
             }
         }
-
-
-
     }
 }

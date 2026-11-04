@@ -176,7 +176,6 @@ namespace Condominio.Web.Components.Pages
 
             Pago.CuotaEspecialCasaId = selectedItem.Id;
             await CuotaEspecialCasaRepository.RegistrarPagoCuota(Pago);
-            await CuotaEspecialCasaRepository.SaveChangesAsync();
             // Si tienes SaveChanges en el repositorio
             await LoadPagos((int)Pago.CuotaEspecialCasaId); // Recargar la lista
             Pago = new Payments();

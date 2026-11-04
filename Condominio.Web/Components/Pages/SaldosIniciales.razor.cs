@@ -195,7 +195,6 @@ namespace Condominio.Web.Components.Pages
             await FacturaMesRepository.SaveListWithFacturaHijo(Item, orders.Where(x => x.Monto > 0).ToList(), casasSeleccionadas.Select(x => x.Id).ToList());
 
 
-            await FacturaMesRepository.SaveChangesAsync();
             DialogService.Close(true);
             selectedIndex = 0;
             casasSeleccionadas = new();

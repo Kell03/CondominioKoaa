@@ -1,5 +1,6 @@
 ﻿using Condominio.Domain.DB;
 using Condominio.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,9 @@ namespace Condominio.Infrastructure.Repositories
 {
     public class ConfiguracionMonedaRepository : GenericRepository<ConfiguracionMoneda>
     {
-        public ConfiguracionMonedaRepository(AppDbContext context) : base(context) { }
+
+        public ConfiguracionMonedaRepository(IDbContextFactory<AppDbContext> factory) : base(factory) { }
+
 
 
 

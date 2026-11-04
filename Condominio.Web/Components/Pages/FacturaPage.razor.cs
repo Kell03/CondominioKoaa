@@ -208,7 +208,6 @@ namespace Condominio.Web.Components.Pages
         private async Task DeleteUser(FacturaMes item)
         {
             await FacturaMesRepository.DeleteWithHijos(item);
-            await FacturaMesRepository.SaveChangesAsync();
             // Si tienes SaveChanges en el repositorio
             await LoadData(); // Recargar la lista
             StateHasChanged();
@@ -225,7 +224,6 @@ namespace Condominio.Web.Components.Pages
 
             // 2. Guardar en la base de datos
             await FacturaMesRepository.DistribuirFacturaEntreCasas(factura);
-            await FacturaMesRepository.SaveChangesAsync();
 
             // 3. Recargar la lista para actualizar la UI
             await LoadData();

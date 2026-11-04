@@ -10,51 +10,61 @@ namespace Condominio.Infrastructure.Repositories
 {
     public class FacturaMesHijoRepository : GenericRepository<FacturaMesHijo>
     {
-        public FacturaMesHijoRepository(AppDbContext context) : base(context) { }
+        public FacturaMesHijoRepository(IDbContextFactory<AppDbContext> factory) : base(factory) { }
 
         public override async Task<IEnumerable<FacturaMesHijo>> GetAllAsync()
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            return await _dbSet.Include(x => x.facturaMes).Include(x => x.CategoriaGasto).OrderByDescending(x => x.CreatedAt).ToListAsync();
+            return await db.Set<FacturaMesHijo>()
+                .Include(x => x.facturaMes)
+                .Include(x => x.CategoriaGasto)
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
         }
-
-
-
 
         public async Task<IEnumerable<FacturaMesHijo>> GetAllFByFacturaAsync(int id)
         {
-            _context.ChangeTracker.Clear();
+            await using var db = await _factory.CreateDbContextAsync();
 
-            var lista = await _context.FacturaMesHijo.Where(x => x.FacturaMesId == id).Include(x => x.CategoriaGasto).ToListAsync();
-            return lista;
+            return await db.FacturaMesHijo
+                .Where(x => x.FacturaMesId == id)
+                .Include(x => x.CategoriaGasto)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public override async Task AddAsync(FacturaMesHijo entity)
         {
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
-            // 1. Agregar el detalle (hijo)
-            await _dbSet.AddAsync(entity);
-
-            // 2. Buscar la factura padre
-            FacturaMes factura = await _context.Set<FacturaMes>()
-                .FirstOrDefaultAsync(f => f.Id == entity.FacturaMesId);
-
-            if (factura != null)
+            try
             {
+                // 1. Agregar el detalle (hijo)
+                db.Set<FacturaMesHijo>().Add(entity);
+
+                // 2. Buscar la factura padre
+                var factura = await db.Set<FacturaMes>()
+                    .FirstOrDefaultAsync(f => f.Id == entity.FacturaMesId);
+
+                if (factura == null)
+                    throw new InvalidOperationException($"Factura con Id {entity.FacturaMesId} no encontrada");
+
                 // 3. Actualizar el total de la factura padre
                 factura.MontoTotal += entity.Monto;
 
-                // 4. Marcar la factura como modificada (usando Set<FacturaMes>())
-                _context.Set<FacturaMes>().Update(factura);
+                // 4. Guardar TODOS los cambios (el hijo + la actualización del padre)
+                await db.SaveChangesAsync();
+
+                await transaction.CommitAsync();
             }
-
-            // 5. Guardar TODOS los cambios (el hijo + la actualización del padre)
-            await _context.SaveChangesAsync();
-
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
-
-
-        
     }
 }

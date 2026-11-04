@@ -75,8 +75,7 @@ namespace Condominio.Web.Components.Pages
 
            
                 selectedItem.FechaActualizacion = DateTime.Now;
-                MonedaRepository.Update(selectedItem);
-                await MonedaRepository.SaveChangesAsync();
+                await MonedaRepository.Update(selectedItem);
                 // Si tienes SaveChanges en el repositorio
                 await LoadUsers(); // Recargar la lista
                 selectedIndex = 0;

@@ -11,7 +11,7 @@ namespace Condominio.Infrastructure.Repositories
 {
     public class ProveedorRepository : GenericRepository<Proveedor>
     {
-        public ProveedorRepository(AppDbContext context) : base(context) { }
+        public ProveedorRepository(IDbContextFactory<AppDbContext> factory) : base(factory) { }
 
     }
 }

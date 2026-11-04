@@ -123,7 +123,6 @@ namespace Condominio.Web.Components.Pages
             {
                 selectedUser.UpdatedAt = DateTime.Now;
                 await UserRepository.UpdateAsync(selectedUser);
-                await UserRepository.SaveChangesAsync();
                 // Si tienes SaveChanges en el repositorio
                 await LoadUsers(); // Recargar la lista
                 selectedIndex = 0;
@@ -137,7 +136,6 @@ namespace Condominio.Web.Components.Pages
 
 
                 await UserRepository.AddAsync(selectedUser);
-                await UserRepository.SaveChangesAsync();
                 // Si tienes SaveChanges en el repositorio
                 await LoadUsers(); // Recargar la lista
                 selectedIndex = 0;
@@ -166,8 +164,7 @@ namespace Condominio.Web.Components.Pages
 
         private async Task DeleteUser(Users user)
         {
-             UserRepository.Delete(user);
-                await UserRepository.SaveChangesAsync();
+                await UserRepository.Delete(user);
                 // Si tienes SaveChanges en el repositorio
                 await LoadUsers(); // Recargar la lista
                 StateHasChanged();

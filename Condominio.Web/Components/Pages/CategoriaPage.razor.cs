@@ -81,8 +81,7 @@ namespace Condominio.Web.Components.Pages
                 if (selectedItem.Id != 0)
                 {
                     selectedItem.UpdatedAt = DateTime.Now;
-                    categoriaRepository.Update(selectedItem);
-                    await categoriaRepository.SaveChangesAsync();
+                    await categoriaRepository.Update(selectedItem);
                     // Si tienes SaveChanges en el repositorio
                     await LoadUsers(); // Recargar la lista
                     selectedIndex = 0;
@@ -96,7 +95,6 @@ namespace Condominio.Web.Components.Pages
 
 
                     await categoriaRepository.AddAsync(selectedItem);
-                    await categoriaRepository.SaveChangesAsync();
                     // Si tienes SaveChanges en el repositorio
                     await LoadUsers(); // Recargar la lista
                     selectedIndex = 0;
@@ -132,8 +130,7 @@ namespace Condominio.Web.Components.Pages
 
         private async Task DeleteUser(CategoriasGasto item)
         {
-            categoriaRepository.Delete(item);
-            await categoriaRepository.SaveChangesAsync();
+            await categoriaRepository.Delete(item);
             // Si tienes SaveChanges en el repositorio
             await LoadUsers(); // Recargar la lista
             StateHasChanged();

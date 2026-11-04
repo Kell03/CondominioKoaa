@@ -369,7 +369,6 @@
                 foreach (var u in nuevos)
                     await UserRepository.AddAsync(u);   // Solo agrega al ChangeTracker
 
-                await UserRepository.SaveChangesAsync(); // Un único SaveChanges
             }
 
             // 6. Refrescar la lista

@@ -163,7 +163,6 @@ namespace Condominio.Web.Components.Pages
 
             Pago.FacturaMesCasaId = selectedItem.Id;
             await FacturaMesCasaRepository.RegistrarPagoFactura(Pago);
-            await FacturaMesCasaRepository.SaveChangesAsync();
             // Si tienes SaveChanges en el repositorio
             await LoadPagos((int)Pago.FacturaMesCasaId); // Recargar la lista
             Pago = new Payments();
