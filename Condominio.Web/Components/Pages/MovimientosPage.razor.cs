@@ -1,6 +1,9 @@
+using Condominio.Application.Services;
 using Condominio.Domain.Entities;
+using Condominio.Infrastructure.Repositories;
 using Microsoft.JSInterop;
 using Radzen;
+using Radzen.Blazor;
 
 namespace Condominio.Web.Components.Pages
 {
@@ -16,12 +19,62 @@ namespace Condominio.Web.Components.Pages
 
         IEnumerable<Movimientos> House;
 
-        private IQueryable<Movimientos> items;
 
         private bool _esMobile = false;
         private bool _cargando = true;
+        RadzenDataGrid<Movimientos> grid;
+
+        private IEnumerable<Movimientos> items;
+        private int totalFacturas = 0;
+
+        private int currentPage = 1;
+        private int TotalPages => (int)Math.Ceiling((double)totalFacturas / 10);
+        private string _filtroGlobal = "";
 
 
+
+        private async Task ChangePage(int page)
+        {
+            if (page < 1 || page > TotalPages) return;
+
+            currentPage = page;
+
+            // Llamamos a LoadData con el Skip y Take correctos para la nueva página
+            await LoadData(new Radzen.LoadDataArgs
+            {
+                Skip = (currentPage - 1) * 10,
+                Top = 10
+            });
+        }
+        private async Task LoadData(Radzen.LoadDataArgs args)
+        {
+            try
+            {
+                await Task.Yield();
+
+                var skip = args.Skip ?? 0;
+                var take = args.Top ?? 10;
+
+                string filtroActual = !string.IsNullOrEmpty(args.Filter) ? args.Filter : _filtroGlobal;
+
+
+               
+                    var (datos, total) = await Movimientorepository.GetPagedAsync(skip, take, filtroActual);
+                    items = datos.ToList();
+                    totalFacturas = total;
+              
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ ERROR EN LOADDATA: {ex.Message}");
+            }
+        }
+
+        private async Task BuscarGlobal(string texto)
+        {
+            _filtroGlobal = texto;
+            await LoadData(new Radzen.LoadDataArgs { Skip = 0, Top = 10 });
+        }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -34,6 +87,11 @@ namespace Condominio.Web.Components.Pages
                     _esMobile = await JSRuntime.InvokeAsync<bool>("esPantallaMovil");
                     Console.WriteLine($"📱 Mobile: {_esMobile}");
 
+                    if (_esMobile)
+                    {
+                        // Simulamos la carga de la página 1
+                        await LoadData(new Radzen.LoadDataArgs { Skip = 0, Top = 10 });
+                    }
                     // Forzamos a Blazor a redibujar la pantalla con el nuevo valor
                     StateHasChanged();
                 }
@@ -48,12 +106,9 @@ namespace Condominio.Web.Components.Pages
                 }
             }
         }
-
         protected override async Task OnInitializedAsync()
         {
-            await LoadUsers();
-
-            House = await Movimientorepository.GetAllAsync();
+           
 
         }
 

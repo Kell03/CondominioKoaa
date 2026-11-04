@@ -1,13 +1,7 @@
 ﻿@using Condominio.Domain.Entities
 
 <!-- ✅ BUSCADOR -->
-<div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
-    <RadzenTextBox Placeholder="Buscar por descripción o fecha..."
-                   Value="@filtroBusqueda"
-                   ValueChanged="@( (string val) => { filtroBusqueda = val; } )"
-                   Immediate="true"
-                   Style="width: 100%; border-radius: 20px; padding: 12px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; font-size: 15px;" />
-</div>
+
 
 <RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
     @foreach (var item in ItemsFiltrados)

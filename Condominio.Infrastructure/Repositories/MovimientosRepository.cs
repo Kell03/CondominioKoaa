@@ -23,6 +23,57 @@ namespace Condominio.Infrastructure.Repositories
             _notificacionService = notificacionService;
         }
 
+        public async Task<(List<Movimientos> Items, int Total)> GetPagedAsync(
+    int skip, int take, string filtro = null, string orderBy = null)
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+
+            var query = db.Set<Movimientos>()
+                .Include(x => x.House)
+                .Include(x => x.CuotaEspecial)
+                .Include(x => x.Factura)
+                .AsNoTracking()
+                .AsQueryable();
+
+            // ✅ FILTRO GLOBAL
+            if (!string.IsNullOrWhiteSpace(filtro))
+            {
+                string valorBusqueda = filtro;
+                if (filtro.Contains("Contains(\""))
+                {
+                    var inicio = filtro.IndexOf("Contains(\"") + 10;
+                    var fin = filtro.IndexOf("\")", inicio);
+                    if (fin > inicio)
+                    {
+                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                    }
+                }
+
+                var f = valorBusqueda.ToLower();
+
+                // Buscamos en la descripción, tipo, monto o casa
+                query = query.Where(x =>
+                    x.Descripcion != null && x.Descripcion.ToLower().Contains(f) ||
+                    x.Tipo.ToString().ToLower().Contains(f) ||
+                    x.Monto.ToString().Contains(f) ||
+                    (x.House != null && x.House.Number.Contains(f))
+                );
+            }
+
+            // Contamos el total (después de aplicar el filtro)
+            var total = await query.CountAsync();
+
+            // Traemos la página actual
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            return (items, total);
+        }
+
+
         public override async Task<IEnumerable<Movimientos>> GetAllAsync()
         {
             await using var db = await _factory.CreateDbContextAsync();
