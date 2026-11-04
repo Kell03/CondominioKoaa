@@ -100,7 +100,7 @@
 
 
 
-                                    <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                                    <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false" Visible="@isAdmin">
                                         <HeaderTemplate>
                                             <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool?"
                                                             InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Select all items" }})"

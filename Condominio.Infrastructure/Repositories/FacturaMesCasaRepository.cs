@@ -43,7 +43,7 @@ namespace Condominio.Infrastructure.Repositories
             var query = db.Set<FacturaMesCasa>()
                 .Where(x => x.HouseId == houseId) // ✅ Filtro base: solo su casa
                 .Include(x => x.House)
-                .Include(x => x.User)
+                // .Include(x => x.User) ❌ ELIMINADO
                 .Include(x => x.Payments)
                 .Include(x => x.FacturaMes)
                     .ThenInclude(fm => fm.FacturaMesHijos)
@@ -410,7 +410,8 @@ namespace Condominio.Infrastructure.Repositories
 
             try
             {
-                int usuarioId = await PaymentConfirm(db, payment);
+                // ✅ Pasamos solo el ID del pago para que PaymentConfirm lo busque fresco en la BD
+                int usuarioId = await PaymentConfirm(db, payment.Id);
 
                 await transaction.CommitAsync();
                 await _notificacionService.EnviarNotificacionAsync(usuarioId);
@@ -425,6 +426,7 @@ namespace Condominio.Infrastructure.Repositories
             }
         }
 
+
         public async Task<bool> MasiveConfirmPayment(List<Payments> payments)
         {
             if (payments == null || !payments.Any()) return false;
@@ -437,7 +439,7 @@ namespace Condominio.Infrastructure.Repositories
             {
                 foreach (var payment in payments)
                 {
-                    int usuarioId = await PaymentConfirm(db, payment);
+                    int usuarioId = await PaymentConfirm(db, payment.Id);
                     usuariosA_Notificar.Add(usuarioId);
                 }
 
@@ -456,8 +458,16 @@ namespace Condominio.Infrastructure.Repositories
             }
         }
 
-        private async Task<int> PaymentConfirm(AppDbContext db, Payments payment)
+        private async Task<int> PaymentConfirm(AppDbContext db, int paymentId)
         {
+            // 1. Buscamos el pago real directamente en la base de datos
+            var payment = await db.Payments
+                .FirstOrDefaultAsync(x => x.Id == paymentId);
+
+            if (payment == null)
+                throw new Exception("Pago no encontrado");
+
+            // 2. Buscamos la factura (EF Core la rastreará automáticamente)
             var facturaMesCasa = await db.FacturaMesCasa
                 .FirstOrDefaultAsync(x => x.Id == payment.FacturaMesCasaId);
 
@@ -468,13 +478,16 @@ namespace Condominio.Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.Id == facturaMesCasa.FacturaMesId);
 
             if (factura == null)
-                throw new Exception("Factura no encontrada");
+                throw new Exception("Factura maestra no encontrada");
 
+            // 3. Actualizamos los montos
             facturaMesCasa.MontoPagado += payment.Monto;
             facturaMesCasa.SaldoPendiente = facturaMesCasa.MontoTotal - facturaMesCasa.MontoPagado;
             factura.MontoRecaudado += payment.Monto;
+
             facturaMesCasa.Estado = facturaMesCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pago Parcial";
 
+            // 4. Preparamos el mensaje
             string mensaje, titulo;
             if (facturaMesCasa.Estado == "Pago Parcial")
             {
@@ -487,22 +500,10 @@ namespace Condominio.Infrastructure.Repositories
                 titulo = "Factura: Pago Confirmado";
             }
 
+            // 5. Actualizamos el estado del pago
             payment.Estado = "Confirmada";
 
-            db.Payments.Update(payment);
-            db.FacturaMesCasa.Update(facturaMesCasa);
-            db.FacturaMes.Update(factura);
-
-            await _movimientoRepo.SaveMovimiento(
-                db,
-                monto: payment.Monto,
-                montoBs: payment.MontoBs,
-                tasa: payment.Tasa,
-                idCasa: facturaMesCasa.HouseId,
-                factura: factura,
-                cuota: null
-            );
-
+            // 6. Buscamos al usuario para notificarle
             var usuario = await db.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.HouseId == facturaMesCasa.HouseId);
@@ -510,6 +511,7 @@ namespace Condominio.Infrastructure.Repositories
             if (usuario == null)
                 throw new Exception("Usuario no encontrado para la casa");
 
+            // 7. Registramos la notificación en la BD
             await db.Notificaciones.AddAsync(new Notificaciones
             {
                 UserId = usuario.Id,
@@ -519,7 +521,13 @@ namespace Condominio.Infrastructure.Repositories
                 ReferenciaId = payment.Id
             });
 
+            // 8. Registramos el movimiento (solo si lo tienes en tu lógica)
+            // await _movimientoRepo.SaveMovimiento(db, monto: payment.Monto, ...);
+
+            // 9. Guardamos TODO. Como todo está rastreado por el mismo `db`, 
+            // EF Core hace un solo UPDATE para cada entidad modificada.
             await db.SaveChangesAsync();
+
             return usuario.Id;
         }
     }

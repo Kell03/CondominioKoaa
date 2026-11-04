@@ -1,0 +1,26 @@
+﻿@using Radzen
+@using Radzen.Blazor
+
+<div style="text-align: center; padding: 20px;">
+    <RadzenIcon Icon="check_circle" Style="font-size: 60px; color: #28a745; margin-bottom: 15px;" />
+
+    <RadzenText TextStyle="TextStyle.H5" Style="margin-bottom: 10px;">
+        @Titulo
+    </RadzenText>
+
+    <RadzenText TextStyle="TextStyle.Body1" Style="color: #6c757d; margin-bottom: 20px;">
+        @Mensaje
+    </RadzenText>
+
+    <RadzenButton Text="Entendido"
+                  ButtonStyle="ButtonStyle.Success"
+                  Click="@(() => DialogService.Close(true))"
+                  Style="width: 100%; border-radius: 8px;" />
+</div>
+
+@code {
+    [Parameter] public string Titulo { get; set; } = "¡Éxito!";
+    [Parameter] public string Mensaje { get; set; } = "Operación realizada correctamente.";
+
+    [Inject] private DialogService DialogService { get; set; } = default!;
+}

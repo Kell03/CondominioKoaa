@@ -178,10 +178,34 @@ namespace Condominio.Web.Components.Pages
             await CuotaEspecialCasaRepository.RegistrarPagoCuota(Pago);
             // Si tienes SaveChanges en el repositorio
             await LoadPagos((int)Pago.CuotaEspecialCasaId); // Recargar la lista
-            Pago = new Payments();
-            Pago.Tasa = rates?.EUR;
+            await DialogService.OpenAsync<DialogoExito>("Pago Registrado",
+  new Dictionary<string, object>
+  {
+        { "Titulo", "¡Pago Exitoso!" },
+        { "Mensaje", "Tu pago ha sido reportado. El administrador lo confirmará en breve." }
+  },
+ new DialogOptions
+ {
+     // ✅ Margin-top: 25vh lo baja hasta el centro de la pantalla
+     // El resto mantiene tus márgenes laterales y el diseño limpio
+     Style = "width: 90vw; max-width: 350px; margin-top: 25vh; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden;",
+     ShowClose = false,
+     CloseDialogOnOverlayClick = true
+ });
 
+
+
+
+           
+            Pago = new Payments();
+            Pago.Tasa = rates.EUR;
+            Pago.Monto = 0;
+            Pago.MontoBs = 0;
+            _montoUsdStr = "0,00";
+            _montoUsdStr = "0,00";
+            selectedIndex = 0;
             StateHasChanged();
+
 
 
         }

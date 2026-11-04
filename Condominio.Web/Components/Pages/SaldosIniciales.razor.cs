@@ -245,6 +245,10 @@ namespace Condominio.Web.Components.Pages
             selectedIndex = 0;
             casasSeleccionadas = new();
             await OnInitializedAsync();
+            if (grid != null)
+            {
+                await grid.Reload();
+            }
             StateHasChanged();
 
         }

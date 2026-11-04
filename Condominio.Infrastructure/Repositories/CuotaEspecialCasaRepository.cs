@@ -6,32 +6,27 @@ using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Condominio.Infrastructure.Repositories
 {
     public class CuotaEspecialCasaRepository : GenericRepository<CuotaEspecialCasa>
     {
-
-
         private readonly INotificacionRealTimeService _notificacionService;
         private readonly NotificacionRepository _notifRepo;
-
-        private readonly MovimientosRepository _movimientoRepo;   // ← NUEVO
-
-
+        private readonly MovimientosRepository _movimientoRepo;
 
         public CuotaEspecialCasaRepository(
-     IDbContextFactory<AppDbContext> factory,
-      NotificacionRepository notifRepo,
-      INotificacionRealTimeService notificacionService,
-      MovimientosRepository movimientoRepo) : base(factory)  // ← NUEVO
+            IDbContextFactory<AppDbContext> factory,
+            NotificacionRepository notifRepo,
+            INotificacionRealTimeService notificacionService,
+            MovimientosRepository movimientoRepo) : base(factory)
         {
             _notifRepo = notifRepo;
             _notificacionService = notificacionService;
-            _movimientoRepo = movimientoRepo;   // ← NUEVO
+            _movimientoRepo = movimientoRepo;
         }
+
         public override async Task<IEnumerable<CuotaEspecialCasa>> GetAllAsync()
         {
             await using var db = await _factory.CreateDbContextAsync();
@@ -65,7 +60,6 @@ namespace Condominio.Infrastructure.Repositories
             return await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
         }
 
-
         public async Task<IEnumerable<CuotaEspecialCasa>> GetAllForUserAsync(int id)
         {
             await using var db = await _factory.CreateDbContextAsync();
@@ -81,23 +75,22 @@ namespace Condominio.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-
-        public async Task<bool> ConfirmarPagoCuotaCasa(CuotaEspecialCasa item)
+        // ✅ OPTIMIZADO: Recibe solo el ID para evitar conflictos de rastreo
+        public async Task<bool> ConfirmarPagoCuotaCasa(int cuotaCasaId)
         {
             await using var db = await _factory.CreateDbContextAsync();
             await using var transaction = await db.Database.BeginTransactionAsync();
 
             try
             {
+                var item = await db.CuotaEspecialCasa.FirstOrDefaultAsync(x => x.Id == cuotaCasaId);
+                if (item == null) throw new Exception("Cuota Casa no encontrada");
+
                 var cuota = await db.CuotaEspecial.FirstOrDefaultAsync(x => x.Id == item.CuotaEspecialId);
-                if (cuota == null)
-                    throw new Exception("Cuota Especial no encontrada");
+                if (cuota == null) throw new Exception("Cuota Especial no encontrada");
 
                 cuota.MontoRecaudado += item.MontoTotal;
                 item.Estado = EstadoCuotaCasa.Confirmada;
-
-                db.CuotaEspecialCasa.Update(item);
-                db.CuotaEspecial.Update(cuota);
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -138,7 +131,6 @@ namespace Condominio.Infrastructure.Repositories
             }
         }
 
-
         public async Task<List<Payments>> RegistrarMultiplesPagoFactura(List<Payments> pagos)
         {
             if (pagos == null || !pagos.Any()) return new List<Payments>();
@@ -171,6 +163,7 @@ namespace Condominio.Infrastructure.Repositories
                 throw;
             }
         }
+
         public async Task<IEnumerable<Payments>> GetPaymentsForUserAsync(int userId, int idCuotaCasaMes)
         {
             await using var db = await _factory.CreateDbContextAsync();
@@ -194,7 +187,6 @@ namespace Condominio.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-
         public async Task<IEnumerable<Payments>> GetPaymentsForInvoiceAsync(int idCuotaCasaMes)
         {
             await using var db = await _factory.CreateDbContextAsync();
@@ -208,7 +200,6 @@ namespace Condominio.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-
         public async Task<bool> ConfirmPayment(Payments payment)
         {
             await using var db = await _factory.CreateDbContextAsync();
@@ -216,18 +207,11 @@ namespace Condominio.Infrastructure.Repositories
 
             try
             {
-                int usuarioId = await PaymentConfirm(db, payment, transaction);
+                int usuarioId = await PaymentConfirm(db, payment.Id);
 
-                if (usuarioId > 0)
-                {
-                    await transaction.CommitAsync();
-                    await _notificacionService.EnviarNotificacionAsync(usuarioId);
-                    return true;
-                }
-                else
-                {
-                    throw new Exception("Falló al confirmar");
-                }
+                await transaction.CommitAsync();
+                await _notificacionService.EnviarNotificacionAsync(usuarioId);
+                return true;
             }
             catch (Exception ex)
             {
@@ -236,6 +220,7 @@ namespace Condominio.Infrastructure.Repositories
                 return false;
             }
         }
+
         public async Task<bool> MasiveConfirmPayment(List<Payments> payments)
         {
             if (payments == null || !payments.Any()) return false;
@@ -248,9 +233,8 @@ namespace Condominio.Infrastructure.Repositories
             {
                 foreach (var payment in payments)
                 {
-                    int usuarioId = await PaymentConfirm(db, payment, transaction);
+                    int usuarioId = await PaymentConfirm(db, payment.Id);
                     usuariosA_Notificar.Add(usuarioId);
-
                 }
 
                 await transaction.CommitAsync();
@@ -268,10 +252,13 @@ namespace Condominio.Infrastructure.Repositories
             }
         }
 
-
-
-        private async Task<int> PaymentConfirm(AppDbContext db, Payments payment, IDbContextTransaction transaction)
+        // ✅ OPTIMIZADO: Busca el pago por ID, sin rastrear objetos de la vista
+        private async Task<int> PaymentConfirm(AppDbContext db, int paymentId)
         {
+            var payment = await db.Payments.FirstOrDefaultAsync(x => x.Id == paymentId);
+            if (payment == null)
+                throw new Exception("Pago no encontrado");
+
             var cuotaCasa = await db.CuotaEspecialCasa.FirstOrDefaultAsync(x => x.Id == payment.CuotaEspecialCasaId);
             if (cuotaCasa == null)
                 throw new Exception("Cuota no encontrada");
@@ -300,10 +287,6 @@ namespace Condominio.Infrastructure.Repositories
             }
 
             payment.Estado = "Confirmada";
-
-            db.Payments.Update(payment);
-            db.CuotaEspecialCasa.Update(cuotaCasa);
-            db.CuotaEspecial.Update(cuota);
 
             await _movimientoRepo.SaveMovimiento(
                 db,

@@ -191,17 +191,65 @@ namespace Condominio.Web.Components.Pages
             await FacturaMesCasaRepository.RegistrarPagoFactura(Pago);
             // Si tienes SaveChanges en el repositorio
             await LoadPagos((int)Pago.FacturaMesCasaId); // Recargar la lista
+
+            // ✅ SWEET ALERT: Abrimos un diálogo modal de éxito
+            await DialogService.OpenAsync<DialogoExito>("Pago Registrado",
+      new Dictionary<string, object>
+      {
+        { "Titulo", "¡Pago Exitoso!" },
+        { "Mensaje", "Tu pago ha sido reportado. El administrador lo confirmará en breve." }
+      },
+     new DialogOptions
+     {
+         // ✅ Margin-top: 25vh lo baja hasta el centro de la pantalla
+         // El resto mantiene tus márgenes laterales y el diseño limpio
+         Style = "width: 90vw; max-width: 350px; margin-top: 25vh; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden;",
+         ShowClose = false,
+         CloseDialogOnOverlayClick = true
+     });
+
+
+            
+
             Pago = new Payments();
             Pago.Tasa = rates.EUR;
             Pago.Monto = 0;
             Pago.MontoBs = 0;
             _montoUsdStr = "0,00";
             _montoUsdStr = "0,00";
-
+            selectedIndex = 0;
             StateHasChanged();
 
 
         }
+
+        private RenderFragment MostrarAlertaExito() => builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "style", "text-align: center; padding: 20px;");
+
+            // Icono
+            builder.OpenComponent<RadzenIcon>(2);
+            builder.AddAttribute(3, "Icon", "check_circle");
+            builder.AddAttribute(4, "Style", "font-size: 60px; color: #28a745; margin-bottom: 15px;");
+            builder.CloseComponent();
+
+            // Título
+            builder.OpenComponent<RadzenText>(5);
+            builder.AddAttribute(6, "TextStyle", TextStyle.H5);
+            builder.AddAttribute(7, "Style", "margin-bottom: 10px;");
+            builder.AddAttribute(8, "ChildContent", (RenderFragment)((b) => b.AddContent(9, "Tu pago ha sido reportado")));
+            builder.CloseComponent();
+
+            // Mensaje
+            builder.OpenComponent<RadzenText>(10);
+            builder.AddAttribute(11, "TextStyle", TextStyle.Body1);
+            builder.AddAttribute(12, "Style", "color: #6c757d;");
+            builder.AddAttribute(13, "ChildContent", (RenderFragment)((b) => b.AddContent(14, "El administrador revisará tu pago y lo confirmará en breve.")));
+            builder.CloseComponent();
+
+            builder.CloseElement(); // Cierra el div
+        };
 
         private async Task LoadPagos(int idFacturaMes)
         {

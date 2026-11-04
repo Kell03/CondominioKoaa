@@ -19,6 +19,8 @@
 @inject BcvScraperService BcvScraper
 @inject Radzen.NotificationService NotificationService
 @inject NavigationManager NavigationManager
+@inject Radzen.DialogService DialogService
+
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
@@ -150,7 +152,7 @@
 
 
 
-                                    <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false">
+                                    <RadzenDataGridColumn Width="60px" Sortable="false" Filterable="false" Visible="@isAdmin">
                                         <HeaderTemplate>
                                             @{
                                                 var itemsVisibles = grid.View.Cast<FacturaMesCasa>().ToList();
