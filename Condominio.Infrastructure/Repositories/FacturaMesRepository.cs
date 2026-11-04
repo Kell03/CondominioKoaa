@@ -25,21 +25,49 @@ namespace Condominio.Infrastructure.Repositories
 
 
 
-        public async Task<(List<FacturaMes> Items, int Total)> GetPagedAsync(int skip, int take)
+        public async Task<(List<FacturaMes> Items, int Total)> GetPagedAsync(
+      int skip, int take, string filtro = null, string orderBy = null)
         {
             await using var db = await _factory.CreateDbContextAsync();
 
-            // 1. Query base
             var query = db.Set<FacturaMes>()
                 .Include(x => x.FacturaMesHijos)
                     .ThenInclude(x => x.CategoriaGasto)
                         .ThenInclude(x => x.Proveedor)
-                .AsNoTracking();
+                .AsNoTracking()
+                .AsQueryable();
 
-            // 2. Contar el total para el paginador
+            if (!string.IsNullOrWhiteSpace(filtro))
+            {
+                // Extraemos el valor limpio
+                string valorBusqueda = filtro;
+                if (filtro.Contains("Contains(\""))
+                {
+                    var inicio = filtro.IndexOf("Contains(\"") + 10;
+                    var fin = filtro.IndexOf("\")", inicio);
+                    if (fin > inicio)
+                    {
+                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                    }
+                }
+
+                var f = valorBusqueda.ToLower();
+
+                // ✅ BUSCAMOS LOS MESES QUE COINCIDEN
+                var mesesCoincidentes = ObtenerMesesCoincidentes(f);
+
+                query = query.Where(x =>
+                    x.Year.ToString().Contains(f) ||
+                    (x.Motivo != null && x.Motivo.ToLower().Contains(f)) ||
+                    x.Mes.ToString().Contains(f) ||
+                    (mesesCoincidentes.Any() && mesesCoincidentes.Contains(x.Mes)) // 👈 La magia aquí
+                );
+            }
+
             var total = await query.CountAsync();
 
-            // 3. Traer solo la página actual
+            // ... (el resto del código de orden y paginación se queda igual)
+
             var items = await query
                 .OrderByDescending(x => x.CreatedAt)
                 .Skip(skip)
@@ -47,6 +75,28 @@ namespace Condominio.Infrastructure.Repositories
                 .ToListAsync();
 
             return (items, total);
+        }
+
+        private List<int> ObtenerMesesCoincidentes(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return new List<int>();
+
+            var meses = new Dictionary<int, string>
+    {
+        { 1, "enero" }, { 2, "febrero" }, { 3, "marzo" }, { 4, "abril" },
+        { 5, "mayo" }, { 6, "junio" }, { 7, "julio" }, { 8, "agosto" },
+        { 9, "septiembre" }, { 10, "octubre" }, { 11, "noviembre" }, { 12, "diciembre" }
+    };
+
+            var textoLower = texto.ToLower();
+
+            // Buscamos todos los meses que contengan el texto (ej: "o" -> [1, 2, 5, 6, 7, 8, 10, 11])
+            var coincidentes = meses
+                .Where(m => m.Value.Contains(textoLower))
+                .Select(m => m.Key)
+                .ToList();
+
+            return coincidentes;
         }
 
         public override async Task<IEnumerable<FacturaMes>> GetAllAsync()

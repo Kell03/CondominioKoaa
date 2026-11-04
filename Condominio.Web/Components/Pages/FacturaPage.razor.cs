@@ -1,4 +1,5 @@
-﻿using Condominio.Domain.Entities;
+﻿using Condominio.Application.Services;
+using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
 using Condominio.Web.Components.Dialogs;
 using Microsoft.EntityFrameworkCore;
@@ -16,44 +17,62 @@ namespace Condominio.Web.Components.Pages
 
         RadzenDataGrid<FacturaMes> grid;
 
-        IEnumerable<FacturaMes> Invoices = [];
 
 
         private bool _esMobile = false;
         private bool _cargando = true;
 
 
+        private IEnumerable<FacturaMes> Invoices;
+        private int totalFacturas = 0;
+
+        private int currentPage = 1;
+        private int TotalPages => (int)Math.Ceiling((double)totalFacturas / 10);
+        private string _filtroGlobal = "";
 
 
-        protected override async Task OnInitializedAsync()
+
+        private async Task ChangePage(int page)
+        {
+            if (page < 1 || page > TotalPages) return;
+
+            currentPage = page;
+
+            // Llamamos a LoadData con el Skip y Take correctos para la nueva página
+            await LoadData(new Radzen.LoadDataArgs
+            {
+                Skip = (currentPage - 1) * 10,
+                Top = 10
+            });
+        }
+        private async Task LoadData(Radzen.LoadDataArgs args)
         {
             try
             {
-                await base.OnInitializedAsync();
+                await Task.Yield();
 
-                Invoices = await FacturaMesRepository.GetAllForGastosAsync();
+                var skip = args.Skip ?? 0;
+                var take = args.Top ?? 10;
+
+                string filtroActual = !string.IsNullOrEmpty(args.Filter) ? args.Filter : _filtroGlobal;
+
+
+                var (datos, total) = await FacturaMesRepository.GetPagedAsync(skip, take, filtroActual);
+                Invoices = datos.ToList();
+                totalFacturas = total;
+              
             }
             catch (Exception ex)
             {
-                ;
-            }
-
-        }
-
-        void RowRender(RowRenderEventArgs<FacturaMes> args)
-        {
-            args.Expandable = (args.Data.FacturaMesHijos != null && args.Data.FacturaMesHijos.Any());
-        }
-
-        void RowExpand(FacturaMes order)
-        {
-            if (order.FacturaMesHijos == null)
-            {
-                order.FacturaMesHijos = order.FacturaMesHijos.ToList();
+                Console.WriteLine($"❌ ERROR EN LOADDATA: {ex.Message}");
             }
         }
 
-
+        private async Task BuscarGlobal(string texto)
+        {
+            _filtroGlobal = texto;
+            await LoadData(new Radzen.LoadDataArgs { Skip = 0, Top = 10 });
+        }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -66,6 +85,11 @@ namespace Condominio.Web.Components.Pages
                     _esMobile = await JSRuntime.InvokeAsync<bool>("esPantallaMovil");
                     Console.WriteLine($"📱 Mobile: {_esMobile}");
 
+                    if (_esMobile)
+                    {
+                        // Simulamos la carga de la página 1
+                        await LoadData(new Radzen.LoadDataArgs { Skip = 0, Top = 10 });
+                    }
 
                     if (firstRender && !_esMobile && grid != null && Invoices != null && Invoices.Any())
                     {
@@ -90,9 +114,35 @@ namespace Condominio.Web.Components.Pages
                     StateHasChanged();
                 }
             }
-
-            
         }
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                await base.OnInitializedAsync();
+
+                Invoices = await FacturaMesRepository.GetAllForGastosAsync();
+            }
+            catch (Exception ex)
+            {
+                ;
+            }
+
+        }
+
+        void RowRender(RowRenderEventArgs<FacturaMes> args)
+        {
+            args.Expandable = (args.Data.FacturaMesHijos != null && args.Data.FacturaMesHijos.Any());
+        }
+
+        void RowExpand(FacturaMes order)
+        {
+           
+        }
+
+
+       
 
 
         private string ObtenerNombreMes(int? mes)
@@ -140,24 +190,6 @@ namespace Condominio.Web.Components.Pages
 
         }
 
-
-
-
-        private async Task LoadData()
-        {
-            Invoices = await FacturaMesRepository.GetAllAsync();
-
-        }
-
-
-
-        private async Task LoadStateAsync()
-        {
-            await Task.CompletedTask;
-
-            var result = await JSRuntime.InvokeAsync<string>("window.localStorage.getItem", "DialogSettings");
-
-        }
 
 
         private async Task ConfirmDelete(FacturaMes item)
@@ -209,7 +241,10 @@ namespace Condominio.Web.Components.Pages
         {
             await FacturaMesRepository.DeleteWithHijos(item);
             // Si tienes SaveChanges en el repositorio
-            await LoadData(); // Recargar la lista
+            if (grid != null)
+            {
+                await grid.Reload();
+            }
             StateHasChanged();
 
         }
@@ -226,7 +261,10 @@ namespace Condominio.Web.Components.Pages
             await FacturaMesRepository.DistribuirFacturaEntreCasas(factura);
 
             // 3. Recargar la lista para actualizar la UI
-            await LoadData();
+            if (grid != null)
+            {
+                await grid.Reload();
+            }
             StateHasChanged();
         }
 
