@@ -73,13 +73,13 @@ namespace Condominio.Infrastructure.Repositories
                 query = query.Where(x =>
                     x.Estado.ToLower().Contains(f) ||
                     x.FacturaMes.Year.ToString().Contains(f) ||
-                    x.FacturaMes.Mes.ToString().Contains(f)||
+                    x.FacturaMes.Mes.ToString().Contains(f) ||
                     x.MontoTotal.ToString().Contains(f)
                 );
 
 
 
-              
+
 
 
             }
@@ -166,41 +166,80 @@ namespace Condominio.Infrastructure.Repositories
 
             return (result, total);
         }
-        public async Task<IEnumerable<FacturaMesCasa>> GetAllSaldoAsync()
+        public async Task<(List<FacturaMesCasa> Items, int Total)> GetPagedSaldoAsync(
+    int skip, int take, string filtro = null, string orderBy = null)
         {
             await using var db = await _factory.CreateDbContextAsync();
 
+            // 1. Query base con el JOIN y la condición de Saldo (que tenga Motivo)
             var query = from factura in db.Set<FacturaMesCasa>()
                         join house in db.Houses on factura.HouseId equals house.Id
                         join user in db.Users on house.Id equals user.HouseId into ownerGroup
                         from owner in ownerGroup.DefaultIfEmpty()
                         join payments in db.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
                         join facturaMes in db.FacturaMes on factura.FacturaMesId equals facturaMes.Id
-                        select new FacturaMesCasa
-                        {
-                            Id = factura.Id,
-                            FacturaMesId = factura.FacturaMesId,
-                            HouseId = factura.HouseId,
-                            MontoTotal = factura.MontoTotal,
-                            MontoPagado = factura.MontoPagado,
-                            SaldoPendiente = factura.SaldoPendiente,
-                            MontoBs = factura.MontoBs,
-                            Estado = factura.Estado,
-                            Comentario = factura.Comentario,
-                            CreatedAt = factura.CreatedAt,
-                            UpdatedAt = factura.UpdatedAt,
-                            House = house,
-                            FacturaMes = facturaMes,
-                            Payments = paymentGroup.ToList(),
-                            User = owner
-                        };
+                        where facturaMes.Motivo != null && facturaMes.Motivo != "" // ✅ Solo los que tienen Motivo
+                        select new { factura, house, owner, paymentGroup, facturaMes };
 
+            // 2. ✅ FILTRO GLOBAL (Buscador o embudo)
+            if (!string.IsNullOrWhiteSpace(filtro))
+            {
+                string valorBusqueda = filtro;
+                if (filtro.Contains("Contains(\""))
+                {
+                    var inicio = filtro.IndexOf("Contains(\"") + 10;
+                    var fin = filtro.IndexOf("\")", inicio);
+                    if (fin > inicio)
+                    {
+                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                    }
+                }
+
+                var f = valorBusqueda.ToLower();
+
+                // Buscamos en casa, estado, año, mes y EL MOTIVO
+                query = query.Where(x =>
+                    x.house.Number.Contains(f) ||
+                    x.factura.Estado.ToLower().Contains(f) ||
+                    (x.owner != null && x.owner.Name != null && x.owner.Name.ToLower().Contains(f)) ||
+                    (x.owner != null && x.owner.Cedula != null && x.owner.Cedula.ToLower().Contains(f)) ||
+
+                    x.facturaMes.Year.ToString().Contains(f) ||
+                    x.facturaMes.Mes.ToString().Contains(f) ||
+                    x.facturaMes.Motivo.ToLower().Contains(f) // 👈 Prioridad aquí
+                );
+            }
+
+            // 3. Contar el total
+            var total = await query.CountAsync();
+
+            // 4. Traer la página actual
             var result = await query
-                .Where(x => x.FacturaMes.Motivo != null && x.FacturaMes.Motivo != "")
+                .Select(x => new FacturaMesCasa
+                {
+                    Id = x.factura.Id,
+                    FacturaMesId = x.factura.FacturaMesId,
+                    HouseId = x.factura.HouseId,
+                    MontoTotal = x.factura.MontoTotal,
+                    MontoPagado = x.factura.MontoPagado,
+                    SaldoPendiente = x.factura.SaldoPendiente,
+                    MontoBs = x.factura.MontoBs,
+                    Estado = x.factura.Estado,
+                    Comentario = x.factura.Comentario,
+                    CreatedAt = x.factura.CreatedAt,
+                    UpdatedAt = x.factura.UpdatedAt,
+                    House = x.house,
+                    FacturaMes = x.facturaMes,
+                    Payments = x.paymentGroup.ToList(),
+                    User = x.owner
+                })
                 .OrderByDescending(x => x.FacturaMes.Year)
                 .ThenByDescending(x => x.FacturaMes.Mes)
+                .Skip(skip)
+                .Take(take)
                 .ToListAsync();
 
+            // 5. Cargar los hijos
             var facturaIds = result.Select(x => x.FacturaMesId).Distinct().ToList();
             if (facturaIds.Any())
             {
@@ -220,7 +259,7 @@ namespace Condominio.Infrastructure.Repositories
                 }
             }
 
-            return result;
+            return (result, total);
         }
 
         public async Task<IEnumerable<FacturaMesCasa>> GetAllForUserAsync(int id)

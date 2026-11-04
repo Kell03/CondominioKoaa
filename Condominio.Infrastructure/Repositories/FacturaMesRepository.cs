@@ -37,6 +37,8 @@ namespace Condominio.Infrastructure.Repositories
                 .AsNoTracking()
                 .AsQueryable();
 
+            query = query.Where(x => x.Motivo == null || x.Motivo == "");
+
             if (!string.IsNullOrWhiteSpace(filtro))
             {
                 // Extraemos el valor limpio

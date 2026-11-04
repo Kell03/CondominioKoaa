@@ -82,7 +82,15 @@
                         @if (_esMobile)
                         {
                             <RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
-                                @foreach (var item in items)
+
+                                <div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
+                                    <RadzenTextBox Placeholder="Buscar por casa, período o estado..."
+                                                   Value="@_filtroGlobal"
+                                                   ValueChanged="@(async (string val) => await BuscarGlobal(val))"
+                                                   Immediate="true"
+                                                   Style="width: 100%; border-radius: 20px; padding: 12px 15px; ..." />
+                                </div>
+                                @foreach (var item in Invoices)
                                 {
                                     var colorBorde = item.SaldoPendiente <= 0 ? "#28a745" : "#007bff";
 
@@ -165,13 +173,31 @@
                                         </div>
                                     </RadzenCard>
                                 }
+
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 10px;">
+                                    <RadzenButton Text="Anterior"
+                                                  Icon="chevron_left"
+                                                  Disabled="@(currentPage <= 1)"
+                                                  Click="@(() => ChangePage(currentPage - 1))"
+                                                  ButtonStyle="ButtonStyle.Light" />
+
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600; color: #555;">
+                                        Página @currentPage de @TotalPages
+                                    </RadzenText>
+
+                                    <RadzenButton Text="Siguiente"
+                                                  Icon="chevron_right"
+                                                  Disabled="@(currentPage >= TotalPages)"
+                                                  Click="@(() => ChangePage(currentPage + 1))"
+                                                  ButtonStyle="ButtonStyle.Light" />
+                                </div>
                             </RadzenStack>
                         }
                         else
                         {
-                            <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
-                                            SelectionMode="DataGridSelectionMode.Single"
-                                            Data="@items" TItem="FacturaMesCasa" RowExpand="RowExpand" LogicalFilterOperator="LogicalFilterOperator.Or" @bind-Value=@invoices>
+                         
+                                <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
+                                                Count="@totalFacturas" LoadData="@((Radzen.LoadDataArgs args) => LoadData(args))" Data="@Invoices" TItem="FacturaMesCasa" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
 
                                 <Template Context="order">
                                     <!-- ✅ La tarjeta ocupa el 100% del espacio disponible -->
