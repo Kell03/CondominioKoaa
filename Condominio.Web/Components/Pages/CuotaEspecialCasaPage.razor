@@ -94,8 +94,9 @@
                         @if (!_esMobile)
                         {
 
-                            <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false" FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="10" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
-                                            Data="@items" TItem="CuotaEspecialCasa" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
+                            <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true"  ExpandMode="DataGridExpandMode.Single"
+                                            Count="@totalFacturas" LoadData="@((Radzen.LoadDataArgs args) => LoadData(args))" Data="@items" TItem="CuotaEspecialCasa"  ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
+
                                 <Columns>
 
 
@@ -316,11 +317,37 @@
                         }
                         else
                         {
+                            <div style="margin-bottom: 15px; position: sticky; top: 0; z-index: 10; padding: 5px; background: #f8f9fa;">
+                                <RadzenTextBox Placeholder="Buscar por casa, período o estado..."
+                                               Value="@_filtroGlobal"
+                                               ValueChanged="@(async (string val) => await BuscarGlobal(val))"
+                                               Immediate="true"
+                                               Style="width: 100%; border-radius: 20px; padding: 12px 15px; ..." />
+                            </div>
                             <!-- ✅ Llamamos al nuevo componente para cuotas -->
                             <GridCuotaEspecialCasa Items="items.ToList()"
                                                    IsAdmin="isAdmin"
                                                    OnPagar="@((cuota) => EditUser(cuota))"
                                                    OnVerPagos="@((cuota) => AddPagosList(cuota))" />
+
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 10px;">
+                                <RadzenButton Text="Anterior"
+                                              Icon="chevron_left"
+                                              Disabled="@(currentPage <= 1)"
+                                              Click="@(() => ChangePage(currentPage - 1))"
+                                              ButtonStyle="ButtonStyle.Light" />
+
+                                <RadzenText TextStyle="TextStyle.Body2" Style="margin: 0; font-weight: 600; color: #555;">
+                                    Página @currentPage de @TotalPages
+                                </RadzenText>
+
+                                <RadzenButton Text="Siguiente"
+                                              Icon="chevron_right"
+                                              Disabled="@(currentPage >= TotalPages)"
+                                              Click="@(() => ChangePage(currentPage + 1))"
+                                              ButtonStyle="ButtonStyle.Light" />
+                            </div>
                         }
                     }
                 </RadzenTabsItem>
@@ -641,7 +668,10 @@
                 }
             }
 
-            await LoadData();
+            if (grid != null)
+            {
+                await grid.Reload();
+            }
             cuotas = null; // Limpiar selección
             StateHasChanged();
         }

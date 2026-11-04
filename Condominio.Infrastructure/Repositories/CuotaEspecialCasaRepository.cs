@@ -27,6 +27,134 @@ namespace Condominio.Infrastructure.Repositories
             _movimientoRepo = movimientoRepo;
         }
 
+
+        public async Task<(List<CuotaEspecialCasa> Items, int Total)> GetPagedAsync(
+    int skip, int take, string filtro = null)
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+
+            var query = from item in db.Set<CuotaEspecialCasa>()
+                        join user in db.Users on item.HouseId equals user.HouseId into ownerGroup
+                        from owner in ownerGroup.DefaultIfEmpty()
+                        join payments in db.Payments on item.Id equals payments.CuotaEspecialCasaId into paymentGroup
+                        select new { item, owner, paymentGroup };
+
+            // ✅ FILTRO GLOBAL (Buscador o embudo)
+            if (!string.IsNullOrWhiteSpace(filtro))
+            {
+                string valorBusqueda = filtro;
+                if (filtro.Contains("Contains(\""))
+                {
+                    var inicio = filtro.IndexOf("Contains(\"") + 10;
+                    var fin = filtro.IndexOf("\")", inicio);
+                    if (fin > inicio)
+                    {
+                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                    }
+                }
+
+                var f = valorBusqueda.ToLower();
+
+                query = query.Where(x =>
+                    x.item.Estado.ToString().ToLower().Contains(f) ||
+                    (x.owner != null && x.owner.Name != null && x.owner.Name.ToLower().Contains(f)) ||
+                    (x.owner != null && x.owner.Cedula != null && x.owner.Cedula.ToLower().Contains(f)) ||
+                    (x.item.Referencia != null && x.item.Referencia.ToLower().Contains(f)) ||
+                    x.item.MontoTotal.ToString().Contains(f)
+                );
+            }
+
+            var total = await query.CountAsync();
+
+            var result = await query
+                .OrderByDescending(x => x.item.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .Select(x => new CuotaEspecialCasa
+                {
+                    Id = x.item.Id,
+                    CuotaEspecialId = x.item.CuotaEspecialId,
+                    HouseId = x.item.HouseId,
+                    MontoTotal = x.item.MontoTotal,
+                    MontoPagado = x.item.MontoPagado,
+                    SaldoPendiente = x.item.SaldoPendiente,
+                    MontoBs = x.item.MontoBs,
+                    Estado = x.item.Estado,
+                    Referencia = x.item.Referencia,
+                    MetodoPago = x.item.MetodoPago,
+                    FechaPago = x.item.FechaPago,
+                    Comentario = x.item.Comentario,
+                    CreatedAt = x.item.CreatedAt,
+                    UpdatedAt = x.item.UpdatedAt,
+                    House = x.item.House,
+                    CuotaEspecial = x.item.CuotaEspecial,
+                    Payments = x.paymentGroup.ToList(),
+                    User = x.owner
+                })
+                .ToListAsync();
+
+            return (result, total);
+        }
+
+
+        public async Task<(List<CuotaEspecialCasa> Items, int Total)> GetPagedForUserAsync(
+    int skip, int take, int userId, string filtro = null)
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+
+            // 1. Buscamos el ID de la casa del usuario
+            var houseId = await db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.HouseId)
+                .FirstOrDefaultAsync();
+
+            if (houseId == null || houseId == 0)
+                return (new List<CuotaEspecialCasa>(), 0);
+
+            // 2. Armamos la query base filtrando por su casa
+            var query = db.Set<CuotaEspecialCasa>()
+                .Where(x => x.HouseId == houseId)
+                .Include(x => x.House)
+                .Include(x => x.CuotaEspecial)
+                .Include(x => x.Payments)
+                .AsNoTracking()
+                .AsQueryable();
+
+            // 3. Filtro global
+            if (!string.IsNullOrWhiteSpace(filtro))
+            {
+                string valorBusqueda = filtro;
+                if (filtro.Contains("Contains(\""))
+                {
+                    var inicio = filtro.IndexOf("Contains(\"") + 10;
+                    var fin = filtro.IndexOf("\")", inicio);
+                    if (fin > inicio)
+                    {
+                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                    }
+                }
+
+                var f = valorBusqueda.ToLower();
+
+                query = query.Where(x =>
+                    x.Estado.ToString().ToLower().Contains(f) ||
+                    (x.Referencia != null && x.Referencia.ToLower().Contains(f)) ||
+                    x.MontoTotal.ToString().Contains(f)
+                );
+            }
+
+            var total = await query.CountAsync();
+
+            // 4. Paginamos
+            var result = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            return (result, total);
+        }
+
         public override async Task<IEnumerable<CuotaEspecialCasa>> GetAllAsync()
         {
             await using var db = await _factory.CreateDbContextAsync();

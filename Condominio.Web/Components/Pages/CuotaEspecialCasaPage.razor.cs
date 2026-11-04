@@ -20,7 +20,6 @@ namespace Condominio.Web.Components.Pages
 
         IEnumerable<CuotaEspecialCasa> Cuotas;
 
-        private IQueryable<CuotaEspecialCasa> items;
         bool allowRowSelectOnRowClick = true;
         Payments Pago = new Payments();
         private IEnumerable<Payments> PagosList;
@@ -41,7 +40,64 @@ namespace Condominio.Web.Components.Pages
         private bool _esMobile = false;
         private bool _cargando = true;
 
+        private IEnumerable<CuotaEspecialCasa> items;
+        private int totalFacturas = 0;
 
+        private int currentPage = 1;
+        private int TotalPages => (int)Math.Ceiling((double)totalFacturas / 10);
+        private string _filtroGlobal = "";
+
+
+
+        private async Task ChangePage(int page)
+        {
+            if (page < 1 || page > TotalPages) return;
+
+            currentPage = page;
+
+            // Llamamos a LoadData con el Skip y Take correctos para la nueva página
+            await LoadData(new Radzen.LoadDataArgs
+            {
+                Skip = (currentPage - 1) * 10,
+                Top = 10
+            });
+        }
+        private async Task LoadData(Radzen.LoadDataArgs args)
+        {
+            try
+            {
+                await Task.Yield();
+
+                var skip = args.Skip ?? 0;
+                var take = args.Top ?? 10;
+
+                string filtroActual = !string.IsNullOrEmpty(args.Filter) ? args.Filter : _filtroGlobal;
+
+
+                if (isAdmin)
+                {
+                    var (datos, total) = await CuotaEspecialCasaRepository.GetPagedAsync(skip, take, filtroActual);
+                    items = datos.ToList();
+                    totalFacturas = total;
+                }
+                else
+                {
+                    var (datos, total) = await CuotaEspecialCasaRepository.GetPagedForUserAsync(skip, take, AppState.CurrentUser.Id, filtroActual);
+                    items = datos.ToList();
+                    totalFacturas = total;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ ERROR EN LOADDATA: {ex.Message}");
+            }
+        }
+
+        private async Task BuscarGlobal(string texto)
+        {
+            _filtroGlobal = texto;
+            await LoadData(new Radzen.LoadDataArgs { Skip = 0, Top = 10 });
+        }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -54,6 +110,11 @@ namespace Condominio.Web.Components.Pages
                     _esMobile = await JSRuntime.InvokeAsync<bool>("esPantallaMovil");
                     Console.WriteLine($"📱 Mobile: {_esMobile}");
 
+                    if (_esMobile)
+                    {
+                        // Simulamos la carga de la página 1
+                        await LoadData(new Radzen.LoadDataArgs { Skip = 0, Top = 10 });
+                    }
                     // Forzamos a Blazor a redibujar la pantalla con el nuevo valor
                     StateHasChanged();
                 }
@@ -71,7 +132,6 @@ namespace Condominio.Web.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             await CheckAdminRole();
-            await LoadData();
             allowRowSelectOnRowClick = true;
             Cuotas = await CuotaEspecialCasaRepository.GetAllAsync();
             rates = await BcvScraper.GetRatesAsync();
@@ -80,39 +140,7 @@ namespace Condominio.Web.Components.Pages
 
         }
 
-        private async Task LoadData()
-        {
-            try
-            {
-
-                var role = AppState.CurrentUser.Role;
-                IEnumerable<CuotaEspecialCasa> itemList;
-
-                if (role == "Administrador")
-                {
-                    itemList = await CuotaEspecialCasaRepository.GetAllAsync();
-                }
-                else
-                {
-                    itemList = await CuotaEspecialCasaRepository.GetAllForUserAsync(AppState.CurrentUser.Id);
-                }
-
-                items = itemList.AsQueryable();
-
-                var monedas = await MonedaRepository.GetAllAsync();
-                Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
-                selectedEmployees = itemList.Any()
-                    ? new List<CuotaEspecialCasa> { itemList.First() }
-                    : new List<CuotaEspecialCasa>();
-
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error al cargar datos: {ex.Message}");
-                // Opcional: mostrar notificación al usuario
-            }
-        }
+       
 
         private async Task CreateNewItem()
         {
@@ -341,7 +369,10 @@ namespace Condominio.Web.Components.Pages
             );
 
 
-            await LoadData();
+            if (grid != null)
+            {
+                await grid.Reload();
+            }
             StateHasChanged();
 
 
