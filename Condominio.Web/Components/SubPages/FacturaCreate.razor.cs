@@ -97,6 +97,7 @@ namespace Condominio.Web.Components.SubPages
         {
             await base.OnInitializedAsync();
             Item.Year = int.Parse(yearInput);
+            Item.Mes = DateTime.Now.Month;
             orders = new List<FacturaMesHijo>();
             var itemList = await CategoriaRepository.GetAllAsync();
             categorias = itemList.Where(x => x.Isfijo).ToList();
