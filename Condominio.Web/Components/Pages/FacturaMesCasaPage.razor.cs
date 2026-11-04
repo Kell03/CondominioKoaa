@@ -19,7 +19,6 @@ namespace Condominio.Web.Components.Pages
         IEnumerable<FacturaMesCasa> employees;
         bool allowRowSelectOnRowClick = true;
 
-
         FacturaMesCasa selectedItem = new FacturaMesCasa();
         private bool isAdmin = false;
         private IEnumerable<FacturaMes> FacturasMes;
@@ -32,7 +31,6 @@ namespace Condominio.Web.Components.Pages
         "Pago Movil",
         "Efectivo"
         };
-        private IQueryable<FacturaMesCasa> items;
         private BcvRates rates;
 
         private string _montoBsStr = "0,00";
@@ -44,8 +42,64 @@ namespace Condominio.Web.Components.Pages
         private bool _esMobile = false;
         private bool _cargando = true;
 
+        private IEnumerable<FacturaMesCasa> items;
+        private int totalFacturas = 0;
+
+        private int currentPage = 1;
+        private int TotalPages => (int)Math.Ceiling((double)totalFacturas / 10);
+        private string _filtroGlobal = "";
 
 
+       
+        private async Task ChangePage(int page)
+        {
+            if (page < 1 || page > TotalPages) return;
+
+            currentPage = page;
+
+            // Llamamos a LoadData con el Skip y Take correctos para la nueva página
+            await LoadData(new Radzen.LoadDataArgs
+            {
+                Skip = (currentPage - 1) * 10,
+                Top = 10
+            });
+        }
+        private async Task LoadData(Radzen.LoadDataArgs args)
+        {
+            try
+            {
+                await Task.Yield();
+
+                var skip = args.Skip ?? 0;
+                var take = args.Top ?? 10;
+
+                string filtroActual = !string.IsNullOrEmpty(args.Filter) ? args.Filter : _filtroGlobal;
+
+
+                if (isAdmin)
+                {
+                    var (datos, total) = await FacturaMesCasaRepository.GetPagedAsync(skip, take, filtroActual);
+                    items = datos.ToList();
+                    totalFacturas = total;
+                }
+                else
+                {
+                    var (datos, total) = await FacturaMesCasaRepository.GetPagedForUserAsync(skip, take, AppState.CurrentUser.Id, filtroActual);
+                    items = datos.ToList();
+                    totalFacturas = total;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ ERROR EN LOADDATA: {ex.Message}");
+            }
+        }
+
+        private async Task BuscarGlobal(string texto)
+        {
+            _filtroGlobal = texto;
+            await LoadData(new Radzen.LoadDataArgs { Skip = 0, Top = 10 });
+        }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -58,6 +112,11 @@ namespace Condominio.Web.Components.Pages
                     _esMobile = await JSRuntime.InvokeAsync<bool>("esPantallaMovil");
                     Console.WriteLine($"📱 Mobile: {_esMobile}");
 
+                    if (_esMobile)
+                    {
+                        // Simulamos la carga de la página 1
+                        await LoadData(new Radzen.LoadDataArgs { Skip = 0, Top = 10 });
+                    }
                     // Forzamos a Blazor a redibujar la pantalla con el nuevo valor
                     StateHasChanged();
                 }
@@ -76,7 +135,8 @@ namespace Condominio.Web.Components.Pages
         {
             await CheckAdminRole();
             allowRowSelectOnRowClick = true;
-            await LoadData();
+            var monedas = await MonedaRepository.GetAllAsync();
+            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
             rates = await BcvScraper.GetRatesAsync();
             await Task.Delay(5000);  // 2000 milisegundos = 2 segundos
             StateHasChanged();
@@ -85,40 +145,6 @@ namespace Condominio.Web.Components.Pages
         }
 
       
-
-        private async Task LoadData()
-        {
-            try
-            {
-
-                var role = AppState.CurrentUser.Role;
-                IEnumerable<FacturaMesCasa> itemList;
-
-                if (role == "Administrador")
-                {
-                    itemList = await FacturaMesCasaRepository.GetAllAsync();
-                }
-                else
-                {
-                    itemList = await FacturaMesCasaRepository.GetAllForUserAsync(AppState.CurrentUser.Id);
-                }
-
-                items = itemList.AsQueryable();
-                var monedas = await MonedaRepository.GetAllAsync();
-                Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
-                employees = itemList.Any()
-                    ? new List<FacturaMesCasa> { itemList.First() }
-                    : new List<FacturaMesCasa>();
-
-
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error al cargar datos: {ex.Message}");
-                // Opcional: mostrar notificación al usuario
-            }
-        }
 
         private async Task CheckAdminRole()
         {
@@ -305,7 +331,10 @@ namespace Condominio.Web.Components.Pages
             );
 
 
-            await LoadData();
+            if (grid != null)
+            {
+                await grid.Reload();
+            }
             StateHasChanged();
 
 
@@ -322,10 +351,6 @@ namespace Condominio.Web.Components.Pages
 
         void RowExpand(FacturaMesCasa order)
         {
-            if (order.FacturaMes.FacturaMesHijos == null)
-            {
-                order.FacturaMes.FacturaMesHijos = order.FacturaMes.FacturaMesHijos.ToList();
-            }
         }
 
 

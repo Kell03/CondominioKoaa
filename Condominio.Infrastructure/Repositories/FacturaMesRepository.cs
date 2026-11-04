@@ -23,6 +23,32 @@ namespace Condominio.Infrastructure.Repositories
             _notificacionService = notificacionService;
         }
 
+
+
+        public async Task<(List<FacturaMes> Items, int Total)> GetPagedAsync(int skip, int take)
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+
+            // 1. Query base
+            var query = db.Set<FacturaMes>()
+                .Include(x => x.FacturaMesHijos)
+                    .ThenInclude(x => x.CategoriaGasto)
+                        .ThenInclude(x => x.Proveedor)
+                .AsNoTracking();
+
+            // 2. Contar el total para el paginador
+            var total = await query.CountAsync();
+
+            // 3. Traer solo la página actual
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            return (items, total);
+        }
+
         public override async Task<IEnumerable<FacturaMes>> GetAllAsync()
         {
             await using var db = await _factory.CreateDbContextAsync();

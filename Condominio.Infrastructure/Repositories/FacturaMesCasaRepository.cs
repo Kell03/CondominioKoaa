@@ -28,7 +28,74 @@ namespace Condominio.Infrastructure.Repositories
             _movimientoRepo = movimientoRepo;
         }
 
-        public override async Task<IEnumerable<FacturaMesCasa>> GetAllAsync()
+        public async Task<(List<FacturaMesCasa> Items, int Total)> GetPagedForUserAsync(int skip, int take, int userId, string filtro = null)
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+
+            var houseId = await db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.HouseId)
+                .FirstOrDefaultAsync();
+
+            if (houseId == null || houseId == 0)
+                return (new List<FacturaMesCasa>(), 0);
+
+            var query = db.Set<FacturaMesCasa>()
+                .Where(x => x.HouseId == houseId) // ✅ Filtro base: solo su casa
+                .Include(x => x.House)
+                .Include(x => x.User)
+                .Include(x => x.Payments)
+                .Include(x => x.FacturaMes)
+                    .ThenInclude(fm => fm.FacturaMesHijos)
+                .AsNoTracking();
+
+            // ✅ FILTRO GLOBAL (Estado, Año, Mes)
+            if (!string.IsNullOrWhiteSpace(filtro))
+            {
+                // ✅ TRUCO: Si el filtro viene de Radzen, extraemos solo el valor de búsqueda.
+                // Radzen envía algo como: x.house.number.Contains("1")
+                string valorBusqueda = filtro;
+
+                // Si contiene la palabra "Contains", extraemos lo que está entre comillas
+                if (filtro.Contains("Contains(\""))
+                {
+                    var inicio = filtro.IndexOf("Contains(\"") + 10;
+                    var fin = filtro.IndexOf("\")", inicio);
+                    if (fin > inicio)
+                    {
+                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                    }
+                }
+
+                var f = valorBusqueda.ToLower();
+
+                // Ahora sí, buscamos el valor limpio
+                query = query.Where(x =>
+                    x.Estado.ToLower().Contains(f) ||
+                    x.FacturaMes.Year.ToString().Contains(f) ||
+                    x.FacturaMes.Mes.ToString().Contains(f)||
+                    x.MontoTotal.ToString().Contains(f)
+                );
+
+
+
+              
+
+
+            }
+
+            var total = await query.CountAsync();
+
+            var result = await query
+                .OrderByDescending(x => x.FacturaMes.Year)
+                .ThenByDescending(x => x.FacturaMes.Mes)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            return (result, total);
+        }
+        public async Task<(List<FacturaMesCasa> Items, int Total)> GetPagedAsync(int skip, int take, string filtro = null)
         {
             await using var db = await _factory.CreateDbContextAsync();
 
@@ -38,52 +105,67 @@ namespace Condominio.Infrastructure.Repositories
                         from owner in ownerGroup.DefaultIfEmpty()
                         join payments in db.Payments on factura.Id equals payments.FacturaMesCasaId into paymentGroup
                         join facturaMes in db.FacturaMes on factura.FacturaMesId equals facturaMes.Id
-                        select new FacturaMesCasa
-                        {
-                            Id = factura.Id,
-                            FacturaMesId = factura.FacturaMesId,
-                            HouseId = factura.HouseId,
-                            MontoTotal = factura.MontoTotal,
-                            MontoPagado = factura.MontoPagado,
-                            SaldoPendiente = factura.SaldoPendiente,
-                            MontoBs = factura.MontoBs,
-                            Estado = factura.Estado,
-                            Comentario = factura.Comentario,
-                            CreatedAt = factura.CreatedAt,
-                            UpdatedAt = factura.UpdatedAt,
-                            House = house,
-                            FacturaMes = facturaMes,
-                            Payments = paymentGroup.ToList(),
-                            User = owner
-                        };
+                        select new { factura, house, owner, paymentGroup, facturaMes };
 
-            var result = await query
-                .OrderByDescending(x => x.FacturaMes.Year)
-                .ThenByDescending(x => x.FacturaMes.Mes)
-                .ToListAsync();
-
-            var facturaIds = result.Select(x => x.FacturaMesId).Distinct().ToList();
-            if (facturaIds.Any())
+            // ✅ FILTRO GLOBAL
+            if (!string.IsNullOrWhiteSpace(filtro))
             {
-                var hijos = await db.FacturaMesHijo
-                    .Where(h => facturaIds.Contains(h.FacturaMesId))
-                    .AsNoTracking()
-                    .ToListAsync();
+                // ✅ TRUCO: Si el filtro viene de Radzen, extraemos solo el valor de búsqueda.
+                // Radzen envía algo como: x.house.number.Contains("1")
+                string valorBusqueda = filtro;
 
-                foreach (var factura in result)
+                // Si contiene la palabra "Contains", extraemos lo que está entre comillas
+                if (filtro.Contains("Contains(\""))
                 {
-                    if (factura.FacturaMes != null)
+                    var inicio = filtro.IndexOf("Contains(\"") + 10;
+                    var fin = filtro.IndexOf("\")", inicio);
+                    if (fin > inicio)
                     {
-                        factura.FacturaMes.FacturaMesHijos = hijos
-                            .Where(h => h.FacturaMesId == factura.FacturaMesId)
-                            .ToList();
+                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
                     }
                 }
+
+                var f = valorBusqueda.ToLower();
+
+                // Ahora sí, buscamos el valor limpio
+                query = query.Where(x =>
+                    x.house.Number.ToLower().Contains(f) ||
+                    x.factura.Estado.ToLower().Contains(f) ||
+                    x.facturaMes.Year.ToString().Contains(f) ||
+                    x.facturaMes.Mes.ToString().Contains(f) ||
+                    x.factura.MontoTotal.ToString().Contains(f)
+                );
             }
 
-            return result;
-        }
+            var total = await query.CountAsync();
 
+            var result = await query
+                .Select(x => new FacturaMesCasa
+                {
+                    Id = x.factura.Id,
+                    FacturaMesId = x.factura.FacturaMesId,
+                    HouseId = x.factura.HouseId,
+                    MontoTotal = x.factura.MontoTotal,
+                    MontoPagado = x.factura.MontoPagado,
+                    SaldoPendiente = x.factura.SaldoPendiente,
+                    MontoBs = x.factura.MontoBs,
+                    Estado = x.factura.Estado,
+                    Comentario = x.factura.Comentario,
+                    CreatedAt = x.factura.CreatedAt,
+                    UpdatedAt = x.factura.UpdatedAt,
+                    House = x.house,
+                    FacturaMes = x.facturaMes,
+                    Payments = x.paymentGroup.ToList(),
+                    User = x.owner
+                })
+                .OrderByDescending(x => x.FacturaMes.Year)
+                .ThenByDescending(x => x.FacturaMes.Mes)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
+
+            return (result, total);
+        }
         public async Task<IEnumerable<FacturaMesCasa>> GetAllSaldoAsync()
         {
             await using var db = await _factory.CreateDbContextAsync();
