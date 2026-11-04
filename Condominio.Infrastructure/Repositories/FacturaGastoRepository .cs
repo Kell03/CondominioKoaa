@@ -5,39 +5,51 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Condominio.Infrastructure.Repositories
 {
     public class FacturaGastoRepository : IFacturaGastoRepository
     {
-        private readonly AppDbContext _context;
-        public FacturaGastoRepository(AppDbContext context) => _context = context;
+        private readonly IDbContextFactory<AppDbContext> _factory;
+
+        public FacturaGastoRepository(IDbContextFactory<AppDbContext> factory)
+        {
+            _factory = factory;
+        }
 
         public async Task<int> AgregarAsync(ImagenesFacturas factura)
         {
-            await _context.ImagenesFacturas.AddAsync(factura);
-            await _context.SaveChangesAsync();
+            await using var db = await _factory.CreateDbContextAsync();
+            db.ImagenesFacturas.Add(factura);
+            await db.SaveChangesAsync();
             return factura.Id;
         }
 
         public async Task<List<ImagenesFacturas>> ObtenerTodasAsync()
-            => await _context.ImagenesFacturas.OrderByDescending(f => f.FechaSubida).ToListAsync();
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+            return await db.ImagenesFacturas
+                .AsNoTracking()
+                .OrderByDescending(f => f.FechaSubida)
+                .ToListAsync();
+        }
 
         public async Task<ImagenesFacturas?> ObtenerPorIdAsync(int id)
-            => await _context.ImagenesFacturas.FindAsync(id);
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+            return await db.ImagenesFacturas.FindAsync(id);
+        }
 
         public async Task EliminarAsync(int id)
         {
-            var factura = await _context.ImagenesFacturas.FindAsync(id);
+            await using var db = await _factory.CreateDbContextAsync();
+            var factura = await db.ImagenesFacturas.FindAsync(id);
             if (factura != null)
             {
-                _context.ImagenesFacturas.Remove(factura);
-                await _context.SaveChangesAsync();
+                db.ImagenesFacturas.Remove(factura);
+                await db.SaveChangesAsync();
             }
         }
-
-
     }
 }

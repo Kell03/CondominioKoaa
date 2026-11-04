@@ -12,8 +12,6 @@ namespace Condominio.Infrastructure.Repositories
     where TEntity : class
 
     {
-        protected readonly AppDbContext _context;
-        protected readonly DbSet<TEntity> _dbSet;
         protected readonly IDbContextFactory<AppDbContext> _factory;
 
         public GenericRepository(IDbContextFactory<AppDbContext> factory)
@@ -35,20 +33,7 @@ namespace Condominio.Infrastructure.Repositories
             return await db.Set<TEntity>().AsNoTracking().ToListAsync();
         }
 
-        public virtual void ClearTracker()
-        {
-            try
-            {
-                // ✅ LIMPIAR EL CHANGE TRACKER
-                _context.ChangeTracker.Clear();
-                Console.WriteLine("✅ ChangeTracker limpiado correctamente");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error al limpiar ChangeTracker: {ex.Message}");
-                throw;
-            }
-        }
+     
 
         public virtual async Task AddAsync(TEntity entity)
         {

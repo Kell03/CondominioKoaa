@@ -208,6 +208,60 @@ namespace Condominio.Domain.DB
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
+
+
+            // Usuarios: login por email (único) y filtro por casa
+            modelBuilder.Entity<Users>(entity =>
+            {
+                entity.HasIndex(u => u.Email).IsUnique();
+                entity.HasIndex(u => u.HouseId);
+            });
+
+            // Facturas: orden por año/mes y filtro por fecha
+            modelBuilder.Entity<FacturaMes>(entity =>
+            {
+                entity.HasIndex(f => new { f.Year, f.Mes });
+                entity.HasIndex(f => f.CreatedAt);
+            });
+
+            // FacturaMesCasa: los dos filtros más usados + compuesto por casa/estado
+            modelBuilder.Entity<FacturaMesCasa>(entity =>
+            {
+                entity.HasIndex(f => f.HouseId);
+                entity.HasIndex(f => f.FacturaMesId);
+                entity.HasIndex(f => new { f.HouseId, f.Estado });
+            });
+
+            // Cuotas especiales: por casa, por cuota, y compuesto casa/estado
+            modelBuilder.Entity<CuotaEspecialCasa>(entity =>
+            {
+                entity.HasIndex(c => c.HouseId);
+                entity.HasIndex(c => c.CuotaEspecialId);
+                entity.HasIndex(c => new { c.HouseId, c.Estado });
+            });
+
+            // Payments: por factura, por cuota, y compuesto estado/fecha
+            modelBuilder.Entity<Payments>(entity =>
+            {
+                entity.HasIndex(p => p.FacturaMesCasaId);
+                entity.HasIndex(p => p.CuotaEspecialCasaId);
+                entity.HasIndex(p => new { p.Estado, p.FechaPago });
+            });
+
+            // Movimientos: por fecha y por gasto
+            modelBuilder.Entity<Movimientos>(entity =>
+            {
+                entity.HasIndex(m => m.CreatedAt);
+                entity.HasIndex(m => m.IdGasto);
+            });
+
+            // Notificaciones: no leídas por usuario (el caso más común) + orden por fecha
+            modelBuilder.Entity<Notificaciones>(entity =>
+            {
+                entity.HasIndex(n => new { n.UserId, n.IsRead });
+                entity.HasIndex(n => n.FechaCreacion);
+            });
+
         }
 
     }
