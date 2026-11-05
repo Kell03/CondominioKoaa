@@ -84,37 +84,40 @@
                 }
             </div>
 
-            <!-- ✅ 3. DETALLE DESPLEGABLE -->
-            <div style="margin-top: 15px;">
-                <RadzenButton Text="Ver Detalle de Factura"
-                              Icon="@(FacturaExpandidaId == item.Id ? "expand_less" : "expand_more")"
-                              ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
-                              Style="width: 100%; border-radius: 8px; border: 1px solid #ddd;"
-                              Click="@(() => OnToggleDetalle.InvokeAsync(item.Id))" />
+            @if (IsAdmin)
+            {
+                <!-- ✅ 3. DETALLE DESPLEGABLE -->
+                <div style="margin-top: 15px;">
+                    <RadzenButton Text="Ver Detalle de Factura"
+                    Icon="@(FacturaExpandidaId == item.Id ? "expand_less" : "expand_more")"
+                    ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+                    Style="width: 100%; border-radius: 8px; border: 1px solid #ddd;"
+                    Click="@(() => OnToggleDetalle.InvokeAsync(item.Id))" />
 
-                @if (FacturaExpandidaId == item.Id)
-                {
-                    <div style="margin-top: 10px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
-                        @foreach (var hijo in item.FacturaMes.FacturaMesHijos)
-                        {
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
-                                <span style="color: #555; white-space: normal; padding-right: 10px;">
-                                    @(hijo.CategoriaGasto?.Nombre ?? hijo.Motivo ?? "-")
-                                </span>
-                                <span style="font-weight: 600; color: #333;">
-                                    @hijo.Monto.ToString("N2") $
+                    @if (FacturaExpandidaId == item.Id)
+                    {
+                        <div style="margin-top: 10px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #eee;">
+                            @foreach (var hijo in item.FacturaMes.FacturaMesHijos)
+                            {
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                                    <span style="color: #555; white-space: normal; padding-right: 10px;">
+                                        @(hijo.CategoriaGasto?.Nombre ?? hijo.Motivo ?? "-")
+                                    </span>
+                                    <span style="font-weight: 600; color: #333;">
+                                        @hijo.Monto.ToString("N2") $
+                                    </span>
+                                </div>
+                            }
+                            <div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                                <span style="font-weight: bold; color: #1a2a3a;">Total Factura</span>
+                                <span style="font-weight: bold; color: #007bff;">
+                                    @item.FacturaMes.FacturaMesHijos.Sum(h => h.Monto).ToString("N2") $
                                 </span>
                             </div>
-                        }
-                        <div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
-                            <span style="font-weight: bold; color: #1a2a3a;">Total Factura</span>
-                            <span style="font-weight: bold; color: #007bff;">
-                                @item.FacturaMes.FacturaMesHijos.Sum(h => h.Monto).ToString("N2") $
-                            </span>
                         </div>
-                    </div>
-                }
-            </div>
+                    }
+                </div>
+            }
 
         </RadzenCard>
     }

@@ -67,6 +67,10 @@ namespace Condominio.Infrastructure.Repositories
             var total = await query.CountAsync();
 
             var result = await query
+                // ✅ 1er Orden: Las que tienen pagos pendientes primero
+                .OrderByDescending(x => x.paymentGroup.Any(p => p.Estado == "Pendiente"))
+                // ✅ 2do Orden: Luego por fecha de creación (más recientes primero)
+                .ThenByDescending(x => x.item.CreatedAt)
                 .OrderByDescending(x => x.item.CreatedAt)
                 .Skip(skip)
                 .Take(take)

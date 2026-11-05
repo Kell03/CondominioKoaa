@@ -47,6 +47,8 @@ namespace Condominio.Infrastructure.Repositories
                 .Include(x => x.Payments)
                 .Include(x => x.FacturaMes)
                     .ThenInclude(fm => fm.FacturaMesHijos)
+                      .ThenInclude(hijo => hijo.CategoriaGasto) 
+                       .ThenInclude(p => p.Proveedor) 
                 .AsNoTracking();
 
             // ✅ FILTRO GLOBAL (Estado, Año, Mes)
@@ -158,7 +160,10 @@ namespace Condominio.Infrastructure.Repositories
                     Payments = x.paymentGroup.ToList(),
                     User = x.owner
                 })
-                .OrderByDescending(x => x.FacturaMes.Year)
+                // ✅ 1er Orden: Las que tienen pagos pendientes van primero
+                .OrderByDescending(x => x.Payments.Any(p => p.Estado == "Pendiente"))
+                // ✅ 2do Orden: Si hay varias pendientes, se ordenan por fecha (más recientes primero)
+                .ThenByDescending(x => x.FacturaMes.Year)
                 .ThenByDescending(x => x.FacturaMes.Mes)
                 .Skip(skip)
                 .Take(take)

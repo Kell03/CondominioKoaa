@@ -394,7 +394,13 @@ namespace Condominio.Web.Components.Pages
 
         void RowRender(RowRenderEventArgs<FacturaMesCasa> args)
         {
-            args.Expandable = (args.Data.FacturaMes.FacturaMesHijos != null && args.Data.FacturaMes.FacturaMesHijos.Any());
+            if (isAdmin)
+            {
+                args.Expandable = false;
+                return;
+            }
+
+            args.Expandable = (args.Data?.FacturaMes?.FacturaMesHijos != null && args.Data.FacturaMes.FacturaMesHijos.Any());
         }
 
         void RowExpand(FacturaMesCasa order)
