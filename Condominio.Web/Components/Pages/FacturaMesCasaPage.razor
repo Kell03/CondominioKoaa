@@ -112,6 +112,7 @@
                                             TItem="FacturaMesCasa"
                                             RowExpand="RowExpand"
                                             ColumnWidth="300px"
+                                            Density="Density.Compact"
                                             LogicalFilterOperator="LogicalFilterOperator.Or">
 
 
@@ -248,7 +249,7 @@
                                     </RadzenDataGridColumn>
 
 
-                                    <RadzenDataGridColumn TItem="FacturaMesCasa" Title="Opciones" Width="100px" TextAlign="TextAlign.Center">
+                                    <RadzenDataGridColumn TItem="FacturaMesCasa" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
                                         <Template Context="factura">
 
 
@@ -315,7 +316,7 @@
 
 
 
-                                    <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Casa" Width="120px">
+                                    <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Casa" Width="90px">
                                         <Template Context="FacturaMesCasa">
                                             @FacturaMesCasa.House.Number
                                         </Template>
@@ -354,14 +355,14 @@
 
                                     <RadzenDataGridColumn TItem="FacturaMesCasa"
                                                           Property="@nameof(FacturaMesCasa.PeriodoCompleto)"
-                                                          Title="Período"
+                                                          Title="Motivo"
                                                           Width="150px" />
 
 
                                     <RadzenDataGridColumn TItem="FacturaMesCasa"
                                                           Property="Estado"
                                                           Title="Estado"
-                                                          Width="140px">
+                                                          Width="120px">
                                         <Template Context="facturaCasa">
                                             @if (facturaCasa.Estado == "Pendiente")
                                             {
