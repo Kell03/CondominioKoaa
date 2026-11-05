@@ -24,6 +24,7 @@ namespace Condominio.Web.Components.Pages
         private IEnumerable<FacturaMes> FacturasMes;
         private IEnumerable<Houses> HouseList;
         Payments Pago = new Payments();
+        ConfiguracionCondominio? condominio = new ConfiguracionCondominio();
         string Moneda = "USD";
         private IEnumerable<Payments> PagosList;
         private List<string> MetodosPago = new List<string>
@@ -135,6 +136,7 @@ namespace Condominio.Web.Components.Pages
         {
             await CheckAdminRole();
             allowRowSelectOnRowClick = true;
+            condominio = await ConfiguracionCondominioRepository.ObtenerAsync();
             var monedas = await MonedaRepository.GetAllAsync();
             Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
             rates = await BcvScraper.GetRatesAsync();

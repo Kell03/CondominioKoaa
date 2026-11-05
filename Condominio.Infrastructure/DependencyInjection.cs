@@ -35,6 +35,7 @@ namespace Condominio.Infrastructure
             services.AddScoped<ProveedorRepository>();
             services.AddScoped<GastosRepository>();
             services.AddScoped<PaymentRepository>();
+            services.AddScoped<ConfiguracionCondominioRepository>();
 
             services.AddScoped<IGenericRepository<FacturaMesHijo>, FacturaMesHijoRepository>();
 

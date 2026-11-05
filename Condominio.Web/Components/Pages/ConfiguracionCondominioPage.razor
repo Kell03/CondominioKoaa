@@ -1,0 +1,275 @@
+﻿@page "/configuracion-condominio"
+@attribute [Authorize(Roles = "Administrador")]
+@using Condominio.Domain.Entities
+@using Condominio.Infrastructure.Repositories
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Radzen
+@using Radzen.Blazor
+@inject ConfiguracionCondominioRepository ConfigRepo
+@inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+
+        <!-- ✅ TARJETA DE TÍTULO (Igual a la de Usuarios) -->
+        <RadzenCard Style="background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #007bff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <RadzenText TextStyle="TextStyle.H4" Style="margin: 0; color: #1a2a3a; font-weight: 500;">
+                Perfil del Condominio
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Style="margin: 4px 0 0 0; color: #6c757d;">
+                Configura los datos generales, bancarios y el logo de tu urbanización.
+            </RadzenText>
+        </RadzenCard>
+
+        <RadzenTabs @bind-SelectedIndex="@selectedIndex">
+            <Tabs>
+
+                <!-- ✅ PESTAÑA 1: LISTA (Vista Previa) -->
+                <RadzenTabsItem Text="Lista">
+
+                    <RadzenCard Style="padding: 20px; border-radius: 8px; margin-top: 10px;">
+                        @if (model.Id == 0)
+                        {
+                            <div style="text-align: center; padding: 30px; color: #6c757d;">
+                                <RadzenIcon Icon="info" Style="font-size: 48px; color: #ccc;" />
+                                <RadzenText TextStyle="TextStyle.H5" Style="margin-top: 10px;">
+                                    Aún no has configurado el perfil del condominio.
+                                </RadzenText>
+                                <RadzenButton Text="Configurar Ahora" Icon="edit" ButtonStyle="ButtonStyle.Primary"
+                                              Click="@(() => selectedIndex = 1)" Style="margin-top: 15px;" />
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+                                <!-- Logo -->
+                                <div style="flex: 0 0 150px; text-align: center;">
+                                    @if (!string.IsNullOrEmpty(model.LogoBase64))
+                                    {
+                                        <img src="@model.LogoBase64" style="max-width: 150px; max-height: 150px; border-radius: 8px; border: 1px solid #eee; padding: 5px;" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenIcon Icon="business" Style="font-size: 80px; color: #ccc;" />
+                                    }
+                                </div>
+
+                                <!-- Información -->
+                                <div style="flex: 1; min-width: 250px;">
+                                    <RadzenText TextStyle="TextStyle.H4" Style="color: #1a2a3a; margin-bottom: 15px;">
+                                        @model.NombreUrbanizacion
+                                    </RadzenText>
+
+                                    <RadzenText TextStyle="TextStyle.Body1" Style="margin-bottom: 5px;">
+                                        <RadzenIcon Icon="account_balance" Style="color: #007bff;" /> <strong>Banco:</strong> @(string.IsNullOrEmpty(model.BancoNombre) ? "-" : model.BancoNombre)
+                                    </RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body1" Style="margin-bottom: 5px;">
+                                        <strong>Cuenta:</strong> @(string.IsNullOrEmpty(model.BancoCuenta) ? "-" : model.BancoCuenta)
+                                    </RadzenText>
+                                
+                                    <RadzenText TextStyle="TextStyle.Body1" Style="margin-bottom: 5px;">
+                                        <strong>RIF:</strong> @(string.IsNullOrEmpty(model.BancoRif) ? "-" : model.BancoRif)
+                                    </RadzenText>
+
+                                    <RadzenText TextStyle="TextStyle.Body1" Style="margin-top: 15px; margin-bottom: 5px;">
+                                        <RadzenIcon Icon="smartphone" Style="color: #28a745;" /> <strong>Pago Móvil:</strong> @(string.IsNullOrEmpty(model.PagoMovilTelefono) ? "-" : model.PagoMovilTelefono)
+                                    </RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body1" Style="margin-bottom: 5px;">
+                                        <strong>C.I/RIF:</strong> @(string.IsNullOrEmpty(model.PagoMovilCedula) ? "-" : model.PagoMovilCedula)
+                                    </RadzenText>
+
+                                    <RadzenButton Text="Editar Perfil" Icon="edit" ButtonStyle="ButtonStyle.Primary"
+                                                  Click="@(() => selectedIndex = 1)" Style="margin-top: 20px;" />
+                                </div>
+                            </div>
+                        }
+                    </RadzenCard>
+
+                </RadzenTabsItem>
+
+                <!-- ✅ PESTAÑA 2: FORMULARIO (Edición) -->
+                <RadzenTabsItem Text="Formulario" Disabled="@(model.Id == 0)">
+
+                    <RadzenTemplateForm TItem="ConfiguracionCondominio" Data="@model" Submit="@Guardar">
+                        <RadzenStack Gap="1.5rem" Style="margin-top: 10px;">
+
+                            <RadzenCard Style="padding: 20px; border-radius: 8px;">
+                                <RadzenText TextStyle="TextStyle.H6" Style="color: #1a2a3a; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                                    <RadzenIcon Icon="info" Style="margin-right: 5px; color: #007bff;" /> Información Básica
+                                </RadzenText>
+
+                                <RadzenRow Gap="1rem">
+                                    <RadzenColumn Size="12" SizeSM="7">
+                                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                            <RadzenLabel Component="NombreRequired">Nombre de la Urbanización <span style="color: red;">*</span></RadzenLabel>
+                                            <RadzenTextBox Name="NombreRequired" @bind-Value="model.NombreUrbanizacion" Placeholder="Ej: Residencias Los Robles" Style="width: 100%;" />
+                                            <RadzenRequiredValidator Component="NombreRequired" Text="El nombre es obligatorio" />
+                                        </RadzenStack>
+                                    </RadzenColumn>
+
+                                    <RadzenColumn Size="12" SizeSM="5">
+                                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                            <RadzenLabel>Logo del Condominio</RadzenLabel>
+                                            <div style="border: 1px dashed #ccc; border-radius: 8px; padding: 10px; text-align: center; background: #fafafa;">
+                                                @if (!string.IsNullOrEmpty(model.LogoBase64))
+                                                {
+                                                    <img src="@model.LogoBase64" style="max-height: 60px; max-width: 100%; border-radius: 4px; margin-bottom: 10px;" />
+                                                    <RadzenButton Text="Cambiar Imagen" Icon="upload" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Click="@(() => model.LogoBase64 = null)" />
+                                                }
+                                                else
+                                                {
+                                                    <InputFile OnChange="OnInputFileChange" accept="image/png, image/jpeg" style="font-size: 12px;" />
+                                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-size: 11px; display: block; margin-top: 5px;">PNG o JPG (máx 2MB)</RadzenText>
+                                                }
+                                            </div>
+                                        </RadzenStack>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenCard>
+
+                            <RadzenCard Style="padding: 20px; border-radius: 8px;">
+                                <RadzenText TextStyle="TextStyle.H6" Style="color: #1a2a3a; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                                    <RadzenIcon Icon="account_balance" Style="margin-right: 5px; color: #007bff;" /> Datos Bancarios (Transferencias)
+                                </RadzenText>
+
+                                <RadzenRow Gap="1rem">
+                                    <RadzenColumn Size="12" SizeSM="6">
+                                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                            <RadzenLabel>Banco</RadzenLabel>
+                                            <RadzenTextBox @bind-Value="model.BancoNombre" Placeholder="Ej: Banco de Venezuela" Style="width: 100%;" />
+                                        </RadzenStack>
+                                    </RadzenColumn>
+                               
+                                    <RadzenColumn Size="12" SizeSM="6">
+                                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                            <RadzenLabel>Número de Cuenta</RadzenLabel>
+                                            <RadzenTextBox @bind-Value="model.BancoCuenta" Placeholder="Ej: 0102-0000-00-0000000000" Style="width: 100%;" />
+                                        </RadzenStack>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeSM="6">
+                                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                            <RadzenLabel>RIF del Titular</RadzenLabel>
+                                            <RadzenTextBox @bind-Value="model.BancoRif" Placeholder="Ej: J-12345678-9" Style="width: 100%;" />
+                                        </RadzenStack>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenCard>
+
+                            <RadzenCard Style="padding: 20px; border-radius: 8px;">
+                                <RadzenText TextStyle="TextStyle.H6" Style="color: #1a2a3a; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                                    <RadzenIcon Icon="smartphone" Style="margin-right: 5px; color: #007bff;" /> Datos de Pago Móvil
+                                </RadzenText>
+
+                                <RadzenRow Gap="1rem">
+                                    <RadzenColumn Size="12" SizeSM="6">
+                                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                            <RadzenLabel>Cédula / RIF</RadzenLabel>
+                                            <RadzenTextBox @bind-Value="model.PagoMovilCedula" Placeholder="Ej: V-12345678" Style="width: 100%;" />
+                                        </RadzenStack>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeSM="6">
+                                        <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                            <RadzenLabel>Teléfono</RadzenLabel>
+                                            <RadzenTextBox @bind-Value="model.PagoMovilTelefono" Placeholder="Ej: 0414-1234567" Style="width: 100%;" />
+                                        </RadzenStack>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenCard>
+
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 2rem;">
+                                <RadzenButton Text="Cancelar" Icon="cancel" ButtonStyle="ButtonStyle.Light"
+                                              Click="@(() => selectedIndex = 0)" />
+                                <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar Cambios" Icon="save" ButtonStyle="ButtonStyle.Success" />
+                            </div>
+
+                        </RadzenStack>
+                    </RadzenTemplateForm>
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+
+    </div>
+</div>
+
+@code {
+    int selectedIndex = 0;
+    private ConfiguracionCondominio model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var config = await ConfigRepo.ObtenerAsync();
+        if (config != null)
+        {
+            model = config;
+        }
+        else
+        {
+            // Si no hay config, forzamos la pestaña de formulario para que la cree
+            selectedIndex = 1;
+        }
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var archivo = e.File;
+        if (archivo != null)
+        {
+            if (archivo.Size > 2 * 1024 * 1024)
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, "Imagen muy grande", "El tamaño máximo permitido es 2MB.");
+                return;
+            }
+
+            try
+            {
+                using var stream = archivo.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var bytes = memoryStream.ToArray();
+
+                var base64String = Convert.ToBase64String(bytes);
+                model.LogoBase64 = $"data:{archivo.ContentType};base64,{base64String}";
+
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Error", $"No se pudo cargar la imagen: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task Guardar()
+    {
+        try
+        {
+            if (model.Id == 0)
+            {
+                await ConfigRepo.AddAsync(model);
+            }
+            else
+            {
+                await ConfigRepo.Update(model);
+            }
+
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Configuración Guardada",
+                Detail = "Los datos del condominio se actualizaron correctamente.",
+                Duration = 3000
+            });
+
+            // Volvemos a la pestaña de lista para ver el resultado
+            selectedIndex = 0;
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Error", $"No se pudo guardar: {ex.Message}");
+        }
+    }
+}

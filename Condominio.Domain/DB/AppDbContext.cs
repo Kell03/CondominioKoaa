@@ -17,6 +17,7 @@ namespace Condominio.Domain.DB
         // DbSets = tablas de tu base de datos
         public DbSet<Users> Users { get; set; }
         public DbSet<Houses> Houses { get; set; }
+        public DbSet<ConfiguracionCondominio> ConfiguracionCondominio { get; set; }
         public DbSet<FacturaMes> FacturaMes { get; set; }
         public DbSet<FacturaMesHijo> FacturaMesHijo { get; set; }
         public DbSet<FacturaMesCasa> FacturaMesCasa { get; set; }

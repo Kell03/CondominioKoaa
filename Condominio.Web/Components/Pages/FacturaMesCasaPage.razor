@@ -20,7 +20,7 @@
 @inject Radzen.NotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject Radzen.DialogService DialogService
-
+@inject ConfiguracionCondominioRepository ConfiguracionCondominioRepository
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
@@ -457,13 +457,16 @@
                                     Pago Móvil
                                 </RadzenText>
                                 <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
-                                    <strong>C.I:</strong> xx.xxx.xxx
+                                    <strong>C.I:</strong> @(string.IsNullOrWhiteSpace(condominio?.PagoMovilCedula) ? "No configurado" : condominio.PagoMovilCedula)
                                 </RadzenText>
                                 <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
-                                    <strong>Teléfono:</strong> xxxx-xxx.xx.xx
+                                    <strong>Teléfono:</strong> @(string.IsNullOrWhiteSpace(condominio?.PagoMovilTelefono) ? "No configurado" : condominio.PagoMovilTelefono)
                                 </RadzenText>
                                 <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
-                                    <strong>Banco:</strong> Banco de Venezuela
+                                    <strong>Banco:</strong> @(string.IsNullOrWhiteSpace(condominio?.BancoNombre) ? "No configurado" : condominio.BancoNombre)
+                                </RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
+                                    <strong>Nro Cuenta:</strong> @(string.IsNullOrWhiteSpace(condominio?.BancoCuenta) ? "No configurado" : condominio.BancoCuenta)
                                 </RadzenText>
                                 <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
                                     <strong>Tasa:</strong>   @Pago.Tasa?.ToString() Bs (@Moneda)
