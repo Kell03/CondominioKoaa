@@ -71,12 +71,12 @@ namespace Condominio.Infrastructure.Repositories
                 await db.SaveChangesAsync(); // gasto obtiene Id
 
                 await _movimientoRepo.SaveMovimiento(
-                    db,                         // ← ¡CLAVE! Pasar el mismo contexto
-                    monto: entity.Monto,
-                    montoBs: entity.MontoBs,
-                    tasa: entity.Tasa,
-                    gasto: entity
-                );
+             db,
+             monto: entity.Monto,
+             montoBs: entity.MontoBs,
+             tasa: entity.Tasa,
+             gasto: entity
+         );
 
                 await db.SaveChangesAsync();
                 await transaction.CommitAsync();

@@ -503,6 +503,20 @@ namespace Condominio.Infrastructure.Repositories
             // 5. Actualizamos el estado del pago
             payment.Estado = "Confirmada";
 
+
+
+            // Registramos el movimiento (solo si lo tienes en tu lógica)
+            await _movimientoRepo.SaveMovimiento(
+    db,
+    monto: payment.Monto,
+    montoBs: payment.MontoBs,
+    tasa: payment.Tasa,
+    idCasa: facturaMesCasa.HouseId,
+    factura: factura,
+    cuota: null
+);
+
+
             // 6. Buscamos al usuario para notificarle
             var usuario = await db.Users
                 .AsNoTracking()
@@ -521,8 +535,6 @@ namespace Condominio.Infrastructure.Repositories
                 ReferenciaId = payment.Id
             });
 
-            // 8. Registramos el movimiento (solo si lo tienes en tu lógica)
-            // await _movimientoRepo.SaveMovimiento(db, monto: payment.Monto, ...);
 
             // 9. Guardamos TODO. Como todo está rastreado por el mismo `db`, 
             // EF Core hace un solo UPDATE para cada entidad modificada.

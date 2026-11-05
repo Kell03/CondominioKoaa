@@ -426,6 +426,16 @@ namespace Condominio.Infrastructure.Repositories
                 factura: null
             );
 
+            await _movimientoRepo.SaveMovimiento(
+    db,
+    monto: payment.Monto,
+    montoBs: payment.MontoBs,
+    tasa: payment.Tasa,
+    idCasa: cuotaCasa.HouseId,
+    cuota: cuota,
+    factura: null
+);
+
             var usuario = await db.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.HouseId == cuotaCasa.HouseId);
@@ -441,6 +451,8 @@ namespace Condominio.Infrastructure.Repositories
                 Tipo = "Payments",
                 ReferenciaId = payment.Id
             });
+
+
 
             await db.SaveChangesAsync();
 
