@@ -85,6 +85,17 @@ namespace Condominio.Infrastructure.Repositories
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
         }
+        public async Task<Users> GetUserHouseAsync(int id)
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+
+            return await db.Set<Users>()
+                .Where(x => x.Id == id)
+                .Include(u => u.House)
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync();
+        }
 
         public override async Task AddAsync(Users entity)
         {

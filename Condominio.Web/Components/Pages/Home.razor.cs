@@ -1,5 +1,6 @@
 using Condominio.Application.Services;
 using Condominio.Domain.Entities;
+using Condominio.Infrastructure.Repositories;
 
 namespace Condominio.Web.Components.Pages
 {
@@ -43,6 +44,14 @@ namespace Condominio.Web.Components.Pages
 
         string Moneda = "USD";
         decimal tasa = 0;
+        private bool isAdmin = false;
+
+        private decimal deudaTotalCondominio = 0;
+        private decimal deudaCasaSeleccionada = 0;
+        private int? selectedHouseId = null;
+        private string casaSeleccionada = "";
+        private List<Houses> listaCasas = new();
+
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -53,7 +62,12 @@ namespace Condominio.Web.Components.Pages
                 try
                 {
                     var tareaRates = BcvScraper.GetRatesAsync();
-
+                    await CheckAdminRole();
+                    if (isAdmin)
+                    {
+                        await CargarDeudaGlobal();
+                        await CargarListaCasas();
+                    }
                     await LoadData();
                     await LoadDataCuotas();
                     var monedas = await MonedaRepository.GetAllAsync();
@@ -83,6 +97,23 @@ namespace Condominio.Web.Components.Pages
             }
         }
 
+
+       
+
+
+        private async Task CheckAdminRole()
+        {
+
+            var role = AppState.CurrentUser.Role;
+            if (role == "Administrador")
+            {
+                isAdmin = true;
+            }
+            else
+            {
+                isAdmin = false;
+            }
+        }
 
         private async Task LoadData()
         {
@@ -200,5 +231,44 @@ namespace Condominio.Web.Components.Pages
             }
         }
 
+
+
+        // ✅ Método para calcular la deuda TOTAL de todo el condominio
+        private async Task CargarDeudaGlobal()
+        {
+            // Traemos todas las facturas y cuotas (paginación de 10000 para asegurar que traiga todo)
+            var (facturas, _) = await FacturaMesCasaRepository.GetPagedAsync(0, 10000, null);
+            var (cuotas, _) = await CuotaEspecialCasaRepository.GetPagedAsync(0, 10000, null);
+
+            var deudaFacturas = facturas.Where(x => x.SaldoPendiente > 0).Sum(x => x.SaldoPendiente);
+            var deudaCuotas = cuotas.Where(x => x.SaldoPendiente > 0).Sum(x => x.SaldoPendiente);
+
+            deudaTotalCondominio = deudaFacturas + deudaCuotas;
+        }
+
+        // ✅ Método para cargar el dropdown de las casas
+        private async Task CargarListaCasas()
+        {
+            var casas = await HouseRepository.GetAllAsync();
+            listaCasas = casas.OrderBy(x => int.TryParse(x.Number, out int n) ? n : 0).ToList();
+        }
+
+        // ✅ Método que se ejecuta al elegir una casa en el Dropdown
+        private async Task CalcularDeudaCasa()
+        {
+            if (selectedHouseId == null || selectedHouseId == 0) return;
+
+            casaSeleccionada = listaCasas.FirstOrDefault(x => x.Id == selectedHouseId)?.Number ?? "";
+
+            // Filtramos las facturas y cuotas de esa casa en específico
+            var (facturas, _) = await FacturaMesCasaRepository.GetPagedAsync(0, 10000, null);
+            var (cuotas, _) = await CuotaEspecialCasaRepository.GetPagedAsync(0, 10000, null);
+
+            var deudaF = facturas.Where(x => x.HouseId == selectedHouseId && x.SaldoPendiente > 0).Sum(x => x.SaldoPendiente);
+            var deudaC = cuotas.Where(x => x.HouseId == selectedHouseId && x.SaldoPendiente > 0).Sum(x => x.SaldoPendiente);
+
+            deudaCasaSeleccionada = deudaF + deudaC;
+            StateHasChanged();
+        }
     }
 }

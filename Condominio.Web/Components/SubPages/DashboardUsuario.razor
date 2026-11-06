@@ -1,0 +1,258 @@
+﻿@using Condominio.Application.Services
+@using Condominio.Domain.Entities
+@using Condominio.Infrastructure.Repositories
+@inject FacturaMesCasaRepository FacturaRepo
+@inject CuotaEspecialCasaRepository CuotaRepo
+@inject UserRepository UserRepository
+@inject AppState AppState
+@inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
+
+@if (_esMobile)
+{
+    <!-- ✅ DISEÑO MÓVIL (El que ya tienes y te gusta) -->
+    <div style="padding: 20px; margin: 0 auto; padding-bottom: 80px;">
+        <!-- SALUDO -->
+        <div style="margin-bottom: 25px; display: flex; align-items: center; gap: 15px;">
+            <RadzenIcon Icon="account_circle" Style="font-size: 50px; color: #007bff;" />
+            <div>
+                <RadzenText TextStyle="TextStyle.H4" Style="font-weight: 700; color: #1a2a3a; margin: 0;">
+                    ¡Hola, @(AppState.CurrentUser?.Name)
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" Style="color: #6c757d; margin: 0;">
+                    Casa @numeroCasa
+                </RadzenText>
+            </div>
+        </div>
+
+        <!-- TARJETA DE DEUDA -->
+        <div style="margin-bottom: 20px;">
+            <RadzenCard Style="background: white; border: 1px solid #e9ecef; border-radius: 16px; padding: 35px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center;">
+                <RadzenText TextStyle="TextStyle.Body1" Style="color: #6c757d; font-weight: 500; margin-bottom: 10px;">
+                    Total a Pagar
+                </RadzenText>
+                <div style="display: flex; justify-content: center; align-items: baseline; margin-bottom: 25px;">
+                    <RadzenText TextStyle="TextStyle.H1" Style="@($"font-size: 55px; font-weight: 800; margin: 0; color: {(totalDeuda <= 0 ? "#28a745" : "#dc3545")};")">
+                        @totalDeuda.ToString("N2")
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.H4" Style="@($"margin-left: 5px; color: {(totalDeuda <= 0 ? "#28a745" : "#dc3545")};")">
+                        $
+                    </RadzenText>
+                </div>
+                @if (totalDeuda > 0)
+                {
+                    <RadzenButton Text="Ir a Pagar Ahora" Icon="payment" ButtonStyle="ButtonStyle.Primary"
+                                  Style="width: 100%; border-radius: 8px; padding: 14px; font-size: 16px;"
+                                  Click="@(() => Nav.NavigateTo("/recibofactura"))" />
+                }
+                else
+                {
+                    <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; font-weight: 600;">
+                        <RadzenIcon Icon="check_circle" Style="margin-right: 5px;" /> ¡Estás al día!
+                    </div>
+                }
+            </RadzenCard>
+        </div>
+
+        <!-- LISTA DE PENDIENTES -->
+        <div>
+            @if (facturasPendientes.Any() || cuotasPendientes.Any())
+            {
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <RadzenText TextStyle="TextStyle.H6" Style="font-weight: 700; margin: 0; color: #1a2a3a;">Detalle de tu deuda</RadzenText>
+                    <span style="background: #f8d7da; color: #721c24; padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+                        @(facturasPendientes.Count + cuotasPendientes.Count) pendientes
+                    </span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    @foreach (var factura in facturasPendientes)
+                    {
+                        <RadzenCard Style="padding: 15px 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 4px solid #007bff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div style="flex: 1; min-width: 150px;">
+                                    <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600; margin: 0; color: #1a2a3a;">@factura.PeriodoCompleto</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; margin-top: 4px; display: block;">Factura Mensual</RadzenText>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <RadzenText TextStyle="TextStyle.H6" Style="color: #dc3545; margin: 0; font-weight: 800;">@factura.SaldoPendiente.ToString("N2") $</RadzenText>
+                                    <RadzenButton Text="Pagar" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Primary" Style="border-radius: 6px;" Click="@(() => Nav.NavigateTo("/recibofactura"))" />
+                                </div>
+                            </div>
+                        </RadzenCard>
+                    }
+                    @foreach (var cuota in cuotasPendientes)
+                    {
+                        <RadzenCard Style="padding: 15px 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 4px solid #6f42c1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div style="flex: 1; min-width: 150px;">
+                                    <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600; margin: 0; color: #1a2a3a;">Cuota Especial</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; margin-top: 4px; display: block;">@(cuota.CuotaEspecial?.Motivo ?? "Aporte")</RadzenText>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <RadzenText TextStyle="TextStyle.H6" Style="color: #6f42c1; margin: 0; font-weight: 800;">@cuota.SaldoPendiente.ToString("N2") $</RadzenText>
+                                    <RadzenButton Text="Pagar" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Secondary" Style="border-radius: 6px; background-color: #6f42c1; color: white; border: none;" Click="@(() => Nav.NavigateTo("/recibocuotaespecial"))" />
+                                </div>
+                            </div>
+                        </RadzenCard>
+                    }
+                </div>
+                <RadzenButton Text="Ver Historial Completo" Icon="history" ButtonStyle="ButtonStyle.Light" Style="width: 100%; margin-top: 20px; border-radius: 8px; padding: 10px;" Click="@(() => Nav.NavigateTo("/recibofactura"))" />
+            }
+            else
+            {
+                <RadzenCard Style="padding: 40px; text-align: center; border-radius: 12px; border: 1px dashed #ccc; background: #f8f9fa;">
+                    <RadzenIcon Icon="task_alt" Style="font-size: 50px; color: #28a745; margin-bottom: 10px;" />
+                    <RadzenText TextStyle="TextStyle.H6">No tienes deudas pendientes</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d;">¡Gracias por mantenerte al día!</RadzenText>
+                </RadzenCard>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <!-- ✅ DISEÑO PC (Dashboard amplio) -->
+    <div style="padding: 40px; max-width: 1400px; margin: 0 auto; padding-bottom: 50px;">
+
+        <!-- SALUDO -->
+        <div style="margin-bottom: 40px; display: flex; align-items: center; gap: 20px;">
+            <RadzenIcon Icon="account_circle" Style="font-size: 70px; color: #007bff;" />
+            <div>
+                <RadzenText TextStyle="TextStyle.H2" Style="font-weight: 800; color: #1a2a3a; margin: 0;">
+                    ¡Hola, @(AppState.CurrentUser?.Name)
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.H5" Style="color: #6c757d; margin: 0;">
+                    Casa @numeroCasa
+                </RadzenText>
+            </div>
+        </div>
+
+        <!-- GRID DE 2 COLUMNAS: IZQUIERDA (Deuda) Y DERECHA (Facturas) -->
+        <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; align-items: start;">
+
+            <!-- COLUMNA IZQUIERDA -->
+            <div>
+                <RadzenCard Style="background: white; border: 1px solid #e9ecef; border-radius: 16px; padding: 40px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); text-align: center;">
+                    <RadzenText TextStyle="TextStyle.H6" Style="color: #6c757d; font-weight: 600; margin-bottom: 15px;">
+                        Total a Pagar
+                    </RadzenText>
+                    <div style="display: flex; justify-content: center; align-items: baseline; margin-bottom: 30px;">
+                        <RadzenText TextStyle="TextStyle.H1" Style="@($"font-size: 70px; font-weight: 800; margin: 0; color: {(totalDeuda <= 0 ? "#28a745" : "#dc3545")};")">
+                            @totalDeuda.ToString("N2")
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.H3" Style="@($"margin-left: 5px; color: {(totalDeuda <= 0 ? "#28a745" : "#dc3545")};")">$</RadzenText>
+                    </div>
+                    @if (totalDeuda > 0)
+                    {
+                        <RadzenButton Text="Ir a Pagar Ahora" Icon="payment" ButtonStyle="ButtonStyle.Primary"
+                                      Style="width: 100%; border-radius: 8px; padding: 18px; font-size: 18px;"
+                                      Click="@(() => Nav.NavigateTo("/recibofactura"))" />
+                    }
+                    else
+                    {
+                        <div style="background: #d4edda; color: #155724; padding: 20px; border-radius: 8px; font-weight: 600; font-size: 18px;">
+                            <RadzenIcon Icon="check_circle" Style="margin-right: 8px;" /> ¡Estás al día!
+                        </div>
+                    }
+                </RadzenCard>
+            </div>
+
+            <!-- COLUMNA DERECHA -->
+            <div>
+                @if (facturasPendientes.Any() || cuotasPendientes.Any())
+                {
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <RadzenText TextStyle="TextStyle.H4" Style="font-weight: 700; margin: 0; color: #1a2a3a;">
+                            Facturas Pendientes
+                        </RadzenText>
+                        <span style="background: #f8d7da; color: #721c24; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold;">
+                            @(facturasPendientes.Count + cuotasPendientes.Count) pendientes
+                        </span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        @foreach (var factura in facturasPendientes)
+                        {
+                            <RadzenCard Style="padding: 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 6px solid #007bff;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: 600; margin: 0; color: #1a2a3a;">@factura.PeriodoCompleto</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Body1" Style="color: #6c757d; margin-top: 4px;">Factura Mensual</RadzenText>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 30px;">
+                                        <RadzenText TextStyle="TextStyle.H4" Style="color: #dc3545; margin: 0; font-weight: 800;">@factura.SaldoPendiente.ToString("N2") $</RadzenText>
+                                        <RadzenButton Text="Pagar" Size="ButtonSize.Medium" ButtonStyle="ButtonStyle.Primary" Style="border-radius: 8px;" Click="@(() => Nav.NavigateTo("/recibofactura"))" />
+                                    </div>
+                                </div>
+                            </RadzenCard>
+                        }
+                        @foreach (var cuota in cuotasPendientes)
+                        {
+                            <RadzenCard Style="padding: 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 6px solid #6f42c1;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: 600; margin: 0; color: #1a2a3a;">Cuota Especial</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Body1" Style="color: #6c757d; margin-top: 4px;">@(cuota.CuotaEspecial?.Motivo ?? "Aporte")</RadzenText>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 30px;">
+                                        <RadzenText TextStyle="TextStyle.H4" Style="color: #6f42c1; margin: 0; font-weight: 800;">@cuota.SaldoPendiente.ToString("N2") $</RadzenText>
+                                        <RadzenButton Text="Pagar" Size="ButtonSize.Medium" ButtonStyle="ButtonStyle.Secondary" Style="border-radius: 8px; background-color: #6f42c1; color: white; border: none;" Click="@(() => Nav.NavigateTo("/recibocuotaespecial"))" />
+                                    </div>
+                                </div>
+                            </RadzenCard>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <RadzenCard Style="padding: 60px; text-align: center; border-radius: 16px; border: 1px dashed #ccc; background: #f8f9fa;">
+                        <RadzenIcon Icon="task_alt" Style="font-size: 70px; color: #28a745; margin-bottom: 15px;" />
+                        <RadzenText TextStyle="TextStyle.H4">No tienes deudas pendientes</RadzenText>
+                    </RadzenCard>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _esMobile = false;
+    private decimal totalDeuda = 0;
+    private string numeroCasa = "";
+    private List<FacturaMesCasa> facturasPendientes = new();
+    private List<CuotaEspecialCasa> cuotasPendientes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // ✅ Detectar si es móvil
+        try
+        {
+            var width = await JSRuntime.InvokeAsync<int>("eval", "window.innerWidth");
+            _esMobile = width < 768;
+        }
+        catch { }
+
+        if (AppState.CurrentUser != null)
+        {
+            var user = await UserRepository.GetUserHouseAsync(AppState.CurrentUser.Id);
+            if (user != null)
+            {
+                numeroCasa = user.House?.Number ?? "N/A";
+            }
+
+            var (facturas, _) = await FacturaRepo.GetPagedForUserAsync(0, 100, AppState.CurrentUser.Id);
+            facturasPendientes = facturas
+                .Where(x => x.SaldoPendiente > 0)
+                .OrderByDescending(x => x.FacturaMes.Year)
+                .ThenByDescending(x => x.FacturaMes.Mes)
+                .ToList();
+
+            var (cuotas, _) = await CuotaRepo.GetPagedForUserAsync(0, 100, AppState.CurrentUser.Id);
+            cuotasPendientes = cuotas
+                .Where(x => x.SaldoPendiente > 0)
+                .ToList();
+
+            totalDeuda = facturasPendientes.Sum(x => x.SaldoPendiente) + cuotasPendientes.Sum(x => x.SaldoPendiente);
+        }
+    }
+}

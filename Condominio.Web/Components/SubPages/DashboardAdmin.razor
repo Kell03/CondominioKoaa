@@ -1,0 +1,363 @@
+﻿@using Condominio.Application.Services
+@using Condominio.Domain.Entities
+@using Condominio.Infrastructure.Repositories
+@using Radzen
+@using Radzen.Blazor
+@inject FacturaMesRepository FacturaMesRepository
+@inject CuotaEspecialRepository CuotaEspecialRepository
+@inject MovimientosRepository MovimientoRepository
+@inject CuotaEspecialCasaRepository CuotaEspecialCasaRepository
+@inject FacturaMesCasaRepository FacturaMesCasaRepository
+@inject HouseRepository HouseRepository
+@inject AppState AppState
+@inject BcvScraperService BcvScraper
+@inject ConfiguracionMonedaRepository MonedaRepository
+@inject IJSRuntime JSRuntime
+
+<div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; width: 100%; max-width: 1400px; margin: 0 auto;">
+
+    <!-- ✅ 1. TARJETA DE COBRANZA (Deuda Global + Filtro) -->
+    <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+
+        <RadzenCard Style="flex: 1 1 300px; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid #dc3545; background: white;">
+            <RadzenText TextStyle="TextStyle.H6" Style="color: #6c757d; font-weight: 600; margin-bottom: 10px;">
+                <RadzenIcon Icon="account_balance_wallet" Style="margin-right: 8px; color: #dc3545;" /> Deuda Total del Condominio
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.H1" Style="font-weight: 800; color: #dc3545; margin: 0; font-size: 45px;">
+                @deudaTotalCondominio.ToString("N2") <span style="font-size: 20px;">$</span>
+            </RadzenText>
+        </RadzenCard>
+
+        <RadzenCard Style="flex: 1 1 300px; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 6px solid #007bff; background: white;">
+            <RadzenText TextStyle="TextStyle.H6" Style="color: #6c757d; font-weight: 600; margin-bottom: 15px;">
+                <RadzenIcon Icon="search" Style="margin-right: 8px; color: #007bff;" /> Consultar Deuda por Propietario
+            </RadzenText>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <RadzenDropDown @bind-Value="selectedHouseId" Data="@listaCasas" TextProperty="Number" ValueProperty="Id"
+                                Placeholder="Seleccionar Casa..." AllowFiltering="true"
+                                Change="@(args => CalcularDeudaCasa())" Style="flex: 1;" />
+            </div>
+
+            @if (selectedHouseId > 0)
+            {
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #e9ecef;">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-bottom: 2px;">Deuda de la Casa @casaSeleccionada:</RadzenText>
+                    <RadzenText TextStyle="TextStyle.H4"
+                                Style="@($"font-weight: 800; color: {(deudaCasaSeleccionada > 0 ? "#dc3545" : "#28a745")}; margin: 0;")">
+                        @deudaCasaSeleccionada.ToString("N2") $
+                    </RadzenText>
+                </div>
+            }
+        </RadzenCard>
+    </div>
+
+    <!-- ✅ TARJETAS DE RESUMEN (KPIs) -->
+    <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+
+        <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #28a745;">
+            <RadzenStack Gap="0.5rem">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo Total (USD)</RadzenText>
+                <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold; color: #28a745; margin: 0;">
+                    @movimientoTotalUsd.ToString("N2") USD
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+
+        <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #007bff;">
+            <RadzenStack Gap="0.5rem">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo Total (Bs)</RadzenText>
+                <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold; color: #007bff; margin: 0;">
+                    @movimientoTotalBs.ToString("N2") Bs
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+
+    <!-- ✅ GRÁFICOS (Diseño original) -->
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+        <RadzenCard Style="border-radius: 8px; width: 100%; height: 100%; overflow: hidden; padding: 25px;">
+            <h3 style="text-align: center; font-weight: bold; color: #333; margin-bottom: 20px;">Estado de Recibos</h3>
+            <RadzenStack AlignItems="AlignItems.Center">
+                <RadzenStack Style="width: 100%; max-width: 450px;">
+                    <RadzenChart Style="height: 200px; width: 100%; margin-bottom: 10px;">
+                        <RadzenDonutSeries Data="@revenue" CategoryProperty="Category" ValueProperty="Value"
+                                           SegmentGap="3" Fills="@colorsFacturas" Radius="90" InnerRadius="55"
+                                           ShowTooltipOnLegend="true" ExplodedProperty="Highlight">
+                            <ChildContent>
+                                <RadzenSeriesDataLabels Visible="true" Position="DataLabelPosition.Inside" FormatString="{0:$#,##0.00}" />
+                            </ChildContent>
+                            <TitleTemplate>
+                                <div class="rz-donut-content">
+                                    <div style="font-size: 11px; color: #666;">@Title</div>
+                                    <div style="font-size: 18px; font-weight: bold;">@Total.ToString("$#,##0")</div>
+                                </div>
+                            </TitleTemplate>
+                        </RadzenDonutSeries>
+                        <RadzenLegend Position="LegendPosition.Right" />
+                    </RadzenChart>
+
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%;">
+                        <RadzenDropDown @bind-Value="selectedMonth" Data="@months" TextProperty="Name" ValueProperty="Value" Placeholder="Mes" Style="flex: 1 1 120px; min-width: 120px;" />
+                        <RadzenTextBox @bind-Value="yearInput" MaxLength="4" Change="@(args => OnYearChanged())" Placeholder="Año" Style="flex: 0 1 100px; min-width: 80px;" />
+                        <RadzenButton Text="Buscar" Icon="search" ButtonStyle="ButtonStyle.Primary" Click="@(args => LoadFacturasChart())" Style="flex: 1 1 100%; padding: 6px 12px;" />
+                    </div>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+
+    <div style="flex: 1 1 45%; min-width: 300px; max-width: 100%;">
+        <RadzenCard Style="border-radius: 8px; width: 100%; height: 100%; overflow: hidden; padding: 25px;">
+            <h3 style="text-align: center; font-weight: bold; color: #333; margin-bottom: 20px;">Estado de Cuotas Especiales</h3>
+            <RadzenStack AlignItems="AlignItems.Center">
+                <RadzenStack Style="width: 100%; max-width: 450px;">
+                    <RadzenChart Style="height: 200px; width: 100%; margin-bottom: 10px;">
+                        <RadzenDonutSeries Data="@revenue2" CategoryProperty="Category" ValueProperty="Value"
+                                           SegmentGap="3" Fills="@colorsCuotas" Radius="90" InnerRadius="55"
+                                           ShowTooltipOnLegend="true" ExplodedProperty="Highlight">
+                            <ChildContent>
+                                <RadzenSeriesDataLabels Visible="true" Position="DataLabelPosition.Inside" FormatString="{0:$#,##0.00}" />
+                            </ChildContent>
+                            <TitleTemplate>
+                                <div class="rz-donut-content">
+                                    <div style="font-size: 11px; color: #666;">@TitleCuota</div>
+                                    <div style="font-size: 18px; font-weight: bold;">@Total2.ToString("$#,##0")</div>
+                                </div>
+                            </TitleTemplate>
+                        </RadzenDonutSeries>
+                        <RadzenLegend Position="LegendPosition.Right" />
+                    </RadzenChart>
+
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%;">
+                        <RadzenDropDown @bind-Value="selectedCuota" Data="@listaCuotas" AllowFiltering="true" Placeholder="Motivo" Style="flex: 1 1 140px; min-width: 120px;" />
+                        <RadzenButton Text="Buscar" Icon="search" ButtonStyle="ButtonStyle.Primary" Click="@(args => LoadCuotasChart())" Style="flex: 0 1 auto; min-width: 70px; padding: 6px 12px;" />
+                    </div>
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+</div>
+
+@code {
+    private bool esMobile = false;
+    private string[] colorsFacturas = new[] { "#3B82F6", "#4B5563" };
+    private string[] colorsCuotas = new[] { "#6EE7B7", "#4B5563" };
+
+    class DataItem
+    {
+        public string Category { get; set; }
+        public double Value { get; set; }
+        public bool Highlight { get; set; } = true;
+    }
+
+    public string Title = "";
+    public string TitleCuota = "";
+    public double Total = 0;
+    public double Total2 = 0;
+    public double movimientoTotalBs = 0;
+    public double movimientoTotalUsd = 0;
+    public List<MesModel> months = MesModel.GetMeses();
+    public int? selectedMonth = null;
+    DataItem[] revenue = new DataItem[] { };
+    DataItem[] revenue2 = new DataItem[] { };
+    private string? yearInput = DateTime.Now.Year.ToString();
+    private int? selectedYear = DateTime.Now.Year;
+
+    IEnumerable<FacturaMes> facturas = [];
+    IEnumerable<Movimientos> Movimientos = [];
+    IEnumerable<CuotaEspecial> cuotas = [];
+    List<string> listaCuotas = [];
+    string selectedCuota = "";
+
+    private BcvRates rates;
+    string Moneda = "USD";
+    decimal tasa = 0;
+
+    private decimal deudaTotalCondominio = 0;
+    private decimal deudaCasaSeleccionada = 0;
+    private int? selectedHouseId = null;
+    private string casaSeleccionada = "";
+    private List<Houses> listaCasas = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var width = await JSRuntime.InvokeAsync<int>("eval", "window.innerWidth");
+                esMobile = width < 768;
+                StateHasChanged(); // Redibuja con el diseño correcto
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error detectando mobile: {ex.Message}");
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var tareaRates = BcvScraper.GetRatesAsync();
+
+            await LoadData();
+            await LoadDataCuotas();
+            var monedas = await MonedaRepository.GetAllAsync();
+            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
+
+            await CargarDeudaGlobal();
+            await CargarListaCasas();
+
+            try
+            {
+                rates = await tareaRates;
+                if (rates != null) await LoadMovimientos();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error en BcvScraper: {ex.Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en OnInitializedAsync: {ex.Message}");
+        }
+    }
+
+    // Métodos de carga
+    private async Task LoadData()
+    {
+        facturas = await FacturaMesRepository.GetAllAsync();
+        facturas = facturas.Where(x => x.Motivo == string.Empty || x.Motivo == null).ToList();
+        DataItem data1 = new DataItem();
+        data1.Category = "Pendiente";
+        var pendiente = (double)(Convert.ToDecimal(facturas.Select(x => x.MontoTotal).LastOrDefault())
+            - (facturas.Select(x => x.MontoRecaudado).LastOrDefault() ?? 0));
+        data1.Value = pendiente;
+        DataItem data2 = new DataItem();
+        data2.Category = "Pagado";
+        var pagado = (double)(facturas.Select(x => x.MontoRecaudado).LastOrDefault() ?? 0);
+        data2.Value = pagado;
+        revenue = new DataItem[] { data2, data1 };
+        var item = facturas.LastOrDefault();
+        Title = $"{item?.NombreMes} {item?.Year}";
+        Total = item?.MontoTotal ?? 0;
+
+    }
+    private async Task LoadMovimientos()
+    {
+        Movimientos = await MovimientoRepository.GetAllAsync();
+        var totalMenosUsd = Movimientos.Where(x => x.IdGasto != null).Sum(x => x.MontoBs);
+        var totalmasUsd = Movimientos.Where(x => x.IdGasto == null).Sum(x => x.MontoBs);
+        movimientoTotalBs = (double)((totalmasUsd - totalMenosUsd) ?? 0);
+
+        var prop = rates.GetType().GetProperty(Moneda);
+        tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+
+        movimientoTotalUsd = (double)Math.Round((decimal)movimientoTotalBs / (decimal)tasa, 2);
+
+    }
+    private async Task LoadDataCuotas()
+    {
+        cuotas = await CuotaEspecialRepository.GetAllAsync();
+        listaCuotas = cuotas.Select(x => x.Motivo).ToList();
+        DataItem data1 = new DataItem();
+        data1.Category = "Pendiente";
+        var pendiente = cuotas.Select(x => x.MontoTotal).LastOrDefault() - cuotas.Select(x => x.MontoRecaudado).LastOrDefault();
+        data1.Value = (double)pendiente;
+        DataItem data2 = new DataItem();
+        data2.Category = "Pagado";
+        var pagado = (double)cuotas.Select(x => x.MontoRecaudado).LastOrDefault();
+        data2.Value = pagado;
+        revenue2 = new DataItem[] { data2, data1 };
+        var item = cuotas.LastOrDefault();
+        TitleCuota = $"{item?.Motivo}";
+        Total2 = (double)(item?.MontoTotal ?? 0);
+
+    }
+    private async Task LoadFacturasChart()
+    {
+        revenue = new DataItem[] { }; // Reinicia el gráfico antes de cargar nuevos datos
+        var currentFactura = facturas.Where(f => f.Year == selectedYear && f.Mes == selectedMonth).FirstOrDefault();
+        if (currentFactura == null)
+        {
+            return;
+        }
+        DataItem data1 = new DataItem();
+        data1.Category = "Pendiente";
+        var pendiente = (double)(Convert.ToDecimal(currentFactura.MontoTotal)
+            - (currentFactura.MontoRecaudado ?? 0));
+        data1.Value = pendiente;
+        DataItem data2 = new DataItem();
+        data2.Category = "Pagado";
+        var pagado = (double)(currentFactura.MontoRecaudado ?? 0);
+        data2.Value = pagado;
+        revenue = new DataItem[] { data2, data1 };
+        Title = $"{currentFactura.NombreMes} {currentFactura.Year}";
+        Total = currentFactura.MontoTotal;
+        StateHasChanged();
+
+    }
+    private async Task LoadCuotasChart()
+    {
+        revenue2 = new DataItem[] { }; // Reinicia el gráfico antes de cargar nuevos datos
+        var currentCuota = cuotas.Where(c => c.Motivo == selectedCuota).FirstOrDefault();
+        if (currentCuota == null)
+        {
+            return;
+        }
+        DataItem data1 = new DataItem();
+        data1.Category = "Pendiente";
+        var pendiente = currentCuota.MontoTotal - currentCuota.MontoRecaudado;
+        data1.Value = (double)pendiente;
+        DataItem data2 = new DataItem();
+        data2.Category = "Pagado";
+        var pagado = (double)currentCuota.MontoRecaudado;
+        data2.Value = pagado;
+        revenue2 = new DataItem[] { data2, data1 };
+        TitleCuota = $"{currentCuota.Motivo}";
+        Total2 = (double)currentCuota.MontoTotal;
+        StateHasChanged();
+
+    }
+    private void OnYearChanged()
+    {
+        if (!string.IsNullOrEmpty(yearInput) && yearInput.Length == 4 && int.TryParse(yearInput, out int year))
+        {
+            selectedYear = year;
+        }
+        else if (!string.IsNullOrEmpty(yearInput) && yearInput.Length > 4)
+        {
+            yearInput = yearInput.Substring(0, 4); // Corta a 4 dígitos
+        }
+    }
+
+    private async Task CargarDeudaGlobal()
+    {
+        var (facturasList, _) = await FacturaMesCasaRepository.GetPagedAsync(0, 10000, null);
+        var (cuotasList, _) = await CuotaEspecialCasaRepository.GetPagedAsync(0, 10000, null);
+        deudaTotalCondominio = facturasList.Where(x => x.SaldoPendiente > 0).Sum(x => x.SaldoPendiente)
+                             + cuotasList.Where(x => x.SaldoPendiente > 0).Sum(x => x.SaldoPendiente);
+    }
+
+    private async Task CargarListaCasas()
+    {
+        var casas = await HouseRepository.GetAllAsync();
+        listaCasas = casas.OrderBy(x => int.TryParse(x.Number, out int n) ? n : 0).ToList();
+    }
+
+    private async Task CalcularDeudaCasa()
+    {
+        if (selectedHouseId == null || selectedHouseId == 0) return;
+        casaSeleccionada = listaCasas.FirstOrDefault(x => x.Id == selectedHouseId)?.Number ?? "";
+
+        var (facturasList, _) = await FacturaMesCasaRepository.GetPagedAsync(0, 10000, null);
+        var (cuotasList, _) = await CuotaEspecialCasaRepository.GetPagedAsync(0, 10000, null);
+
+        deudaCasaSeleccionada = facturasList.Where(x => x.HouseId == selectedHouseId && x.SaldoPendiente > 0).Sum(x => x.SaldoPendiente)
+                              + cuotasList.Where(x => x.HouseId == selectedHouseId && x.SaldoPendiente > 0).Sum(x => x.SaldoPendiente);
+    }
+}
