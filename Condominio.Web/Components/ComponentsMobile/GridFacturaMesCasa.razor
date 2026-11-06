@@ -1,8 +1,5 @@
 ﻿@using Condominio.Domain.Entities
 
-
-
-
 <RadzenStack Gap="15px" Style="margin-bottom: 20px; padding: 5px;">
     @foreach (var item in ItemsFiltrados)
     {
@@ -84,15 +81,15 @@
                 }
             </div>
 
-            @if (IsAdmin)
+            <!-- ✅ 3. DETALLE DESPLEGABLE (SOLO PARA EL RESIDENTE) -->
+            @if (!IsAdmin)
             {
-                <!-- ✅ 3. DETALLE DESPLEGABLE -->
                 <div style="margin-top: 15px;">
                     <RadzenButton Text="Ver Detalle de Factura"
-                    Icon="@(FacturaExpandidaId == item.Id ? "expand_less" : "expand_more")"
-                    ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
-                    Style="width: 100%; border-radius: 8px; border: 1px solid #ddd;"
-                    Click="@(() => OnToggleDetalle.InvokeAsync(item.Id))" />
+                                  Icon="@(FacturaExpandidaId == item.Id ? "expand_less" : "expand_more")"
+                                  ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+                                  Style="width: 100%; border-radius: 8px; border: 1px solid #ddd;"
+                                  Click="@(() => OnToggleDetalle.InvokeAsync(item.Id))" />
 
                     @if (FacturaExpandidaId == item.Id)
                     {
