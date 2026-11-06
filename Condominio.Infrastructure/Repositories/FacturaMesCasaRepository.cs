@@ -496,12 +496,14 @@ namespace Condominio.Infrastructure.Repositories
             string mensaje, titulo;
             if (facturaMesCasa.Estado == "Pago Parcial")
             {
-                mensaje = $"Pago parcial confirmado · {factura.NombreMes} {factura.Year} · Ref: {payment.Referencia}";
+                string body = (string.IsNullOrEmpty(factura.Motivo)) ? $"{factura.NombreMes}{factura.Year}" : $"{factura.Motivo}";
+                mensaje = $"Pago parcial confirmado · {body} · Ref: {payment.Referencia}";
                 titulo = "Factura: Pago Parcial";
             }
             else
             {
-                mensaje = $"Pago confirmado · {factura.NombreMes} {factura.Year} · Ref: {payment.Referencia}";
+                string body = (string.IsNullOrEmpty(factura.Motivo)) ? $"{factura.NombreMes}{factura.Year}" : $"{factura.Motivo}";
+                mensaje = $"Pago confirmado · {factura.Motivo} · Ref: {payment.Referencia}";
                 titulo = "Factura: Pago Confirmado";
             }
 
