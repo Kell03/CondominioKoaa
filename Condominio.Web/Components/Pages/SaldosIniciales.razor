@@ -675,6 +675,13 @@
                 }
 
                 isUploading = false;
+
+                if (grid != null)
+                {
+                    await grid.Reload();
+                }
+
+                StateHasChanged();
             }
             catch (Exception ex)
             {
