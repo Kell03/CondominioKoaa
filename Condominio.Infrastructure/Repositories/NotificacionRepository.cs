@@ -20,7 +20,7 @@ namespace Condominio.Infrastructure.Repositories
                 .AsNoTracking()
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.FechaCreacion)
-                .Take(50)
+                .Take(10)
                 .ToListAsync();
         }
 
