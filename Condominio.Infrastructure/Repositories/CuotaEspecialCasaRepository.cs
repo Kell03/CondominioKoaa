@@ -43,6 +43,7 @@ namespace Condominio.Infrastructure.Repositories
             if (!string.IsNullOrWhiteSpace(filtro))
             {
                 string valorBusqueda = filtro;
+                // ✅ 1. Manejar el filtro del buscador general (Contains)
                 if (filtro.Contains("Contains(\""))
                 {
                     var inicio = filtro.IndexOf("Contains(\"") + 10;
@@ -52,11 +53,23 @@ namespace Condominio.Infrastructure.Repositories
                         valorBusqueda = filtro.Substring(inicio, fin - inicio);
                     }
                 }
+                // ✅ 2. Manejar el filtro del embudo de Radzen (Igualdad ==)
+                else if (filtro.Contains("== \""))
+                {
+                    var inicio = filtro.IndexOf("== \"") + 4;
+                    var fin = filtro.IndexOf("\"", inicio);
+                    if (fin > inicio)
+                    {
+                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                    }
+                }
 
                 var f = valorBusqueda.ToLower();
 
+                // ✅ 3. Aplicar el filtro
                 query = query.Where(x =>
                     x.item.Estado.ToString().ToLower().Contains(f) ||
+                    x.item.House.Number.ToLower().Contains(f) || // Asegúrate de que Number sea string
                     (x.owner != null && x.owner.Name != null && x.owner.Name.ToLower().Contains(f)) ||
                     (x.owner != null && x.owner.Cedula != null && x.owner.Cedula.ToLower().Contains(f)) ||
                     (x.item.Referencia != null && x.item.Referencia.ToLower().Contains(f)) ||
@@ -67,13 +80,6 @@ namespace Condominio.Infrastructure.Repositories
             var total = await query.CountAsync();
 
             var result = await query
-                // ✅ 1er Orden: Las que tienen pagos pendientes primero
-                .OrderByDescending(x => x.paymentGroup.Any(p => p.Estado == "Pendiente"))
-                // ✅ 2do Orden: Luego por fecha de creación (más recientes primero)
-                .ThenByDescending(x => x.item.CreatedAt)
-                .OrderByDescending(x => x.item.CreatedAt)
-                .Skip(skip)
-                .Take(take)
                 .Select(x => new CuotaEspecialCasa
                 {
                     Id = x.item.Id,
@@ -95,7 +101,13 @@ namespace Condominio.Infrastructure.Repositories
                     Payments = x.paymentGroup.ToList(),
                     User = x.owner
                 })
-                .ToListAsync();
+// ✅ 1er Orden: Las que tienen pagos pendientes primero
+.OrderByDescending(x => x.Payments.Any(p => p.Estado == "Pendiente"))
+// ✅ 2do Orden: Luego por fecha de creación (más recientes primero)
+.ThenByDescending(x => x.CreatedAt)
+.Skip(skip)
+.Take(take)
+.ToListAsync();
 
             return (result, total);
         }
@@ -353,6 +365,29 @@ namespace Condominio.Infrastructure.Repositories
             }
         }
 
+
+        public async Task<bool> DeniedPayment(Payments payment)
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+
+            try
+            {
+                int usuarioId = await PaymentDenied(db, payment.Id);
+
+                await transaction.CommitAsync();
+                await _notificacionService.EnviarNotificacionAsync(usuarioId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+                return false;
+            }
+        }
+
+
         public async Task<bool> MasiveConfirmPayment(List<Payments> payments)
         {
             if (payments == null || !payments.Any()) return false;
@@ -430,15 +465,56 @@ namespace Condominio.Infrastructure.Repositories
                 factura: null
             );
 
-            await _movimientoRepo.SaveMovimiento(
-    db,
-    monto: payment.Monto,
-    montoBs: payment.MontoBs,
-    tasa: payment.Tasa,
-    idCasa: cuotaCasa.HouseId,
-    cuota: cuota,
-    factura: null
-);
+
+
+            var usuario = await db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.HouseId == cuotaCasa.HouseId);
+
+            if (usuario == null)
+                throw new Exception("Usuario no encontrado para la casa");
+
+            await db.Notificaciones.AddAsync(new Notificaciones
+            {
+                UserId = usuario.Id,
+                Titulo = titulo,
+                Mensaje = mensaje,
+                Tipo = "Payments",
+                ReferenciaId = payment.Id
+            });
+
+
+
+            await db.SaveChangesAsync();
+
+            return usuario.Id;
+        }
+
+
+        private async Task<int> PaymentDenied(AppDbContext db, int paymentId)
+        {
+            var payment = await db.Payments.FirstOrDefaultAsync(x => x.Id == paymentId);
+            if (payment == null)
+                throw new Exception("Pago no encontrado");
+
+            var cuotaCasa = await db.CuotaEspecialCasa.FirstOrDefaultAsync(x => x.Id == payment.CuotaEspecialCasaId);
+            if (cuotaCasa == null)
+                throw new Exception("Cuota no encontrada");
+
+            var cuota = await db.CuotaEspecial.FirstOrDefaultAsync(x => x.Id == cuotaCasa.CuotaEspecialId);
+            if (cuota == null)
+                throw new Exception("Cuota no encontrada");
+
+         
+
+            string mensaje, titulo;
+          
+                mensaje = $"Pago Rechazado · {cuota.Motivo} · Ref: {payment.Referencia}";
+                titulo = "Cuota Especial: Pago Rechazado";
+            
+
+            payment.Estado = "Rechazado";
+
 
             var usuario = await db.Users
                 .AsNoTracking()

@@ -123,7 +123,7 @@ namespace Condominio.Web.Components.Dialogs
             {
                 if (Cuotas)
                 {
-                    //await CuotaEspecialCasaRepository.ConfirmPayment(payment);
+                    await CuotaEspecialCasaRepository.DeniedPayment(payment);
                 }
                 else
                 {

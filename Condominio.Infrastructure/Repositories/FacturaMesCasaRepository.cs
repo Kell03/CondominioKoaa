@@ -126,6 +126,16 @@ namespace Condominio.Infrastructure.Repositories
                         valorBusqueda = filtro.Substring(inicio, fin - inicio);
                     }
                 }
+                // ✅ 2. Manejar el filtro del embudo de Radzen (Igualdad ==)
+                else if (filtro.Contains("== \""))
+                {
+                    var inicio = filtro.IndexOf("== \"") + 4;
+                    var fin = filtro.IndexOf("\"", inicio);
+                    if (fin > inicio)
+                    {
+                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                    }
+                }
 
                 var f = valorBusqueda.ToLower();
 
