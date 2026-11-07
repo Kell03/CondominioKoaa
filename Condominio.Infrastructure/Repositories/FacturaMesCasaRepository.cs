@@ -432,6 +432,31 @@ namespace Condominio.Infrastructure.Repositories
         }
 
 
+
+        public async Task<bool> DeniedPayment(Payments payment)
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+
+            try
+            {
+                // ✅ Pasamos solo el ID del pago para que PaymentConfirm lo busque fresco en la BD
+                int usuarioId = await PaymentDenied(db, payment.Id);
+
+                await transaction.CommitAsync();
+                await _notificacionService.EnviarNotificacionAsync(usuarioId);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"Error al guardar: {ex.Message}");
+                return false;
+            }
+        }
+
+
         public async Task<bool> MasiveConfirmPayment(List<Payments> payments)
         {
             if (payments == null || !payments.Any()) return false;
@@ -522,6 +547,69 @@ namespace Condominio.Infrastructure.Repositories
     factura: factura,
     cuota: null
 );
+
+
+            // 6. Buscamos al usuario para notificarle
+            var usuario = await db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.HouseId == facturaMesCasa.HouseId);
+
+            if (usuario == null)
+                throw new Exception("Usuario no encontrado para la casa");
+
+            // 7. Registramos la notificación en la BD
+            await db.Notificaciones.AddAsync(new Notificaciones
+            {
+                UserId = usuario.Id,
+                Titulo = titulo,
+                Mensaje = mensaje,
+                Tipo = "Payments",
+                ReferenciaId = payment.Id
+            });
+
+
+            // 9. Guardamos TODO. Como todo está rastreado por el mismo `db`, 
+            // EF Core hace un solo UPDATE para cada entidad modificada.
+            await db.SaveChangesAsync();
+
+            return usuario.Id;
+        }
+
+
+        private async Task<int> PaymentDenied(AppDbContext db, int paymentId)
+        {
+            // 1. Buscamos el pago real directamente en la base de datos
+            var payment = await db.Payments
+                .FirstOrDefaultAsync(x => x.Id == paymentId);
+
+            if (payment == null)
+                throw new Exception("Pago no encontrado");
+
+            // 2. Buscamos la factura (EF Core la rastreará automáticamente)
+            var facturaMesCasa = await db.FacturaMesCasa
+                .FirstOrDefaultAsync(x => x.Id == payment.FacturaMesCasaId);
+
+            if (facturaMesCasa == null)
+                throw new Exception("Factura no encontrada");
+
+            var factura = await db.FacturaMes
+                .FirstOrDefaultAsync(x => x.Id == facturaMesCasa.FacturaMesId);
+
+            if (factura == null)
+                throw new Exception("Factura maestra no encontrada");
+
+
+            // 4. Preparamos el mensaje
+            string mensaje, titulo;
+
+                string body = (string.IsNullOrEmpty(factura.Motivo)) ? $"{factura.NombreMes}{factura.Year}" : $"{factura.Motivo}";
+                mensaje = $"Pago Rechazado · {factura.Motivo} · Ref: {payment.Referencia}";
+                titulo = "Factura: Pago Rechazado";
+            
+
+            // 5. Actualizamos el estado del pago
+            payment.Estado = "Rechazado";
+
 
 
             // 6. Buscamos al usuario para notificarle

@@ -61,13 +61,13 @@
                                     </RadzenDataGridColumn>
                                     <RadzenDataGridColumn TItem="CuotaEspecial" Title="Monto" Width="140px">
                                         <Template Context="cuota">
-                                            @cuota.MontoTotal $
+                                            @cuota.MontoTotal.ToString("N2") $
                                         </Template>
                                     </RadzenDataGridColumn>
 
                                     <RadzenDataGridColumn TItem="CuotaEspecial" Title="Monto Recaudado" Width="170px">
                                         <Template Context="cuota">
-                                            @cuota.MontoRecaudado $
+                                            @cuota.MontoRecaudado.ToString("N2") $
                                         </Template>
                                     </RadzenDataGridColumn>
                                     <RadzenDataGridColumn Property="@nameof(CuotaEspecial.NombreMes)" Title="Mes" Width="100px" />

@@ -8,6 +8,17 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JSRuntime
 
+@if (_cargando)
+{
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 100px 20px; min-height: 50vh;">
+        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Style="width: 50px; height: 50px;" />
+        <RadzenText TextStyle="TextStyle.Body1" Style="margin-top: 15px; color: #6c757d;">
+            Cargando tu estado de cuenta...
+        </RadzenText>
+    </div>
+}
+else
+{
 @if (_esMobile)
 {
     <!-- ✅ DISEÑO MÓVIL (El que ya tienes y te gusta) -->
@@ -214,13 +225,16 @@ else
         </div>
     </div>
 }
+}
 
 @code {
     private bool _esMobile = false;
+    private bool _cargando = true; // ✅ NUEVA VARIABLE
     private decimal totalDeuda = 0;
     private string numeroCasa = "";
     private List<FacturaMesCasa> facturasPendientes = new();
     private List<CuotaEspecialCasa> cuotasPendientes = new();
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -254,5 +268,8 @@ else
 
             totalDeuda = facturasPendientes.Sum(x => x.SaldoPendiente) + cuotasPendientes.Sum(x => x.SaldoPendiente);
         }
+
+        // ✅ APAGAMOS EL ESTADO DE CARGA AQUÍ
+        _cargando = false;
     }
 }

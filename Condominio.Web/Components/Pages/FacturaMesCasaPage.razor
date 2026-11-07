@@ -673,21 +673,32 @@
                                 </Template>
                             </RadzenDataGridColumn>
 
-
-                            <RadzenDataGridColumn TItem="Payments"
-                                                  Property="@nameof(Payments.Tasa)"
-                                                  Title="Tasa"
-                                                  Width="100px">
-                                <Template Context="pago">
-                                    @pago.Tasa Bs
-                                </Template>
-                            </RadzenDataGridColumn>
-
-                                       
-
                             <RadzenDataGridColumn TItem="Payments" Title="Fecha" Width="100px">
                                 <Template Context="payment">
                                     @payment.FechaPago.ToString("dd/MM/yyyy")
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                            <RadzenDataGridColumn TItem="Payments" Property="@nameof(Payments.Estado)" Title="Estado" Width="120px">
+                                <Template Context="pago">
+                                    @if (pago.Estado == "Rechazado" || pago.Estado == "Rechazada")
+                                    {
+                                        <span style="background: #f8d7da; color: #721c24; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block;">
+                                            Rechazado
+                                        </span>
+                                    }
+                                    else if (pago.Estado == "Confirmada")
+                                    {
+                                        <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block;">
+                                            Confirmado
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block;">
+                                            Pendiente
+                                        </span>
+                                    }
                                 </Template>
                             </RadzenDataGridColumn>
 

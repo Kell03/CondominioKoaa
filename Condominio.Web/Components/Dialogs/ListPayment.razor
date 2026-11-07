@@ -56,13 +56,21 @@
                               Width="120px"
                               TextAlign="TextAlign.Center">
             <Template Context="payment">
-                @if (payment.Estado != "Confirmada")
+                @if (payment.Estado != "Confirmada" && payment.Estado != "Rechazado")
                 {
                     <RadzenButton Icon="check"
                                   ButtonStyle="ButtonStyle.Success"
                                   Size="ButtonSize.Small"
                                   Tooltip="Ver detalles"
                                   Click="@(() => ConfirmSend(payment))"
+                                  @onclick:stopPropagation="true" />
+
+
+                    <RadzenButton Icon="close"
+                                  ButtonStyle="ButtonStyle.Danger"
+                                  Size="ButtonSize.Small"
+                                  Tooltip="Rechazar pago"
+                                  Click="@(() => RejectPayment(payment))"
                                   @onclick:stopPropagation="true" />
                 }
                 else

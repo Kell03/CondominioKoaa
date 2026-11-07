@@ -12,7 +12,7 @@ namespace Condominio.Web.Components.Dialogs
         public int IdItem { get; set; }
 
         [Parameter]
-        public bool Cuotas { get; set; } 
+        public bool Cuotas { get; set; }
         private IEnumerable<Payments> PagosList = Enumerable.Empty<Payments>();
         private FacturaMesCasa FacturaCasa;
 
@@ -24,7 +24,7 @@ namespace Condominio.Web.Components.Dialogs
 
         private async Task LoadPagos()
         {
-            if(Cuotas)
+            if (Cuotas)
             {
                 PagosList = await CuotaEspecialCasaRepository.GetPaymentsForInvoiceAsync(IdItem);
             }
@@ -37,22 +37,51 @@ namespace Condominio.Web.Components.Dialogs
 
         private async Task ConfirmSend(Payments item)
         {
-            
-                var result = await DialogService.Confirm(
-                $"¿Confirmar pago con referencia {(item.Referencia)}?\n\n" +
-                $"Se le notificará al propietario que su pago ha sido aprobado.\n\n" +
-                $"¿Deseas continuar?",
-                "Confirmar aprobación de pago",
-               new ConfirmOptions()
-               {
-                   OkButtonText = " Sí, aprobar pago",
-                   CancelButtonText = " Cancelar",
-               }
-          );
 
-                if (result == true)
-                {
-                    await ConfirmPayment(item);
+            var result = await DialogService.Confirm(
+            $"¿Confirmar pago con referencia {(item.Referencia)}?\n\n" +
+            $"Se le notificará al propietario que su pago ha sido aprobado.\n\n" +
+            $"¿Deseas continuar?",
+            "Confirmar aprobación de pago",
+           new ConfirmOptions()
+           {
+               OkButtonText = " Sí, aprobar pago",
+               CancelButtonText = " Cancelar",
+           }
+      );
+
+            if (result == true)
+            {
+                await ConfirmPayment(item);
+                DialogService.Close();
+
+
+            }
+
+
+
+
+        }
+
+
+        private async Task RejectPayment(Payments item)
+        {
+
+            var result = await DialogService.Confirm(
+            $"¿Rechazar pago con referencia {(item.Referencia)}?\n\n" +
+            $"Se le notificará al propietario que su pago ha sido rechazado.\n\n" +
+            $"¿Deseas continuar?",
+            "Confirmar rechazo de pago",
+           new ConfirmOptions()
+           {
+               OkButtonText = " Sí, rechazar pago",
+               CancelButtonText = " Cancelar",
+           }
+      );
+
+            if (result == true)
+            {
+                await DeniedPayment(item);
                 DialogService.Close();
 
 
@@ -87,6 +116,29 @@ namespace Condominio.Web.Components.Dialogs
             }
         }
 
+        private async Task DeniedPayment(Payments payment)
+        {
+
+            try
+            {
+                if (Cuotas)
+                {
+                    //await CuotaEspecialCasaRepository.ConfirmPayment(payment);
+                }
+                else
+                {
+                    await FacturaMesCasaRepository.DeniedPayment(payment);
+                }
+
+                await LoadPagos();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                // Aquí podrías mostrar un mensaje al usuario
+            }
+        }
 
 
     }

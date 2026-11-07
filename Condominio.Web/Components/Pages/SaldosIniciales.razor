@@ -275,7 +275,8 @@
                                                           Title="Monto"
                                                           Width="120px">
                                         <Template Context="facturaCasa">
-                                            @facturaCasa.MontoTotal $
+                                            @facturaCasa.MontoTotal.ToString("N2") $
+
                                         </Template>
                                     </RadzenDataGridColumn>
 
@@ -285,7 +286,7 @@
                                                           Title="Pagado"
                                                           Width="140px">
                                         <Template Context="facturaCasa">
-                                            @facturaCasa.MontoPagado $
+                                            @facturaCasa.MontoPagado.ToString("N2") $
                                         </Template>
                                     </RadzenDataGridColumn>
 
@@ -295,7 +296,7 @@
                                                           Title="Pendiente"
                                                           Width="140px">
                                         <Template Context="facturaCasa">
-                                            @facturaCasa.SaldoPendiente $
+                                            @facturaCasa.SaldoPendiente.ToString("N2") $
                                         </Template>
                                     </RadzenDataGridColumn>
 

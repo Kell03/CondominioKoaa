@@ -1,6 +1,8 @@
 using Condominio.Application.Services;
 using Condominio.Domain.Entities;
 using Condominio.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Condominio.Web.Components.Pages
 {
@@ -51,8 +53,13 @@ namespace Condominio.Web.Components.Pages
         private int? selectedHouseId = null;
         private string casaSeleccionada = "";
         private List<Houses> listaCasas = new();
+        [Inject] private AuthenticationStateProvider AuthProvider { get; set; }
+
+        private bool _cargando = true;
+        private bool _rolListo = false;
 
 
+      
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender && !yaCargo)
@@ -94,11 +101,29 @@ namespace Condominio.Web.Components.Pages
                 {
                     Console.WriteLine($"Error en OnAfterRenderAsync: {ex.Message}");
                 }
+                finally
+                {
+                    // ✅ Esperamos solo los milisegundos necesarios a que el MainLayout
+                    // termine de asignar el rol. Si ya está listo, no espera nada.
+                    int intentos = 0;
+                    while ((AppState.CurrentUser == null || string.IsNullOrEmpty(AppState.CurrentUser.Role)) && intentos < 50)
+                    {
+                        await Task.Delay(50); // 50ms es casi imperceptible
+                        intentos++;
+                    }
+
+                    // Ahora que estamos seguros de que el rol existe, actualizamos isAdmin
+                    if (AppState.CurrentUser != null && AppState.CurrentUser.Role == "Administrador")
+                    {
+                        isAdmin = true;
+                    }
+
+                    _cargando = false;
+                    StateHasChanged();
+                }
             }
         }
 
-
-       
 
 
         private async Task CheckAdminRole()

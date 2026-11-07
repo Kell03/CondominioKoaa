@@ -162,9 +162,11 @@ namespace Condominio.Web.Components.Pages
 
         private double ObtenerMontoTotal(FacturaMes factura)
         {
-            return factura.FacturaMesHijos.Select(x => x.Monto).Sum();
-        }
+            if (factura?.FacturaMesHijos == null) return 0;
 
+            // Sumamos y redondeamos a 2 decimales
+            return Math.Round(factura.FacturaMesHijos.Select(x => x.Monto).Sum(), 2);
+        }
 
         private async Task AddUser()
         {
