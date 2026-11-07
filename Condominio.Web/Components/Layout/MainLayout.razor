@@ -528,10 +528,13 @@
         if (mostrarPanel && AppState.CurrentUser != null)
         {
             // ✅ 1. CARGAR NOTIFICACIONES
-            notificaciones = await NotificacionRepository.GetByUserAsync(AppState.CurrentUser.Id);
+            var todasLasNotificaciones = await NotificacionRepository.GetByUserAsync(AppState.CurrentUser.Id);
+            notificaciones = todasLasNotificaciones.Take(8).ToList(); // 👈 AQUÍ SE LIMITA A 5
+
 
             // ✅ 2. MARCAR TODAS COMO LEÍDAS
             await NotificacionRepository.MarcarTodasComoLeidasAsync(AppState.CurrentUser.Id);
+
 
             // ✅ 3. ACTUALIZAR EL CONTADOR A 0
             contadorNoLeidas = 0;
