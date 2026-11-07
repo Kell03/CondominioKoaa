@@ -27,9 +27,15 @@
                      Style="width: 100%;">
 
             <!-- ✅ IZQUIERDA: TOGGLE + TÍTULO -->
-            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="background: transparent; padding: 0; margin: 0;">
                 <RadzenSidebarToggle Click="@(() => sidebar1Expanded = !sidebar1Expanded)" />
-                <RadzenLabel Text="Condominio" />
+
+                <!-- ✅ Logo Izquierdo -->
+                <img src="/SOLUNARINF.png"
+                     alt="Logo"
+                     style="height: 50px; width: auto; object-fit: contain;
+                background: transparent;
+                mix-blend-mode: multiply;" />
             </RadzenStack>
 
             <!-- ✅ DERECHA: NOMBRE DEL CONDOMINIO + CAMPANA (Agrupados) -->
@@ -37,27 +43,26 @@
                          AlignItems="AlignItems.Center"
                          Gap="1.5rem">
 
-                <!-- Nombre del Condominio -->
                 @if (!string.IsNullOrEmpty(nombreCondominio))
                 {
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
 
-
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                         @if (!string.IsNullOrEmpty(logoCondominio))
                         {
-                            <img src="@logoCondominio" style="height: 28px; width: 28px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,0.3);" />
+                            <!-- ✅ Si hay logo, mostramos SOLO la imagen (más grande) -->
+                            <img src="@logoCondominio"
+                                 style="height: 45px; width: auto; max-width: 180px; object-fit: contain;" />
                         }
                         else
                         {
-                            <RadzenIcon Icon="business" Style="font-size: 24px; color: white;" />
+                            <!-- ✅ Si NO hay logo, mostramos el icono y el texto -->
+                            <RadzenIcon Icon="business" Style="font-size: 32px; color: #007bff; margin-right: 8px;" />
+                            <RadzenText TextStyle="TextStyle.H6"
+                                        Style="color: #1a2a3a; font-weight: 700; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; letter-spacing: -0.5px;">
+                                @nombreCondominio
+                            </RadzenText>
                         }
-                        <RadzenText TextStyle="TextStyle.Body1"
-                                    Style="color: #1a2a3a; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">
-                            @nombreCondominio
-                        </RadzenText>
                     </RadzenStack>
-
-                   
                 }
 
                 <!-- Campana de Notificaciones -->
@@ -280,7 +285,8 @@
 
     <!-- ✅ FOOTER -->
     <RadzenFooter>
-        Footer
+                    &copy; @DateTime.Now.Year - SOLUNARINF | Todos los derechos reservados.
+
     </RadzenFooter>
 
     <style>

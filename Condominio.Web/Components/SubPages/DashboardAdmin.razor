@@ -16,6 +16,29 @@
 
 <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; width: 100%; max-width: 1400px; margin: 0 auto;">
 
+    <!-- ✅ TARJETAS DE RESUMEN (KPIs) -->
+    <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+
+        <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #28a745;">
+            <RadzenStack Gap="0.5rem">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo Total (USD)</RadzenText>
+                <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold; color: #28a745; margin: 0;">
+                    @movimientoTotalUsd.ToString("N2") USD
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+
+        <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #007bff;">
+            <RadzenStack Gap="0.5rem">
+                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo Total (Bs)</RadzenText>
+                <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold; color: #007bff; margin: 0;">
+                    @movimientoTotalBs.ToString("N2") Bs
+                </RadzenText>
+            </RadzenStack>
+        </RadzenCard>
+    </div>
+
+
     <!-- ✅ 1. TARJETA DE COBRANZA (Deuda Global + Filtro) -->
     <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
 
@@ -49,28 +72,6 @@
                     </RadzenText>
                 </div>
             }
-        </RadzenCard>
-    </div>
-
-    <!-- ✅ TARJETAS DE RESUMEN (KPIs) -->
-    <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-
-        <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #28a745;">
-            <RadzenStack Gap="0.5rem">
-                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo Total (USD)</RadzenText>
-                <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold; color: #28a745; margin: 0;">
-                    @movimientoTotalUsd.ToString("N2") USD
-                </RadzenText>
-            </RadzenStack>
-        </RadzenCard>
-
-        <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #007bff;">
-            <RadzenStack Gap="0.5rem">
-                <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo Total (Bs)</RadzenText>
-                <RadzenText TextStyle="TextStyle.H4" Style="font-weight: bold; color: #007bff; margin: 0;">
-                    @movimientoTotalBs.ToString("N2") Bs
-                </RadzenText>
-            </RadzenStack>
         </RadzenCard>
     </div>
 
