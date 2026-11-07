@@ -142,17 +142,15 @@
                             </RadzenStack>
 
 
-              
-
                             <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
-                                <RadzenLabel Component="MontoInput">Monto Base (Opcional)</RadzenLabel>
+                                <RadzenLabel Component="MontoInput">Monto Base ($)</RadzenLabel>
+
                                 <RadzenNumeric Name="MontoInput"
                                                @bind-Value="selectedItem.Monto"
                                                TValue="decimal"
                                                Style="width: 100%; max-width: 400px;"
-                                               Format="C2" />
+                                               Format="N2" />
                             </RadzenStack>
-
                             <!-- ✅ SWITCH ES FIJO -->
                             <RadzenStack Orientation="Orientation.Horizontal"
                                          Gap="1rem"
@@ -168,6 +166,15 @@
                                     </RadzenText>
                                 </RadzenStack>
                             </RadzenStack>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
+                                <RadzenSwitch @bind-Value="selectedItem.Porcentaje" Name="PorcentajeInput" />
+                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+                                    <RadzenLabel Component="PorcentajeInput" Style="font-weight: 600; cursor: pointer;">Es Porcentaje</RadzenLabel>
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d;">Si está activo, el monto será un porcentaje de la factura.</RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
+
 
                             <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" Style="width: 100%; max-width: 400px;" />
                         </RadzenStack>

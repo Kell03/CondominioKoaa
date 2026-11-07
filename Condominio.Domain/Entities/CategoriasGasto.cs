@@ -13,8 +13,8 @@ namespace Condominio.Domain.Entities
         public string? Descripcion { get; set; }
         public bool Activo { get; set; } = true;
         public bool Isfijo { get; set; } = true;
+        public bool Porcentaje { get; set; } = false;
         public decimal Monto { get; set; } = 0;
-
 
         public int? IdProveedor { get; set; }
         public Proveedor? Proveedor { get; set; }

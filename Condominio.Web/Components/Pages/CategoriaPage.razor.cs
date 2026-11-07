@@ -24,7 +24,7 @@ namespace Condominio.Web.Components.Pages
 
         private bool _esMobile = false;
         private bool _cargando = true;
-
+        public bool value  = false;
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {

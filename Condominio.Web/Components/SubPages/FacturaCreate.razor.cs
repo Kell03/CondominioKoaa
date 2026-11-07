@@ -24,11 +24,13 @@ namespace Condominio.Web.Components.SubPages
         private string? yearInput = DateTime.Now.Year.ToString();
 
         private List<FacturaMesHijo> orders = new();
+        private List<CategoriasGasto> porcentajaCategorias = new();
         private List<CategoriasGasto> categorias = new();
         private List<Proveedor> proveedores = new();
         private FacturaMesHijo itemEditando = new();
         private bool mostrarPanel = false;
         private int indiceEditando = -1;
+        private decimal total = 0;
 
 
         private void AgregarItem()
@@ -73,6 +75,8 @@ namespace Condominio.Web.Components.SubPages
 
             CancelarEdicion();
 
+            await Calcular();
+
             await ordersGrid.Reload();
 
             StateHasChanged();
@@ -84,14 +88,39 @@ namespace Condominio.Web.Components.SubPages
             itemEditando = new FacturaMesHijo();
             indiceEditando = -1;
             mostrarPanel = false;
+
         }
 
         // ✅ Eliminar
-        private void DeleteRow(FacturaMesHijo item)
+        private async Task DeleteRow(FacturaMesHijo item)
         {
             orders.Remove(item);
+            await Calcular();
+            if (ordersGrid != null)
+            {
+                await ordersGrid.Reload();
+            }
+
+            StateHasChanged();
         }
 
+
+        private async Task Calcular()
+        {
+            foreach(var order in orders)
+            {
+                 var categoria = categorias.FirstOrDefault(c => c.Id == order.IdCategoria);
+                    if (categoria != null && categoria.Porcentaje)
+                    {
+                        // Calcula el monto basado en el porcentaje
+                        var montoBase = orders.Where(o => o.IdCategoria != order.IdCategoria).Sum(o => (decimal)o.Monto);
+                        order.Monto = (double)(montoBase * ((decimal)categoria.Monto / 100.0m));
+                    }
+                
+            }
+
+            StateHasChanged();
+        }
 
         protected override async Task OnInitializedAsync()
         {
@@ -100,6 +129,7 @@ namespace Condominio.Web.Components.SubPages
             Item.Mes = DateTime.Now.Month;
             orders = new List<FacturaMesHijo>();
             var itemList = await CategoriaRepository.GetAllAsync();
+            porcentajaCategorias = itemList.Where(x => x.Porcentaje).ToList();
             categorias = itemList.Where(x => x.Isfijo).ToList();
 
 
@@ -117,7 +147,7 @@ namespace Condominio.Web.Components.SubPages
 
                 orders.Add(nuevoHijo);
             }
-
+            await Calcular();
             await ordersGrid.Reload();
 
         }

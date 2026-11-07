@@ -166,18 +166,45 @@ namespace Condominio.Infrastructure.Repositories
 
             try
             {
+                // 1. Guardamos la factura para obtener el ID
                 db.FacturaMes.Add(item);
                 await db.SaveChangesAsync();
 
+                var categoriasPorcentaje = db.CategoriasGasto.Where(x => x.Porcentaje == true).ToList();
+
+                // 2. Calculamos la base (solo los gastos fijos)
+                decimal montoBase = children
+      .Where(x => x.IdCategoria == null || !categoriasPorcentaje.Select(x => x.Id).Contains(x.IdCategoria.Value))
+      .Sum(c => (decimal)c.Monto);
+
+                decimal totalFactura = montoBase;
+
+                // 3. Calculamos los gastos de porcentaje
+                foreach (var child in children.Where(x => x.IdCategoria != null && categoriasPorcentaje.Select(x => x.Id).Contains(x.IdCategoria.Value)))
+                {
+                    // Calculamos el monto del porcentaje sobre la base
+                    var monto = categoriasPorcentaje.Where(x => x.Id == child.IdCategoria).Select(x => x.Monto).FirstOrDefault();
+                    decimal montoCalculado = montoBase * ((decimal)monto / 100.0m);
+
+                    // Asignamos el monto al hijo
+                    child.Monto = (double)montoCalculado;
+
+                    // Sumamos al total general
+                    totalFactura += montoCalculado;
+                }
+
+                // 4. Asignamos el ID a todos los hijos
                 foreach (var child in children)
                 {
                     child.FacturaMesId = item.Id;
                 }
 
+                // 5. Insertamos los hijos
                 db.FacturaMesHijo.AddRange(children);
                 await db.SaveChangesAsync();
 
-                item.MontoTotal = children.Sum(c => c.Monto);
+                // 6. Actualizamos el monto total de la factura maestra
+                item.MontoTotal = (double)totalFactura;
                 db.FacturaMes.Update(item);
                 await db.SaveChangesAsync();
 

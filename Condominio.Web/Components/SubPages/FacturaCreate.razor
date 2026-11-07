@@ -165,6 +165,15 @@
                             Style="width: 100%;">
                 <Columns>
 
+
+                    <div style="display: flex; justify-content: flex-end; align-items: center; background: white; padding: 12px 20px; border: 1px solid #e9ecef; border-bottom: none; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                        <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 600; color: #6c757d; margin-right: 10px;">
+                            Total Estimado:
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.H5" Style="font-weight: 800; color: #28a745; margin: 0;">
+                            @orders.Sum(x => x.Monto).ToString("N2") $
+                        </RadzenText>
+                    </div>
                     <!-- Categoría -->
                     <RadzenDataGridColumn Property="@nameof(FacturaMesHijo.IdCategoria)"
                                           Title="Cat. / Motivo"
@@ -228,6 +237,8 @@
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
+
+
 
                 <EmptyTemplate>
                     <div style="padding: 20px; text-align: center; color: #6c757d;">
