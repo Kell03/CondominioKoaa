@@ -147,7 +147,7 @@
 
                             <RadzenDataGridColumn TItem="FacturaMes" Title="Monto Recaudado" Width="170px">
                                 <Template Context="factura">
-                                    @(factura.MontoRecaudado ?? 0).ToString("N2") $
+                                    @((factura.MontoRecaudado ?? 0).ToString("N2")) $
 
                                 </Template>
                             </RadzenDataGridColumn>
