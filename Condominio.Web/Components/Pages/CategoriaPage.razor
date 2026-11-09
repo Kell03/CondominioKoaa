@@ -166,15 +166,31 @@
                                     </RadzenText>
                                 </RadzenStack>
                             </RadzenStack>
-
+                            <!-- Switch Porcentaje -->
                             <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
-                                <RadzenSwitch @bind-Value="selectedItem.Porcentaje" Name="PorcentajeInput" />
+                                <RadzenSwitch @bind-Value="selectedItem.Porcentaje"
+                                              Change="@(args => { if (args == true) selectedItem.EsResta = false; })"
+                                              Name="PorcentajeInput" />
                                 <RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
                                     <RadzenLabel Component="PorcentajeInput" Style="font-weight: 600; cursor: pointer;">Es Porcentaje</RadzenLabel>
                                     <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d;">Si está activo, el monto será un porcentaje de la factura.</RadzenText>
                                 </RadzenStack>
                             </RadzenStack>
 
+                            <!-- Switch Es Resta -->
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" AlignItems="AlignItems.Center">
+                                <RadzenSwitch @bind-Value="selectedItem.EsResta"
+                                              Change="@(args => { if (args == true) selectedItem.Porcentaje = false; })"
+                                              Name="EsRestaInput" />
+                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.2rem">
+                                    <RadzenLabel Component="EsRestaInput" Style="font-weight: 600; cursor: pointer; color: #dc3545;">
+                                        Es Resta
+                                    </RadzenLabel>
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d;">
+                                        Si está activo, este monto se restará del total de la factura.
+                                    </RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
 
                             <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar" Style="width: 100%; max-width: 400px;" />
                         </RadzenStack>

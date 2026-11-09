@@ -75,7 +75,7 @@ namespace Condominio.Web.Components.SubPages
 
             CancelarEdicion();
 
-            await Calcular();
+             Calcular();
 
             await ordersGrid.Reload();
 
@@ -95,7 +95,7 @@ namespace Condominio.Web.Components.SubPages
         private async Task DeleteRow(FacturaMesHijo item)
         {
             orders.Remove(item);
-            await Calcular();
+             Calcular();
             if (ordersGrid != null)
             {
                 await ordersGrid.Reload();
@@ -105,18 +105,46 @@ namespace Condominio.Web.Components.SubPages
         }
 
 
-        private async Task Calcular()
+        private void Calcular()
         {
-            foreach(var order in orders)
+            // 1. Calculamos la base: Solo sumamos los gastos que NO son porcentaje.
+            // (Los que son resta también se suman aquí, porque el porcentaje se calcula sobre el total bruto).
+            var montoBase = orders
+                .Where(o => {
+                    var cat = categorias.FirstOrDefault(c => c.Id == o.IdCategoria);
+                    return cat == null || !cat.Porcentaje; // Si no es porcentaje, entra a la base
+                })
+                .Sum(o => (decimal)o.Monto); // Suma bruta (aún no restamos)
+
+            // 2. Procesamos cada order
+            foreach (var order in orders)
             {
-                 var categoria = categorias.FirstOrDefault(c => c.Id == order.IdCategoria);
-                    if (categoria != null && categoria.Porcentaje)
+                var categoria = categorias.FirstOrDefault(c => c.Id == order.IdCategoria);
+
+                if (categoria != null)
+                {
+                    // ✅ Si es Porcentaje, calculamos su monto sobre la base bruta
+                    if (categoria.Porcentaje)
                     {
-                        // Calcula el monto basado en el porcentaje
-                        var montoBase = orders.Where(o => o.IdCategoria != order.IdCategoria).Sum(o => (decimal)o.Monto);
-                        order.Monto = (double)(montoBase * ((decimal)categoria.Monto / 100.0m));
+                        decimal montoCalculado = montoBase * ((decimal)categoria.Monto / 100.0m);
+
+                        // Si además de porcentaje, es resta, lo hacemos negativo
+                        if (categoria.EsResta)
+                        {
+                            montoCalculado = -montoCalculado;
+                        }
+
+                        order.Monto = (double)montoCalculado;
                     }
-                
+                    // ✅ Si es una resta fija (no porcentaje), solo lo convertimos a negativo
+                    else if (categoria.EsResta)
+                    {
+                        if (order.Monto > 0)
+                        {
+                            order.Monto = -order.Monto;
+                        }
+                    }
+                }
             }
 
             StateHasChanged();
@@ -147,7 +175,7 @@ namespace Condominio.Web.Components.SubPages
 
                 orders.Add(nuevoHijo);
             }
-            await Calcular();
+             Calcular();
             await ordersGrid.Reload();
 
         }

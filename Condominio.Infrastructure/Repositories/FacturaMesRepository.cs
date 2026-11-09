@@ -174,8 +174,8 @@ namespace Condominio.Infrastructure.Repositories
 
                 // 2. Calculamos la base (solo los gastos fijos)
                 decimal montoBase = children
-      .Where(x => x.IdCategoria == null || !categoriasPorcentaje.Select(x => x.Id).Contains(x.IdCategoria.Value))
-      .Sum(c => (decimal)c.Monto);
+     .Where(x => x.IdCategoria == null || !categoriasPorcentaje.Select(x => x.Id).Contains(x.IdCategoria.Value))
+     .Sum(c => (categoriasPorcentaje.FirstOrDefault(x => x.Id == c.IdCategoria)?.EsResta == true) ? -(decimal)c.Monto : (decimal)c.Monto);
 
                 decimal totalFactura = montoBase;
 
@@ -185,6 +185,10 @@ namespace Condominio.Infrastructure.Repositories
                     // Calculamos el monto del porcentaje sobre la base
                     var monto = categoriasPorcentaje.Where(x => x.Id == child.IdCategoria).Select(x => x.Monto).FirstOrDefault();
                     decimal montoCalculado = montoBase * ((decimal)monto / 100.0m);
+                    // ✅ AGREGAR ESTA LÍNEA (Si la categoría es EsResta, el porcentaje se vuelve negativo)
+                    if (categoriasPorcentaje.FirstOrDefault(x => x.Id == child.IdCategoria)?.EsResta == true) montoCalculado = -montoCalculado;
+
+
 
                     // Asignamos el monto al hijo
                     child.Monto = (double)montoCalculado;
