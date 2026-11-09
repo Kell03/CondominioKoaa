@@ -12,5 +12,8 @@ namespace Condominio.Domain.Entities
         public string Moneda { get; set; } = "USD";  // 'USD' o 'EUR'
         public DateTime FechaActualizacion { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
+
+        public decimal? TasaManual { get; set; }
+
     }
 }

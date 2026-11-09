@@ -67,7 +67,19 @@
 
                                         <RadzenDataGridColumn Property="@nameof(ConfiguracionMoneda.Moneda)" Title="Moneda" Width="160px" />
                                         <RadzenDataGridColumn Property="@nameof(ConfiguracionMoneda.FechaActualizacion)" Title="Fecha Actualizacion" Width="160px" />
-
+                                        <!-- ✅ NUEVA COLUMNA: Tasa Manual -->
+                                        <RadzenDataGridColumn TItem="ConfiguracionMoneda" Title="Tasa Manual" Width="120px">
+                                            <Template Context="moneda">
+                                                @if (moneda.TasaManual.HasValue || moneda.TasaManual != null)
+                                                {
+                                                    <span style="font-weight: 600; color: #28a745;">@moneda.TasaManual.Value.ToString("N2")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span style="color: #6c757d; font-style: italic;">Automática</span>
+                                                }
+                                            </Template>
+                                        </RadzenDataGridColumn>
 
                                     </Columns>
                                 </RadzenDataGrid>
@@ -105,6 +117,24 @@
 
                                 <RadzenRequiredValidator Component="RoleRequiredInput" Text="La moneda es requerida" />
                             </RadzenStack>
+
+
+                            <!-- ✅ NUEVO CAMPO: Tasa Manual -->
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                <RadzenLabel Component="TasaManualInput">
+                                    Forzar Tasa Manual (Opcional)
+                                </RadzenLabel>
+                                <RadzenNumeric Name="TasaManualInput"
+                                               @bind-Value="selectedItem.TasaManual"
+                                               TValue="decimal?"
+                                               Placeholder="Ej: 36.50"
+                                               Format="N2"
+                                               Style="width: 100%; max-width: 400px;" />
+                                <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d;">
+                                    Si dejas este campo vacío, el sistema usará la tasa automática del BCV.
+                                </RadzenText>
+                            </RadzenStack>
+
 
 
 

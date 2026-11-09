@@ -25,6 +25,7 @@ namespace Condominio.Web.Components.Pages
         private IEnumerable<Houses> HouseList;
         Payments Pago = new Payments();
         ConfiguracionCondominio? condominio = new ConfiguracionCondominio();
+        List<ConfiguracionMoneda>? monedas = new List<ConfiguracionMoneda>();
         string Moneda = "USD";
         private IEnumerable<Payments> PagosList;
         private List<string> MetodosPago = new List<string>
@@ -137,9 +138,26 @@ namespace Condominio.Web.Components.Pages
             await CheckAdminRole();
             allowRowSelectOnRowClick = true;
             condominio = await ConfiguracionCondominioRepository.ObtenerAsync();
-            var monedas = await MonedaRepository.GetAllAsync();
+            var monedasList = await MonedaRepository.GetAllAsync();
+            monedas = monedasList.ToList(); 
             Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
             rates = await BcvScraper.GetRatesAsync();
+
+            var configMonedaActual = monedas.FirstOrDefault(x => x.Moneda == Moneda);
+            if (configMonedaActual != null && configMonedaActual.TasaManual.HasValue && configMonedaActual.TasaManual > 0)
+            {
+                // ✅ Usamos ToUpper() por si la variable "Moneda" viene en minúsculas
+                var prop = rates.GetType().GetProperty(Moneda.ToUpper());
+                if (prop != null)
+                {
+                    prop.SetValue(rates, configMonedaActual.TasaManual.Value);
+                }
+                else
+                {
+                    // Si la reflexión falla, forzamos manualmente (asumiendo que solo usas USD)
+                    rates.USD = configMonedaActual.TasaManual.Value;
+                }
+            }
             await Task.Delay(5000);  // 2000 milisegundos = 2 segundos
             StateHasChanged();
 

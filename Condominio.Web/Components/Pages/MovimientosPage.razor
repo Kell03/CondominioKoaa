@@ -78,6 +78,7 @@
                                             LoadData="@((Radzen.LoadDataArgs args) => LoadData(args))"
                                             Data="@items"
                                             TItem="Movimientos"
+                                            Density="Density.Compact"
                                             ColumnWidth="300px"
                                             LogicalFilterOperator="LogicalFilterOperator.Or">
                                 <Columns>
@@ -85,13 +86,13 @@
                                     <!-- Fecha -->
                                     <RadzenDataGridColumn Property="@nameof(Movimientos.Fecha)"
                                     Title="Fecha"
-                                    Width="140px"
+                                    Width="80px"
                                     FormatString="{0:dd/MM/yyyy}" />
 
                                     <!-- Tipo (Entrada / Salida) -->
                                     <RadzenDataGridColumn Property="@nameof(Movimientos.Tipo)"
                                     Title="Tipo"
-                                    Width="100px">
+                                    Width="90px">
                                         <Template Context="item">
                                             @if (item.Tipo == TipoMovimiento.Entrada)
                                             {
@@ -145,7 +146,14 @@
                                             @(item.MontoBs.HasValue ? item.MontoBs.Value.ToString("N2") : "-")
                                         </Template>
                                     </RadzenDataGridColumn>
-
+                                    <RadzenDataGridColumn Property="@nameof(Movimientos.Tasa)"
+                                                          Title="Tasa"
+                                                          Width="80px"
+                                                          TextAlign="TextAlign.Right">
+                                        <Template Context="item">
+                                            @(item.Tasa.HasValue ? item.Tasa.Value.ToString("N2") : "-")
+                                        </Template>
+                                    </RadzenDataGridColumn>
                                     <!-- Opciones -->
 
 

@@ -75,6 +75,10 @@ namespace Condominio.Web.Components.Pages
 
            
                 selectedItem.FechaActualizacion = DateTime.Now;
+            if(selectedItem.TasaManual == 0 )
+            {
+                selectedItem.TasaManual = null;
+            }
                 await MonedaRepository.Update(selectedItem);
                 // Si tienes SaveChanges en el repositorio
                 await LoadUsers(); // Recargar la lista

@@ -83,40 +83,61 @@ namespace Condominio.Web.Components.Pages
             // 1. Lanzamos el scraper primero (en segundo plano)
             var tareaRates = BcvScraper.GetRatesAsync();
 
-            // 2. Cargamos la base de datos de forma SECUENCIAL (evita el error de "A second operation was started...")
+            // 2. Cargamos la base de datos
             items = (await gastosRepository.GetAllAsync()).AsQueryable();
             selectedEmployees = new List<Gasto>() { items.FirstOrDefault() };
 
             cuotasEspeciales = (await cuotaEspecialRepository.GetAllAsync()).ToList();
             facturas = (await facturaMesRepository.GetAllForGastosAsync()).ToList();
 
-            var monedas = await MonedaRepository.GetAllAsync();
-            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
+            // 3. Cargamos las monedas
+            var monedasList = await MonedaRepository.GetAllAsync();
+            var monedas = monedasList.ToList();
+            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault() ?? "USD";
 
             var fondoBs = await MovimientoRepository.GettavailablefundsAsync();
-            // 3. Esperamos que el scraper termine
+
+            // 4. Esperamos que el scraper termine
             try
             {
                 rates = await tareaRates;
+
                 if (rates == null)
                 {
                     Console.WriteLine("⚠️ rates es null, el BCV no respondió.");
                 }
                 else
                 {
-                    var prop = rates.GetType().GetProperty(Moneda);
-                    var tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
-                    // = fondoBs / tasa;
-                    fondoDisponible = fondoBs;
-                }
+                    // ✅ 5. AQUÍ APLICAMOS LA TASA MANUAL
+                    var configMonedaActual = monedas.FirstOrDefault(x => x.Moneda == Moneda);
+                    if (configMonedaActual != null && configMonedaActual.TasaManual.HasValue && configMonedaActual.TasaManual > 0)
+                    {
+                        var propManual = rates.GetType().GetProperty(Moneda.ToUpper());
+                        if (propManual != null)
+                        {
+                            propManual.SetValue(rates, configMonedaActual.TasaManual.Value);
+                        }
+                        else
+                        {
+                            rates.USD = configMonedaActual.TasaManual.Value;
+                        }
+                    }
 
+                    // 6. Calculamos la tasa final (ya sea la manual o la del BCV)
+                    var prop = rates.GetType().GetProperty(Moneda.ToUpper());
+                    var tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+
+                    // Si tienes la línea de fondoDisponible en dólares, usa la tasa aquí
+                    // fondoDisponible = fondoBs / tasa;
+
+                    fondoDisponible = fondoBs; // (Dejé tu línea original)
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error en BcvScraper: {ex.Message}");
             }
         }
-
 
         private async Task SaveItem()
         {

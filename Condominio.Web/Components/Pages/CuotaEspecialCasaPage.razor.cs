@@ -29,6 +29,7 @@ namespace Condominio.Web.Components.Pages
         };
         private BcvRates rates;
         string Moneda = "USD";
+        List<ConfiguracionMoneda>? monedas = new List<ConfiguracionMoneda>();
 
         private string _montoBsStr = "0,00";
         private string _montoUsdStr = "0,00";
@@ -134,7 +135,28 @@ namespace Condominio.Web.Components.Pages
             await CheckAdminRole();
             allowRowSelectOnRowClick = true;
             Cuotas = await CuotaEspecialCasaRepository.GetAllAsync();
+            // ✅ 1. CARGAMOS LA MONEDA Y VERIFICAMOS LA TASA MANUAL
+            var monedasList = await MonedaRepository.GetAllAsync();
+            monedas = monedasList.ToList();
+            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault() ?? "USD";
+
+            // ✅ 2. OBTENEMOS LA TASA DEL BCV
             rates = await BcvScraper.GetRatesAsync();
+
+            // ✅ 3. SI HAY TASA MANUAL, LA USAMOS
+            var configMonedaActual = monedas.FirstOrDefault(x => x.Moneda == Moneda);
+            if (configMonedaActual != null && configMonedaActual.TasaManual.HasValue && configMonedaActual.TasaManual > 0)
+            {
+                var prop = rates.GetType().GetProperty(Moneda.ToUpper());
+                if (prop != null)
+                {
+                    prop.SetValue(rates, configMonedaActual.TasaManual.Value);
+                }
+                else
+                {
+                    rates.USD = configMonedaActual.TasaManual.Value;
+                }
+            }
             await Task.Delay(5000);
             StateHasChanged();
 

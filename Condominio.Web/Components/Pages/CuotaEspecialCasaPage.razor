@@ -362,7 +362,11 @@
                                     <strong>Banco:</strong> Banco de Venezuela
                                 </RadzenText>
                                 <RadzenText TextStyle="TextStyle.Body2" Style="color: #495057; margin: 0;">
-                                    <strong>Tasa:</strong>   @Pago.Tasa?.ToString() Bs (@Moneda)
+                                    <strong>Tasa:</strong> @Pago.Tasa?.ToString("N2") Bs (@Moneda)
+                                    @if (monedas.Select(x => x.TasaManual).FirstOrDefault() > 0)
+                                    {
+                                        <span style="color: #28a745; margin-left: 5px;">(Fijada por el condominio)</span>
+                                    }
                                 </RadzenText>
                             </RadzenStack>
                         </RadzenCard>
@@ -648,6 +652,7 @@
                 pago.Monto = recibo.MontoTotal;
                 pago.MontoBs = recibo.MontoTotal * tasa;
                 pago.CuotaEspecialCasaId = recibo.Id;
+                pago.Tasa = tasa;
                 pagos.Add(pago);
             }
 

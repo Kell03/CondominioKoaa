@@ -26,12 +26,20 @@
         <RadzenLabel Text="Referencia Bancaria" Component="RefInput">
             Referencia <span style="color: red;">*</span>
         </RadzenLabel>
-        <RadzenTextBox Name="RefInput" @bind-Value="Referencia" Placeholder="Ej: 12345678" Style="width: 100%;" />
+        <RadzenTextBox Name="RefInput"
+                       @bind-Value="Referencia"
+                       Immediate="true"
+                       Placeholder="Ej: 12345678"
+                       Style="width: 100%;" />
     </RadzenStack>
 
     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
         <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="@(() => DialogService.Close(null))" />
-        <RadzenButton Text="Confirmar" ButtonStyle="ButtonStyle.Success" Click="@(() => DialogService.Close(Referencia))" />
+
+        <!-- ✅ Agregamos Disabled y cambiamos el Click a un método -->
+        <RadzenButton Text="Confirmar" ButtonStyle="ButtonStyle.Success"
+                      Disabled="@(string.IsNullOrWhiteSpace(Referencia))"
+                      Click="@ConfirmarPago" />
     </RadzenStack>
 </RadzenStack>
 
@@ -42,4 +50,13 @@
     [Parameter] public decimal MontoTotalUsd { get; set; }
 
     private string Referencia { get; set; } = "";
+
+    // ✅ Método que valida y cierra
+    private void ConfirmarPago()
+    {
+        if (string.IsNullOrWhiteSpace(Referencia))
+            return;
+
+        DialogService.Close(Referencia);
+    }
 }
