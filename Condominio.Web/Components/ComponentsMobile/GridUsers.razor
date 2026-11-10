@@ -50,18 +50,19 @@
             </div>
 
             <!-- 3. Botones de Acción -->
-            @if (IsAdmin)
-            {
+            
                 <div style="margin-top: 15px; display: flex; gap: 10px;">
                     <RadzenButton Text="Editar" Icon="edit" ButtonStyle="ButtonStyle.Info"
                                   Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
                                   Click="@(() => OnEditar.InvokeAsync(usuario))" />
-
+                @if (IsAdmin)
+                {
                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger"
                                   Style="border-radius: 8px;" Size="ButtonSize.Small"
                                   Click="@(() => OnEliminar.InvokeAsync(usuario))" />
+                }
                 </div>
-            }
+            
 
         </RadzenCard>
     }
