@@ -251,14 +251,17 @@
     private async Task LoadMovimientos()
     {
         Movimientos = await MovimientoRepository.GetAllAsync();
-        var totalMenosUsd = Movimientos.Where(x => x.IdGasto != null).Sum(x => x.MontoBs);
-        var totalmasUsd = Movimientos.Where(x => x.IdGasto == null).Sum(x => x.MontoBs);
-        movimientoTotalBs = (double)((totalmasUsd - totalMenosUsd) ?? 0);
+        var totalMenosBs = Movimientos.Where(x => x.IdGasto != null).Sum(x => x.MontoBs);
+        var totalmasBs = Movimientos.Where(x => x.IdGasto == null).Sum(x => x.MontoBs);
+        movimientoTotalBs = (double)((totalmasBs - totalMenosBs) ?? 0);
 
         var prop = rates.GetType().GetProperty(Moneda);
         tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
 
-        movimientoTotalUsd = (double)Math.Round((decimal)movimientoTotalBs / (decimal)tasa, 2);
+
+        var totalMenosUsd = Movimientos.Where(x => x.IdGasto != null).Sum(x => x.MontoBs / x.Tasa);
+        var totalmasUsd = Movimientos.Where(x => x.IdGasto == null).Sum(x => x.MontoBs / x.Tasa);
+        movimientoTotalUsd = (double)((totalmasUsd - totalMenosUsd) ?? 0);
 
     }
     private async Task LoadDataCuotas()
