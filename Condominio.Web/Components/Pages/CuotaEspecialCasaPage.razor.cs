@@ -202,21 +202,44 @@ namespace Condominio.Web.Components.Pages
 
 
 
-        private async Task EditUser(CuotaEspecialCasa item)
+        rivate async Task EditUser(CuotaEspecialCasa item)
         {
             if (isAdmin == true)
             {
                 return;
             }
 
-            var prop = rates.GetType().GetProperty(Moneda);
-            Pago.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+            Pago = new Payments();
+
+            // ✅ 1. Buscamos la configuración de la moneda actual en la base de datos
+            var monedaActual = monedas?.FirstOrDefault(x => x.Moneda == Moneda);
+
+            // ✅ 2. Si hay una TasaManual configurada (no es nula y es mayor a 0), la usamos
+            if (monedaActual != null && monedaActual.TasaManual.HasValue && monedaActual.TasaManual > 0)
+            {
+                Pago.Tasa = monedaActual.TasaManual.Value;
+            }
+            else
+            {
+                // ✅ 3. Si no hay manual, usamos el objeto rates (BCV) con ToUpper() para evitar nulos
+                var prop = rates?.GetType().GetProperty(Moneda.ToUpper());
+
+                if (prop != null && rates != null)
+                {
+                    Pago.Tasa = (decimal)prop.GetValue(rates);
+                }
+                else
+                {
+                    Pago.Tasa = 0;
+                    Console.WriteLine("⚠️ No se pudo obtener la tasa del BCV ni la manual.");
+                }
+            }
+
             Pago.MontoBs = 0;
             await LoadPagos(item.Id);
             selectedItem = item;
             selectedIndex = 1;
             StateHasChanged();
-            await Task.CompletedTask;
         }
 
         #region Pagos 
