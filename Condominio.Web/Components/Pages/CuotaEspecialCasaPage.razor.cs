@@ -49,7 +49,7 @@ namespace Condominio.Web.Components.Pages
         private string _filtroGlobal = "";
 
 
-
+        private decimal tasaManualActual = 0;
         private async Task ChangePage(int page)
         {
             if (page < 1 || page > TotalPages) return;
@@ -135,34 +135,30 @@ namespace Condominio.Web.Components.Pages
             await CheckAdminRole();
             allowRowSelectOnRowClick = true;
             Cuotas = await CuotaEspecialCasaRepository.GetAllAsync();
-            // ✅ 1. CARGAMOS LA MONEDA Y VERIFICAMOS LA TASA MANUAL
+
+            // ✅ 1. CARGAMOS LA MONEDA
             var monedasList = await MonedaRepository.GetAllAsync();
             monedas = monedasList.ToList();
             Moneda = monedas.Select(x => x.Moneda).FirstOrDefault() ?? "USD";
 
-            // ✅ 2. OBTENEMOS LA TASA DEL BCV
+            // ✅ 2. OBTENEMOS LA TASA DEL BCV (sin modificarla)
             rates = await BcvScraper.GetRatesAsync();
 
-            // ✅ 3. SI HAY TASA MANUAL, LA USAMOS
+            // ✅ 3. GUARDAMOS LA TASA MANUAL EN UNA VARIABLE APARTE
             var configMonedaActual = monedas.FirstOrDefault(x => x.Moneda == Moneda);
             if (configMonedaActual != null && configMonedaActual.TasaManual.HasValue && configMonedaActual.TasaManual > 0)
             {
-                var prop = rates.GetType().GetProperty(Moneda.ToUpper());
-                if (prop != null)
-                {
-                    prop.SetValue(rates, configMonedaActual.TasaManual.Value);
-                }
-                else
-                {
-                    rates.USD = configMonedaActual.TasaManual.Value;
-                }
+                tasaManualActual = configMonedaActual.TasaManual.Value;
             }
+            else
+            {
+                tasaManualActual = 0; // Si es 0, el sistema sabrá que debe usar el BCV
+            }
+
             await Task.Delay(5000);
             StateHasChanged();
-
         }
 
-       
 
         private async Task CreateNewItem()
         {
@@ -211,19 +207,15 @@ namespace Condominio.Web.Components.Pages
 
             Pago = new Payments();
 
-            // ✅ 1. Buscamos la configuración de la moneda actual en la base de datos
-            var monedaActual = monedas?.FirstOrDefault(x => x.Moneda == Moneda);
-
-            // ✅ 2. Si hay una TasaManual configurada (no es nula y es mayor a 0), la usamos
-            if (monedaActual != null && monedaActual.TasaManual.HasValue && monedaActual.TasaManual > 0)
+            // ✅ 1. Si hay tasa manual, la usamos
+            if (tasaManualActual > 0)
             {
-                Pago.Tasa = monedaActual.TasaManual.Value;
+                Pago.Tasa = tasaManualActual;
             }
             else
             {
-                // ✅ 3. Si no hay manual, usamos el objeto rates (BCV) con ToUpper() para evitar nulos
+                // ✅ 2. Si no hay manual, usamos la del BCV (el objeto rates está intacto)
                 var prop = rates?.GetType().GetProperty(Moneda.ToUpper());
-
                 if (prop != null && rates != null)
                 {
                     Pago.Tasa = (decimal)prop.GetValue(rates);
@@ -231,7 +223,6 @@ namespace Condominio.Web.Components.Pages
                 else
                 {
                     Pago.Tasa = 0;
-                    Console.WriteLine("⚠️ No se pudo obtener la tasa del BCV ni la manual.");
                 }
             }
 
@@ -240,6 +231,7 @@ namespace Condominio.Web.Components.Pages
             selectedItem = item;
             selectedIndex = 1;
             StateHasChanged();
+            await Task.CompletedTask;
         }
 
         #region Pagos 

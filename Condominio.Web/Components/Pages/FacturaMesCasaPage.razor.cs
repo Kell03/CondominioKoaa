@@ -50,9 +50,10 @@ namespace Condominio.Web.Components.Pages
         private int currentPage = 1;
         private int TotalPages => (int)Math.Ceiling((double)totalFacturas / 10);
         private string _filtroGlobal = "";
+        private decimal tasaManualActual = 0;
 
 
-       
+
         private async Task ChangePage(int page)
         {
             if (page < 1 || page > TotalPages) return;
@@ -138,33 +139,30 @@ namespace Condominio.Web.Components.Pages
             await CheckAdminRole();
             allowRowSelectOnRowClick = true;
             condominio = await ConfiguracionCondominioRepository.ObtenerAsync();
+
             var monedasList = await MonedaRepository.GetAllAsync();
-            monedas = monedasList.ToList(); 
-            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault();
+            monedas = monedasList.ToList();
+            Moneda = monedas.Select(x => x.Moneda).FirstOrDefault() ?? "USD";
+
+            // ✅ 1. Obtenemos la tasa del BCV (usando el caché del scraper)
             rates = await BcvScraper.GetRatesAsync();
 
+            // ✅ 2. Guardamos la tasa manual en una variable APARTE (no tocamos "rates")
             var configMonedaActual = monedas.FirstOrDefault(x => x.Moneda == Moneda);
             if (configMonedaActual != null && configMonedaActual.TasaManual.HasValue && configMonedaActual.TasaManual > 0)
             {
-                // ✅ Usamos ToUpper() por si la variable "Moneda" viene en minúsculas
-                var prop = rates.GetType().GetProperty(Moneda.ToUpper());
-                if (prop != null)
-                {
-                    prop.SetValue(rates, configMonedaActual.TasaManual.Value);
-                }
-                else
-                {
-                    // Si la reflexión falla, forzamos manualmente (asumiendo que solo usas USD)
-                    rates.USD = configMonedaActual.TasaManual.Value;
-                }
+                tasaManualActual = configMonedaActual.TasaManual.Value;
             }
-            await Task.Delay(5000);  // 2000 milisegundos = 2 segundos
+            else
+            {
+                tasaManualActual = 0; // 0 significa que usaremos la del BCV
+            }
+
+            await Task.Delay(5000);
             StateHasChanged();
-
-
         }
 
-      
+
 
         private async Task CheckAdminRole()
         {
@@ -184,35 +182,25 @@ namespace Condominio.Web.Components.Pages
 
         private async Task EditUser(FacturaMesCasa item)
         {
-            if(isAdmin == true)
-            {
-                return;
-            }
+            if (isAdmin == true) return;
+
             Pago = new Payments();
 
-            // ✅ 1. Buscamos la configuración de la moneda actual
-            var monedaActual = monedas?.FirstOrDefault(x => x.Moneda == Moneda);
-
-            // ✅ 2. Si hay una TasaManual configurada (no es nula y es > 0), usamos esa
-            if (monedaActual != null && monedaActual.TasaManual.HasValue && monedaActual.TasaManual > 0)
+            // ✅ Si hay tasa manual, la usamos. Si no, usamos el BCV (que está intacto en `rates`)
+            if (tasaManualActual > 0)
             {
-                Pago.Tasa = monedaActual.TasaManual.Value;
+                Pago.Tasa = tasaManualActual;
             }
             else
             {
-                // ✅ 3. Si no hay manual, usamos el objeto rates (que debería tener la del BCV)
-                // Aseguramos que el nombre de la propiedad esté en mayúsculas
                 var prop = rates?.GetType().GetProperty(Moneda.ToUpper());
-
                 if (prop != null && rates != null)
                 {
                     Pago.Tasa = (decimal)prop.GetValue(rates);
                 }
                 else
                 {
-                    // ✅ 4. Si por alguna razón falla, dejamos la tasa en 0 o lanzamos un log
                     Pago.Tasa = 0;
-                    Console.WriteLine("⚠️ No se pudo obtener la tasa del BCV ni la manual.");
                 }
             }
 
@@ -221,11 +209,7 @@ namespace Condominio.Web.Components.Pages
             selectedItem = item;
             selectedIndex = 1;
             StateHasChanged();
-            await Task.CompletedTask;
         }
-
-
-
         #region Pagos 
 
         private async Task SavePago()
