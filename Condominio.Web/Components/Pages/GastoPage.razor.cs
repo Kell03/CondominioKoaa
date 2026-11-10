@@ -35,6 +35,7 @@ namespace Condominio.Web.Components.Pages
         string Moneda = "USD";
         private bool _esMobile = false;
         private bool _cargando = true;
+        private decimal tasaManualActual = 0;
 
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -102,36 +103,18 @@ namespace Condominio.Web.Components.Pages
             {
                 rates = await tareaRates;
 
-                if (rates == null)
+                // ✅ 5. GUARDAMOS LA TASA MANUAL EN UNA VARIABLE APARTE (NO tocamos rates)
+                var configMonedaActual = monedas.FirstOrDefault(x => x.Moneda == Moneda);
+                if (configMonedaActual != null && configMonedaActual.TasaManual.HasValue && configMonedaActual.TasaManual > 0)
                 {
-                    Console.WriteLine("⚠️ rates es null, el BCV no respondió.");
+                    tasaManualActual = configMonedaActual.TasaManual.Value;
                 }
                 else
                 {
-                    // ✅ 5. AQUÍ APLICAMOS LA TASA MANUAL
-                    var configMonedaActual = monedas.FirstOrDefault(x => x.Moneda == Moneda);
-                    if (configMonedaActual != null && configMonedaActual.TasaManual.HasValue && configMonedaActual.TasaManual > 0)
-                    {
-                        var propManual = rates.GetType().GetProperty(Moneda.ToUpper());
-                        if (propManual != null)
-                        {
-                            propManual.SetValue(rates, configMonedaActual.TasaManual.Value);
-                        }
-                        else
-                        {
-                            rates.USD = configMonedaActual.TasaManual.Value;
-                        }
-                    }
-
-                    // 6. Calculamos la tasa final (ya sea la manual o la del BCV)
-                    var prop = rates.GetType().GetProperty(Moneda.ToUpper());
-                    var tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
-
-                    // Si tienes la línea de fondoDisponible en dólares, usa la tasa aquí
-                    // fondoDisponible = fondoBs / tasa;
-
-                    fondoDisponible = fondoBs; // (Dejé tu línea original)
+                    tasaManualActual = 0; // 0 significa que usaremos la del BCV
                 }
+
+                fondoDisponible = fondoBs;
             }
             catch (Exception ex)
             {
@@ -315,9 +298,17 @@ namespace Condominio.Web.Components.Pages
                  selectedItem = new Gasto();
 
                 selectedItem.FechaPago = DateTime.Today;
-                var prop = rates.GetType().GetProperty(Moneda);
-                selectedItem.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
 
+                if (tasaManualActual > 0)
+                {
+                    selectedItem.Tasa = tasaManualActual;
+                }
+                else
+                {
+                    var prop = rates?.GetType().GetProperty(Moneda.ToUpper());
+                    selectedItem.Tasa = prop != null && rates != null ? (decimal)prop.GetValue(rates) : 0m;
+                }
+              
                 selectedIndex = 1;
                 StateHasChanged();
                 await Task.CompletedTask;
@@ -440,8 +431,15 @@ namespace Condominio.Web.Components.Pages
 
             selectedItem = new Gasto();
             selectedItem.FechaPago = DateTime.Today;
-            var prop = rates.GetType().GetProperty(Moneda);
-            selectedItem.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+            if (tasaManualActual > 0)
+            {
+                selectedItem.Tasa = tasaManualActual;
+            }
+            else
+            {
+                var prop = rates?.GetType().GetProperty(Moneda.ToUpper());
+                selectedItem.Tasa = prop != null && rates != null ? (decimal)prop.GetValue(rates) : 0m;
+            }
             origenSeleccionado = "Factura";
             selectedItem.FacturaMesHijoId = null;
             detallesFactura.Clear();
@@ -476,8 +474,15 @@ namespace Condominio.Web.Components.Pages
 
             selectedItem = new Gasto();
             selectedItem.FechaPago = DateTime.Today;
-            var prop = rates.GetType().GetProperty(Moneda);
-            selectedItem.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+            if (tasaManualActual > 0)
+            {
+                selectedItem.Tasa = tasaManualActual;
+            }
+            else
+            {
+                var prop = rates?.GetType().GetProperty(Moneda.ToUpper());
+                selectedItem.Tasa = prop != null && rates != null ? (decimal)prop.GetValue(rates) : 0m;
+            }
             origenSeleccionado = "Cuota";
             selectedItem.CuotaEspecialId = cuotaEspecial.Id;
             if (!selectedItem.CuotaEspecialId.HasValue)
@@ -514,8 +519,15 @@ namespace Condominio.Web.Components.Pages
 
             selectedItem = new Gasto();
             selectedItem.FechaPago = DateTime.Today;
-            var prop = rates.GetType().GetProperty(Moneda);
-            selectedItem.Tasa = prop != null ? (decimal)prop.GetValue(rates) : 0m;
+            if (tasaManualActual > 0)
+            {
+                selectedItem.Tasa = tasaManualActual;
+            }
+            else
+            {
+                var prop = rates?.GetType().GetProperty(Moneda.ToUpper());
+                selectedItem.Tasa = prop != null && rates != null ? (decimal)prop.GetValue(rates) : 0m;
+            }
             origenSeleccionado = "Otro";
 
             selectedIndex = 2;
