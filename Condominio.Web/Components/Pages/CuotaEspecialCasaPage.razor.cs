@@ -202,7 +202,7 @@ namespace Condominio.Web.Components.Pages
 
 
 
-        rivate async Task EditUser(CuotaEspecialCasa item)
+        private async Task EditUser(CuotaEspecialCasa item)
         {
             if (isAdmin == true)
             {
