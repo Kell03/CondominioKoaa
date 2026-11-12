@@ -332,6 +332,7 @@ namespace Condominio.Infrastructure.Repositories
                     FacturaMesCasaId = pago.FacturaMesCasaId,
                     Monto = pago.Monto,
                     MontoBs = pago.MontoBs,
+                    MontoEfectivo = pago.MontoEfectivo,
                     Tasa = pago.Tasa,
                     MetodoPago = pago.MetodoPago,
                     Referencia = pago.Referencia,
@@ -521,9 +522,13 @@ namespace Condominio.Infrastructure.Repositories
                 throw new Exception("Factura maestra no encontrada");
 
             // 3. Actualizamos los montos
-            facturaMesCasa.MontoPagado += payment.Monto;
+            // ✅ 1. Calculamos el total que pagó el residente (Monto + Efectivo)
+            decimal totalPagado = payment.Monto + (payment.MontoEfectivo ?? 0);
+
+            // ✅ 2. Sumamos ese total a la factura de la casa y a la factura maestra
+            facturaMesCasa.MontoPagado += totalPagado;
             facturaMesCasa.SaldoPendiente = facturaMesCasa.MontoTotal - facturaMesCasa.MontoPagado;
-            factura.MontoRecaudado += payment.Monto;
+            factura.MontoRecaudado += totalPagado;
 
             facturaMesCasa.Estado = facturaMesCasa.SaldoPendiente <= 0 ? "Confirmada" : "Pago Parcial";
 
@@ -538,7 +543,7 @@ namespace Condominio.Infrastructure.Repositories
             else
             {
                 string body = (string.IsNullOrEmpty(factura.Motivo)) ? $"{factura.NombreMes}{factura.Year}" : $"{factura.Motivo}";
-                mensaje = $"Pago confirmado · {factura.Motivo} · Ref: {payment.Referencia}";
+                mensaje = $"Pago confirmado · {body} · Ref: {payment.Referencia}";
                 titulo = "Factura: Pago Confirmado";
             }
 
@@ -555,7 +560,8 @@ namespace Condominio.Infrastructure.Repositories
     tasa: payment.Tasa,
     idCasa: facturaMesCasa.HouseId,
     factura: factura,
-    cuota: null
+    cuota: null,
+    montoEfectivo: payment.MontoEfectivo
 );
 
 

@@ -121,7 +121,8 @@ namespace Condominio.Infrastructure.Repositories
             FacturaMes? factura = null,
             CuotaEspecial? cuota = null,
             int? idCasa = null,
-            Gasto? gasto = null)
+            Gasto? gasto = null,
+            decimal? montoEfectivo = null)
         {
             TipoMovimiento tipo;
 
@@ -136,6 +137,7 @@ namespace Condominio.Infrastructure.Repositories
                 Tipo = tipo,
                 Monto = monto,
                 MontoBs = montoBs,
+                MontoEfectivo = montoEfectivo,
                 Tasa = tasa,
                 IdCasa = idCasa,
                 IdFactura = factura?.Id,

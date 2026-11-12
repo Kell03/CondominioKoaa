@@ -52,6 +52,8 @@ namespace Condominio.Web.Components.Pages
         private string _filtroGlobal = "";
         private decimal tasaManualActual = 0;
 
+        private bool efectivo = false;
+
 
 
         private async Task ChangePage(int page)
@@ -237,7 +239,7 @@ namespace Condominio.Web.Components.Pages
      });
 
 
-            
+
 
             Pago = new Payments();
             Pago.Tasa = rates.EUR;
@@ -460,6 +462,22 @@ namespace Condominio.Web.Components.Pages
             else if (!isSelected && invoices.Contains(item))
             {
                 invoices.Remove(item);
+            }
+        }
+
+
+        private void OnMetodoPagoChanged(object value)
+        {
+            // Si el valor seleccionado es "Efectivo"
+            if (value?.ToString() == "Efectivo")
+            {
+                efectivo = true;
+                StateHasChanged();
+            }
+            else
+            {
+                efectivo = false;
+                StateHasChanged();
             }
         }
     }

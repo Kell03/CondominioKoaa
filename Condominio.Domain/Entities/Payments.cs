@@ -14,9 +14,12 @@ namespace Condominio.Domain.Entities
         public int? CuotaEspecialCasaId { get; set; }
 
         // ✅ DATOS DEL PAGO
-        public decimal Monto { get; set; }  
+        public decimal Monto { get; set; }  = 0;
         public decimal? Tasa { get; set; }
         public decimal? MontoBs { get; set; } = null;
+
+        public decimal? MontoEfectivo { get; set; }
+
         public string? Referencia { get; set; }
         public string? MetodoPago { get; set; }
         public string Estado { get; set; } = "Pendiente";

@@ -14,6 +14,9 @@ namespace Condominio.Domain.Entities
         public string Descripcion { get; set; } = string.Empty;
         public decimal Monto { get; set; }
         public decimal? MontoBs { get; set; }
+
+        public decimal? MontoEfectivo { get; set; }
+
         public decimal? Tasa { get; set; }
         public int? IdCasa { get; set; }
         public int? IdFactura { get; set; }
