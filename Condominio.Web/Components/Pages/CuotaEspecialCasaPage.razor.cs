@@ -25,7 +25,8 @@ namespace Condominio.Web.Components.Pages
         private IEnumerable<Payments> PagosList;
         private List<string> MetodosPago = new List<string>
         {
-        "Pago Movil"
+        "Pago Movil",
+        "Efectivo"
         };
         private BcvRates rates;
         string Moneda = "USD";
@@ -50,6 +51,8 @@ namespace Condominio.Web.Components.Pages
 
 
         private decimal tasaManualActual = 0;
+        private bool efectivo = false;
+
         private async Task ChangePage(int page)
         {
             if (page < 1 || page > TotalPages) return;
@@ -417,11 +420,24 @@ namespace Condominio.Web.Components.Pages
         #endregion
 
 
+        private void OnMetodoPagoChanged(object value)
+        {
+            // Si el valor seleccionado es "Efectivo"
+            if (value?.ToString() == "Efectivo")
+            {
+                efectivo = true;
+                StateHasChanged();
+            }
+            else
+            {
+                efectivo = false;
+                StateHasChanged();
+            }
+        }
 
-      
 
 
-       
+
 
 
     }

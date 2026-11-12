@@ -129,11 +129,20 @@
 
                                     <!-- Monto -->
                                     <RadzenDataGridColumn Property="@nameof(Movimientos.Monto)"
-                                    Title="Monto ($)"
-                                    Width="120px"
-                                    TextAlign="TextAlign.Right">
+                                                          Title="Monto ($)"
+                                                          Width="130px"
+                                                          TextAlign="TextAlign.Right">
                                         <Template Context="item">
-                                            @item.Monto.ToString("N2")
+                                            <!-- Monto Principal -->
+                                            <div>@item.Monto.ToString("N2") $</div>
+
+                                            <!-- ✅ Monto en Efectivo (Solo si existe y sin colores) -->
+                                            @if (item.MontoEfectivo > 0)
+                                            {
+                                                <div style="font-size: 11px; color: #6c757d;">
+                                                    (Efectivo: @item.MontoEfectivo.Value.ToString("N2") $)
+                                                </div>
+                                            }
                                         </Template>
                                     </RadzenDataGridColumn>
 

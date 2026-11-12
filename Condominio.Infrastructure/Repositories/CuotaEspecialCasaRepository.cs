@@ -258,6 +258,7 @@ namespace Condominio.Infrastructure.Repositories
                     CuotaEspecialCasaId = pago.CuotaEspecialCasaId,
                     Monto = pago.Monto,
                     MontoBs = pago.MontoBs,
+                    MontoEfectivo = pago.MontoEfectivo,
                     Tasa = pago.Tasa,
                     MetodoPago = pago.MetodoPago,
                     Referencia = pago.Referencia,
@@ -434,9 +435,11 @@ namespace Condominio.Infrastructure.Repositories
             if (cuota == null)
                 throw new Exception("Cuota no encontrada");
 
-            cuotaCasa.MontoPagado += payment.Monto;
+            decimal totalPagado = payment.Monto + (payment.MontoEfectivo ?? 0);
+
+            cuotaCasa.MontoPagado += totalPagado;
             cuotaCasa.SaldoPendiente = cuotaCasa.MontoTotal - cuotaCasa.MontoPagado;
-            cuota.MontoRecaudado += payment.Monto;
+            cuota.MontoRecaudado += totalPagado;
             cuotaCasa.Estado = cuotaCasa.SaldoPendiente <= 0
                 ? EstadoCuotaCasa.Confirmada
                 : EstadoCuotaCasa.PagoParcial;
@@ -459,6 +462,7 @@ namespace Condominio.Infrastructure.Repositories
                 db,
                 monto: payment.Monto,
                 montoBs: payment.MontoBs,
+                montoEfectivo: payment.MontoEfectivo,
                 tasa: payment.Tasa,
                 idCasa: cuotaCasa.HouseId,
                 cuota: cuota,
