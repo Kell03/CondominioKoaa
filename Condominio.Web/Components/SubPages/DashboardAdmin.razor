@@ -18,21 +18,30 @@
 
     <!-- ✅ TARJETAS DE RESUMEN (KPIs) -->
     <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
-        <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #28a745;">
-            <RadzenStack Orientation="Orientation.Horizontal" Gap="2rem" Wrap="FlexWrap.Wrap">
+        <RadzenCard Style="flex: 1 1 250px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #28a745;">
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="1.5rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
 
-                <!-- Saldo en Bancos -->
+                <!-- ✅ SALDO EN BANCOS -->
                 <RadzenStack Gap="0.2rem">
-                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo en Bancos (USD)</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">
+                        <RadzenIcon Icon="account_balance" Style="font-size: 16px; margin-right: 4px; vertical-align: middle;" />
+                        Saldo en Bancos (USD)
+                    </RadzenText>
                     <RadzenText TextStyle="TextStyle.H3" Style="font-weight: bold; color: #28a745; margin: 0;">
                         @movimientoTotalUsd.ToString("N2") $
                     </RadzenText>
                 </RadzenStack>
 
-                <!-- Saldo en Efectivo -->
+                <!-- ✅ SEPARADOR (La barra) -->
+                <RadzenText TextStyle="TextStyle.H3" Style="color: #ccc; margin: 0; font-weight: 300;">/</RadzenText>
+
+                <!-- ✅ SALDO EN EFECTIVO -->
                 <RadzenStack Gap="0.2rem">
-                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">Saldo en Efectivo</RadzenText>
-                    <RadzenText TextStyle="TextStyle.H3" Style="font-weight: bold; color: #28a745; margin: 0;">
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #666; font-weight: 600;">
+                        <RadzenIcon Icon="payments" Style="font-size: 16px; margin-right: 4px; vertical-align: middle;" />
+                        Saldo en Efectivo
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.H3" Style="font-weight: bold; color: #6f42c1; margin: 0;">
                         @movimientoTotalEfectivo.ToString("N2") $
                     </RadzenText>
                 </RadzenStack>

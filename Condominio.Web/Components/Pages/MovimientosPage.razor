@@ -133,15 +133,26 @@
                                                           Width="130px"
                                                           TextAlign="TextAlign.Right">
                                         <Template Context="item">
-                                            <!-- Monto Principal -->
-                                            <div>@item.Monto.ToString("N2") $</div>
-
-                                            <!-- ✅ Monto en Efectivo (Solo si existe y sin colores) -->
-                                            @if (item.MontoEfectivo > 0)
+                                            @if (item.Monto > 0)
                                             {
-                                                <div style="font-size: 11px; color: #6c757d;">
-                                                    (Efectivo: @item.MontoEfectivo.Value.ToString("N2") $)
+                                                <!-- ✅ Si hay transferencia, mostramos el monto normal -->
+                                                <div style="font-weight: 600;">
+                                                    @item.Monto.ToString("N2") $
                                                 </div>
+                                            }
+                                            else if (item.MontoEfectivo > 0)
+                                            {
+                                                <!-- ✅ Si es efectivo, lo mostramos como principal con un pequeño indicativo -->
+                                                <div style="font-weight: 600;">
+                                                    @item.MontoEfectivo.Value.ToString("N2") $
+                                                </div>
+                                                <div style="font-size: 11px; color: #6c757d;">
+                                                    (Efectivo)
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div style="font-weight: 600;">0.00 $</div>
                                             }
                                         </Template>
                                     </RadzenDataGridColumn>

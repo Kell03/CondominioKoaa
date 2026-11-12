@@ -42,15 +42,21 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px solid #e9ecef;">
                 <div>
                     <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; font-weight: 600;">Monto ($)</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body1" Style="@($"font-weight: 800; margin: 0; color: {(item.Tipo == TipoMovimiento.Entrada ? "#28a745" : "#dc3545")};")">
-                        @(item.Tipo == TipoMovimiento.Entrada ? "+" : "-")@item.Monto.ToString("N2") $
-                    </RadzenText>
 
-                    <!-- ✅ ESTA ES LA ÚNICA LÍNEA QUE DEBES AGREGAR -->
+                    <!-- ✅ Si hay efectivo, mostramos el efectivo. Si no, mostramos el monto normal -->
                     @if (item.MontoEfectivo > 0)
                     {
+                        <RadzenText TextStyle="TextStyle.Body1" Style="@($"font-weight: 800; margin: 0; color: {(item.Tipo == TipoMovimiento.Entrada ? "#28a745" : "#dc3545")};")">
+                            @(item.Tipo == TipoMovimiento.Entrada ? "+" : "-")@item.MontoEfectivo.Value.ToString("N2") $
+                        </RadzenText>
                         <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; margin: 0; display: block; font-size: 12px;">
-                            (Efectivo: @item.MontoEfectivo.Value.ToString("N2") $)
+                            (Efectivo)
+                        </RadzenText>
+                    }
+                    else
+                    {
+                        <RadzenText TextStyle="TextStyle.Body1" Style="@($"font-weight: 800; margin: 0; color: {(item.Tipo == TipoMovimiento.Entrada ? "#28a745" : "#dc3545")};")">
+                            @(item.Tipo == TipoMovimiento.Entrada ? "+" : "-")@item.Monto.ToString("N2") $
                         </RadzenText>
                     }
                 </div>

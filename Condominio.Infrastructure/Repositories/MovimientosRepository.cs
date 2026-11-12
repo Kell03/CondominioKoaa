@@ -95,6 +95,16 @@ namespace Condominio.Infrastructure.Repositories
                 .SumAsync(x => x.IdGasto == null ? (x.MontoBs ?? 0) : -(x.MontoBs ?? 0));
         }
 
+
+
+        public async Task<decimal> GetAvailableCashAsync()
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+
+            return await db.Set<Movimientos>()
+                .SumAsync(x => x.IdGasto == null ? (x.MontoEfectivo ?? 0) : -(x.MontoEfectivo ?? 0));
+        }
+
         // Versión sin db: abre su propio contexto y guarda.
         public async Task SaveMovimiento(
             decimal monto,

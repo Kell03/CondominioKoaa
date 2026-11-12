@@ -425,11 +425,16 @@ namespace Condominio.Web.Components.Pages
             // Si el valor seleccionado es "Efectivo"
             if (value?.ToString() == "Efectivo")
             {
+                Pago.Monto = 0;
+                Pago.MontoBs = 0;
+                _montoBsStr = "0,00";
+                _montoUsdStr = "0,00";
                 efectivo = true;
                 StateHasChanged();
             }
             else
             {
+                Pago.MontoEfectivo = null;
                 efectivo = false;
                 StateHasChanged();
             }

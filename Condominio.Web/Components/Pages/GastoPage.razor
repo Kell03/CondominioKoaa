@@ -291,6 +291,16 @@
                                 </RadzenSelectBar>
                             </RadzenStack>
 
+                                <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                    <RadzenLabel Component="MetodoPagoInput">Método de Pago</RadzenLabel>
+                                    <RadzenDropDown @bind-Value="selectedItem.MetodoPago"
+                                                    Data="@MetodosPago"
+                                                    Name="MetodoPagoInput"
+                                                Style="width: 100%; max-width: 400px;"
+                                                    Change="@OnMetodoPagoChanged" />
+                                </RadzenStack>
+
+
                             <!-- ✅ SELECT DE FACTURA (solo si origen = Factura) -->
                             @if (origenSeleccionado == "Factura")
                             {
@@ -368,9 +378,9 @@
                                 </RadzenStack>
                             }
 
-
-
-                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                            @if(!efectivo){
+                                <div @key="@("bloque-noefectivo")">
+                                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
                                 <RadzenLabel Component="MontoRequiredInput">
                                     Monto $ <span style="color: var(--rz-danger);">*</span>
                                 </RadzenLabel>
@@ -414,10 +424,29 @@
                                                Name="MontoRequiredBsInput" />
 
                                 <RadzenRequiredValidator Component="MontoRequiredBsInput" Text="El monto bs es requerido" />
-                                <RadzenNumericRangeValidator Min="0.01" Max="99999999999999.99"
+                                <RadzenNumericRangeValidator Min="0.01" Max="9999999999999999999.99"
                                                              Component="MontoRequiredBsInput"
                                                              Text="El monto bs debe ser mayor a 0" />
                             </RadzenStack>
+                            </div>
+                            }
+                            else
+                            {
+                                <div @key="@("bloque-efectivo")">
+                                    <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem">
+                                        <RadzenLabel Text="Monto Efectivo" Component="MontoEfectivoInput" />
+
+                                        <!-- ✅ AGREGA EL NAME AQUÍ -->
+                                        <RadzenNumeric @bind-Value="selectedItem.MontoEfectivo"
+                                                       TValue="decimal?"
+                                                       Name="MontoEfectivoInput"
+                                                       Style="width: 100%; max-width: 400px;" />
+
+                                        <RadzenRequiredValidator Component="MontoEfectivoInput" Text="El monto en efectivo es requerido" />
+                                        <RadzenNumericRangeValidator Min="0.01" Max="999999.99" Component="MontoEfectivoInput" Text="El monto debe ser mayor a 0" />
+                                    </RadzenStack>
+                                </div>
+                            }
 
 
                             <!-- Fecha de Pago -->

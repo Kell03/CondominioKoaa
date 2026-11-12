@@ -28,6 +28,7 @@ namespace Condominio.Web.Components.Pages
         private bool _isFormatting = false;
 
         private decimal fondoDisponible = 0;
+        private decimal fondoEfectivoDisponible = 0;
         private IQueryable<Gasto> items;
         private BcvRates rates;
         private bool cargandoRates = true;
@@ -37,6 +38,13 @@ namespace Condominio.Web.Components.Pages
         private bool _cargando = true;
         private decimal tasaManualActual = 0;
 
+        private List<string> MetodosPago = new List<string>
+        {
+        "Pago Movil",
+        "Efectivo"
+        };
+
+        private bool efectivo = false;
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -97,6 +105,7 @@ namespace Condominio.Web.Components.Pages
             Moneda = monedas.Select(x => x.Moneda).FirstOrDefault() ?? "USD";
 
             var fondoBs = await MovimientoRepository.GettavailablefundsAsync();
+            var fondoEfectivo = await MovimientoRepository.GetAvailableCashAsync();
 
             // 4. Esperamos que el scraper termine
             try
@@ -115,6 +124,7 @@ namespace Condominio.Web.Components.Pages
                 }
 
                 fondoDisponible = fondoBs;
+                fondoEfectivoDisponible = fondoEfectivo;
             }
             catch (Exception ex)
             {
@@ -142,17 +152,28 @@ namespace Condominio.Web.Components.Pages
                 }
                 else
                 {
-                    if (fondoDisponible < selectedItem.MontoBs)
+
+                    if (selectedItem.MetodoPago != "Efectivo" && fondoDisponible < selectedItem.MontoBs)
                     {
                         NotificationService.Notify(new NotificationMessage
                         {
                             Severity = NotificationSeverity.Error, // Color amarillo/naranja
                             Summary = "Fondos Insuficientes",
-                            Detail = $"No cuentas con los fondos disponibles para realizar esta transacción. Saldo actual: {fondoDisponible:N2} Bs.",
+                            Detail = $"No cuentas con los fondos disponibles para realizar esta transacción. Saldo actual: {fondoDisponible:N2} $.",
                             Duration = 4000 // 4 segundos para que le dé tiempo de leer
                         });
 
 
+                    }
+                    else if (selectedItem.MetodoPago == "Efectivo" && fondoEfectivoDisponible < selectedItem.MontoEfectivo)
+                    {
+                        NotificationService.Notify(new NotificationMessage
+                        {
+                            Severity = NotificationSeverity.Error, // Color amarillo/naranja
+                            Summary = "Fondos Insuficientes",
+                            Detail = $"No cuentas con el efectivo suficiente para realizar esta transacción. Efectivo actual: {fondoEfectivoDisponible:N2} Bs.",
+                            Duration = 4000 // 4 segundos para que le dé tiempo de leer
+                        });
                     }
                     else
                     {
@@ -532,6 +553,28 @@ namespace Condominio.Web.Components.Pages
 
             selectedIndex = 2;
             StateHasChanged();
+        }
+
+
+        private void OnMetodoPagoChanged(object value)
+        {
+            // Si el valor seleccionado es "Efectivo"
+            if (value?.ToString() == "Efectivo")
+            {
+                selectedItem.Monto = 0;
+                selectedItem.MontoBs = 0;
+                _montoUsdStr = "0,00";
+                _montoBsStr = "0,00";
+                efectivo = true;
+            }
+            else
+            {
+                selectedItem.MontoEfectivo = null;
+                efectivo = false;
+            }
+
+            StateHasChanged();
+
         }
 
 

@@ -18,6 +18,9 @@ namespace Condominio.Domain.Entities
         public string? Motivo { get; set; }
         public string? Notas { get; set; }
 
+        public string? MetodoPago { get; set; }
+        public decimal? MontoEfectivo { get; set; }
+
         // Navegación
         public FacturaMesHijo? FacturaMesHijo { get; set; }
         public CuotaEspecial? CuotaEspecial { get; set; }

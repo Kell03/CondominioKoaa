@@ -25,9 +25,23 @@
                       ?? "Gasto")
                 </RadzenText>
 
-                <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #dc3545;">
-                    -@item.Monto.ToString("N2") $
-                </RadzenText>
+                <div style="text-align: right;">
+                    @if (item.MontoEfectivo > 0)
+                    {
+                        <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #dc3545;">
+                            -@item.MontoEfectivo.Value.ToString("N2") $
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" Style="margin: 0; color: #6c757d; font-size: 11px;">
+                            (Efectivo)
+                        </RadzenText>
+                    }
+                    else
+                    {
+                        <RadzenText TextStyle="TextStyle.H6" Style="margin: 0; font-weight: 800; color: #dc3545;">
+                            -@item.Monto.ToString("N2") $
+                        </RadzenText>
+                    }
+                </div>
             </RadzenStack>
 
             <!-- 2. Fecha y Comprobante -->

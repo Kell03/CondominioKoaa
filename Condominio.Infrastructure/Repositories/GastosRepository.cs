@@ -74,6 +74,7 @@ namespace Condominio.Infrastructure.Repositories
              db,
              monto: entity.Monto,
              montoBs: entity.MontoBs,
+             montoEfectivo: entity.MontoEfectivo,
              tasa: entity.Tasa,
              gasto: entity
          );

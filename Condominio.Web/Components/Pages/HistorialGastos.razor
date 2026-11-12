@@ -87,8 +87,19 @@
                                             }
                                         </Template>
                                     </RadzenDataGridColumn>
-                                    <RadzenDataGridColumn Property="@nameof(Gasto.Monto)" Title="Monto" Width="130px" />
-                                    <RadzenDataGridColumn Property="@nameof(Gasto.Comprobante)" Title="Comprobante" Width="180px" />
+                                    <RadzenDataGridColumn TItem="Gasto" Property="@nameof(Gasto.Monto)" Title="Monto" Width="130px" TextAlign="TextAlign.Right">
+                                        <Template Context="item">
+                                            @if (item.MontoEfectivo > 0)
+                                            {
+                                                <div style="font-weight: 600;">-@item.MontoEfectivo.Value.ToString("N2") $</div>
+                                                <div style="font-size: 11px; color: #6c757d;">(Efectivo)</div>
+                                            }
+                                            else
+                                            {
+                                                <div style="font-weight: 600;">-@item.Monto.ToString("N2") $</div>
+                                            }
+                                        </Template>
+                                    </RadzenDataGridColumn>                                    <RadzenDataGridColumn Property="@nameof(Gasto.Comprobante)" Title="Comprobante" Width="180px" />
                                     <RadzenDataGridColumn Property="@nameof(Gasto.Notas)" Title="Notas" Width="200px" />
                                     <RadzenDataGridColumn TItem="Gasto" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
                                         <Template Context="item">
