@@ -19,6 +19,7 @@
 }
 else
 {
+
 @if (_esMobile)
 {
     <!-- ✅ DISEÑO MÓVIL (El que ya tienes y te gusta) -->
@@ -75,8 +76,9 @@ else
                         @(facturasPendientes.Count + cuotasPendientes.Count) pendientes
                     </span>
                 </div>
+
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    @foreach (var factura in facturasPendientes)
+                        @foreach (var factura in facturasPendientes.OrderByDescending(x => x.CreatedAt).Take(3))
                     {
                         <RadzenCard Style="padding: 15px 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 4px solid #007bff;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -91,7 +93,7 @@ else
                             </div>
                         </RadzenCard>
                     }
-                    @foreach (var cuota in cuotasPendientes)
+                        @foreach (var cuota in cuotasPendientes.OrderByDescending(x => x.CreatedAt).Take(3))
                     {
                         <RadzenCard Style="padding: 15px 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 4px solid #6f42c1;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -111,19 +113,39 @@ else
             }
             else
             {
-                <RadzenCard Style="padding: 40px; text-align: center; border-radius: 12px; border: 1px dashed #ccc; background: #f8f9fa;">
-                    <RadzenIcon Icon="task_alt" Style="font-size: 50px; color: #28a745; margin-bottom: 10px;" />
-                    <RadzenText TextStyle="TextStyle.H6">No tienes deudas pendientes</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d;">¡Gracias por mantenerte al día!</RadzenText>
-                </RadzenCard>
+                    <RadzenCard Style="padding: 50px 20px; text-align: center; border-radius: 12px; border: 1px dashed #ccc; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <RadzenIcon Icon="task_alt" Style="font-size: 60px; color: #28a745; margin-bottom: 15px;" />
+                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: 700; color: #1a2a3a; margin-bottom: 6px;">
+                            No tienes deudas pendientes
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d;">
+                            ¡Gracias por mantenerte al día!
+                        </RadzenText>
+                    </RadzenCard>
             }
         </div>
+
+            <div style="margin-top: 20px;">
+                <RadzenCard Style="background: white; border: 1px solid #e9ecef; border-radius: 16px; padding: 25px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 4px solid #17a2b8; text-align: center;">
+                    <RadzenIcon Icon="insights" Style="font-size: 45px; color: #17a2b8; margin-bottom: 10px;" />
+                    <RadzenText TextStyle="TextStyle.H6" Style="font-weight: 700; color: #1a2a3a; margin: 0 0 4px 0;">
+                        Estado de Cobros
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-bottom: 18px; display: block;">
+                        Consulta el estado de facturas y cuotas especiales
+                    </RadzenText>
+                    <RadzenButton Text="Ver Estado de Cobros" Icon="arrow_forward"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Style="width: 100%; border-radius: 8px; padding: 12px; font-size: 15px; background-color: #17a2b8; border: none;"
+                                  Click="@(() => Nav.NavigateTo("/estado-cobros"))" />
+                </RadzenCard>
+            </div>
     </div>
 }
 else
 {
     <!-- ✅ DISEÑO PC (Dashboard amplio) -->
-    <div style="padding: 40px; max-width: 1400px; margin: 0 auto; padding-bottom: 50px;">
+        <div style="padding: 10px 60px 60px 60px; max-width: 1200px; margin: 0 auto;">
 
         <!-- SALUDO -->
         <div style="margin-bottom: 40px; display: flex; align-items: center; gap: 20px;">
@@ -138,6 +160,7 @@ else
             </div>
         </div>
 
+            
         <!-- GRID DE 2 COLUMNAS: IZQUIERDA (Deuda) Y DERECHA (Facturas) -->
         <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; align-items: start;">
 
@@ -182,7 +205,7 @@ else
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 15px;">
-                        @foreach (var factura in facturasPendientes)
+                            @foreach (var factura in facturasPendientes.OrderByDescending(x => x.CreatedAt).Take(5))
                         {
                             <RadzenCard Style="padding: 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 6px solid #007bff;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -197,7 +220,7 @@ else
                                 </div>
                             </RadzenCard>
                         }
-                        @foreach (var cuota in cuotasPendientes)
+                        @foreach (var cuota in cuotasPendientes.OrderByDescending(x => x.CreatedAt).Take(5))
                         {
                             <RadzenCard Style="padding: 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 6px solid #6f42c1;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -223,6 +246,29 @@ else
                 }
             </div>
         </div>
+
+            <div style="margin-top: 30px; margin-bottom: 20px;">
+                <RadzenCard Style="background: white; border: 1px solid #e9ecef; border-radius: 16px; padding: 30px 40px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); border-left: 6px solid #17a2b8;">
+                    <div style="display: flex; align-items: center; gap: 25px;">
+                        <div style="background: rgba(23,162,184,0.1); border-radius: 14px; padding: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <RadzenIcon Icon="insights" Style="font-size: 45px; color: #17a2b8;" />
+                        </div>
+                        <div style="flex: 1;">
+                            <RadzenText TextStyle="TextStyle.H5" Style="font-weight: 700; color: #1a2a3a; margin: 0;">
+                                Estado de Cobros
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1" Style="color: #6c757d; margin: 4px 0 0 0; display: block;">
+                                Consulta el resumen de facturas mensuales y cuotas especiales
+                            </RadzenText>
+                        </div>
+                        <RadzenButton Text="Ver Estado de Cobros" Icon="arrow_forward"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Style="border-radius: 8px; padding: 14px 24px; font-size: 16px; background-color: #17a2b8; border: none; flex-shrink: 0;"
+                                      Click="@(() => Nav.NavigateTo("/estado-cobros"))" />
+                    </div>
+                </RadzenCard>
+            </div>
+
     </div>
 }
 }

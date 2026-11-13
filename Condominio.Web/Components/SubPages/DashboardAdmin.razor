@@ -12,9 +12,25 @@
 @inject AppState AppState
 @inject BcvScraperService BcvScraper
 @inject ConfiguracionMonedaRepository MonedaRepository
+@inject NavigationManager Nav
 @inject IJSRuntime JSRuntime
 
 <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; width: 100%; max-width: 1400px; margin: 0 auto;">
+
+    <div style="flex: 1 1 100%; display: flex; justify-content: flex-start; gap: 10px; margin-bottom: 0.5rem;">
+        <RadzenButton Text="Nuevo Recibo" Icon="receipt_long"
+                      ButtonStyle="ButtonStyle.Light"
+                      Size="ButtonSize.Small"
+                      Style="border-radius: 6px; border: 1px solid #007bff; color: #007bff; font-weight: 600; padding: 6px 14px;"
+                      Click="@(() => Nav.NavigateTo("/facturas"))" />
+
+        <RadzenButton Text="Nueva Cuota Especial" Icon="playlist_add"
+                      ButtonStyle="ButtonStyle.Light"
+                      Size="ButtonSize.Small"
+                      Style="border-radius: 6px; border: 1px solid #6f42c1; color: #6f42c1; font-weight: 600; padding: 6px 14px;"
+                      Click="@(() => Nav.NavigateTo("/cuotaespecial"))" />
+    </div>
+
 
     <!-- ✅ TARJETAS DE RESUMEN (KPIs) -->
     <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
@@ -48,6 +64,8 @@
 
             </RadzenStack>
         </RadzenCard>
+
+
 
         <RadzenCard Style="flex: 1 1 200px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #007bff;">
             <RadzenStack Gap="0.5rem">
