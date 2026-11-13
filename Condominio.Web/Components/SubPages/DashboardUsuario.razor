@@ -78,7 +78,7 @@ else
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                        @foreach (var factura in facturasPendientes.OrderByDescending(x => x.CreatedAt).Take(3))
+                        @foreach (var factura in facturasPendientes.OrderByDescending(x => x.CreatedAt).Take(1))
                     {
                         <RadzenCard Style="padding: 15px 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 4px solid #007bff;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -93,7 +93,7 @@ else
                             </div>
                         </RadzenCard>
                     }
-                        @foreach (var cuota in cuotasPendientes.OrderByDescending(x => x.CreatedAt).Take(3))
+                        @foreach (var cuota in cuotasPendientes.OrderByDescending(x => x.CreatedAt).Take(1))
                     {
                         <RadzenCard Style="padding: 15px 20px; border-radius: 12px; border: 1px solid #e9ecef; border-left: 4px solid #6f42c1;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -165,31 +165,48 @@ else
         <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; align-items: start;">
 
             <!-- COLUMNA IZQUIERDA -->
-            <div>
-                <RadzenCard Style="background: white; border: 1px solid #e9ecef; border-radius: 16px; padding: 40px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); text-align: center;">
-                    <RadzenText TextStyle="TextStyle.H6" Style="color: #6c757d; font-weight: 600; margin-bottom: 15px;">
-                        Total a Pagar
-                    </RadzenText>
-                    <div style="display: flex; justify-content: center; align-items: baseline; margin-bottom: 30px;">
-                        <RadzenText TextStyle="TextStyle.H1" Style="@($"font-size: 70px; font-weight: 800; margin: 0; color: {(totalDeuda <= 0 ? "#28a745" : "#dc3545")};")">
-                            @totalDeuda.ToString("N2")
+                <div>
+                    <!-- 1. Tarjeta de Deuda Total -->
+                    <RadzenCard Style="background: white; border: 1px solid #e9ecef; border-radius: 16px; padding: 40px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); text-align: center;">
+                        <RadzenText TextStyle="TextStyle.H6" Style="color: #6c757d; font-weight: 600; margin-bottom: 15px;">
+                            Total a Pagar
                         </RadzenText>
-                        <RadzenText TextStyle="TextStyle.H3" Style="@($"margin-left: 5px; color: {(totalDeuda <= 0 ? "#28a745" : "#dc3545")};")">$</RadzenText>
-                    </div>
-                    @if (totalDeuda > 0)
-                    {
-                        <RadzenButton Text="Ir a Pagar Ahora" Icon="payment" ButtonStyle="ButtonStyle.Primary"
-                                      Style="width: 100%; border-radius: 8px; padding: 18px; font-size: 18px;"
-                                      Click="@(() => Nav.NavigateTo("/recibofactura"))" />
-                    }
-                    else
-                    {
-                        <div style="background: #d4edda; color: #155724; padding: 20px; border-radius: 8px; font-weight: 600; font-size: 18px;">
-                            <RadzenIcon Icon="check_circle" Style="margin-right: 8px;" /> ¡Estás al día!
+                        <div style="display: flex; justify-content: center; align-items: baseline; margin-bottom: 30px;">
+                            <RadzenText TextStyle="TextStyle.H1" Style="@($"font-size: 70px; font-weight: 800; margin: 0; color: {(totalDeuda <= 0 ? "#28a745" : "#dc3545")};")">
+                                @totalDeuda.ToString("N2")
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.H3" Style="@($"margin-left: 5px; color: {(totalDeuda <= 0 ? "#28a745" : "#dc3545")};")">$</RadzenText>
                         </div>
-                    }
-                </RadzenCard>
-            </div>
+                        @if (totalDeuda > 0)
+                        {
+                            <RadzenButton Text="Ir a Pagar Ahora" Icon="payment" ButtonStyle="ButtonStyle.Primary"
+                                          Style="width: 100%; border-radius: 8px; padding: 18px; font-size: 18px;"
+                                          Click="@(() => Nav.NavigateTo("/recibofactura"))" />
+                        }
+                        else
+                        {
+                            <div style="background: #d4edda; color: #155724; padding: 20px; border-radius: 8px; font-weight: 600; font-size: 18px;">
+                                <RadzenIcon Icon="check_circle" Style="margin-right: 8px;" /> ¡Estás al día!
+                            </div>
+                        }
+                    </RadzenCard>
+
+                    <!-- 2. Tarjeta de Estado de Cobros (Movida aquí y adaptada para la columna) -->
+                    <RadzenCard Style="margin-top: 20px; background: white; border: 1px solid #e9ecef; border-radius: 16px; padding: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); border-left: 6px solid #17a2b8; display: flex; flex-direction: column; align-items: center; text-align: center;">
+                        <RadzenIcon Icon="insights" Style="font-size: 40px; color: #17a2b8; margin-bottom: 10px;" />
+                        <RadzenText TextStyle="TextStyle.H6" Style="font-weight: 700; color: #1a2a3a; margin: 0 0 5px 0;">
+                            Estado de Cobros
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d; margin-bottom: 20px;">
+                            Consulta el resumen de facturas y cuotas.
+                        </RadzenText>
+                        <RadzenButton Text="Ver Estado" Icon="arrow_forward"
+                                      ButtonStyle="ButtonStyle.Primary"
+                                      Style="width: 100%; border-radius: 8px; padding: 12px; background-color: #17a2b8; border: none;"
+                                      Click="@(() => Nav.NavigateTo("/estado-cobros"))" />
+                    </RadzenCard>
+                </div>
+
 
             <!-- COLUMNA DERECHA -->
             <div>
@@ -247,27 +264,7 @@ else
             </div>
         </div>
 
-            <div style="margin-top: 30px; margin-bottom: 20px;">
-                <RadzenCard Style="background: white; border: 1px solid #e9ecef; border-radius: 16px; padding: 30px 40px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); border-left: 6px solid #17a2b8;">
-                    <div style="display: flex; align-items: center; gap: 25px;">
-                        <div style="background: rgba(23,162,184,0.1); border-radius: 14px; padding: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                            <RadzenIcon Icon="insights" Style="font-size: 45px; color: #17a2b8;" />
-                        </div>
-                        <div style="flex: 1;">
-                            <RadzenText TextStyle="TextStyle.H5" Style="font-weight: 700; color: #1a2a3a; margin: 0;">
-                                Estado de Cobros
-                            </RadzenText>
-                            <RadzenText TextStyle="TextStyle.Body1" Style="color: #6c757d; margin: 4px 0 0 0; display: block;">
-                                Consulta el resumen de facturas mensuales y cuotas especiales
-                            </RadzenText>
-                        </div>
-                        <RadzenButton Text="Ver Estado de Cobros" Icon="arrow_forward"
-                                      ButtonStyle="ButtonStyle.Primary"
-                                      Style="border-radius: 8px; padding: 14px 24px; font-size: 16px; background-color: #17a2b8; border: none; flex-shrink: 0;"
-                                      Click="@(() => Nav.NavigateTo("/estado-cobros"))" />
-                    </div>
-                </RadzenCard>
-            </div>
+           
 
     </div>
 }
