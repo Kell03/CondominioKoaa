@@ -11,9 +11,16 @@
 @inject AuthenticationStateProvider AuthProvider
 
 <RadzenCard Style="max-width: 400px; margin: 50px auto;">
-    <RadzenText TextStyle="TextStyle.H3" Style="text-align: center;">
-        🔐 Iniciar Sesión
-    </RadzenText>
+
+    <!-- ✅ LOGO CENTRADO -->
+    <!-- ✅ Contenedor que recorta el espacio vacío de la imagen -->
+    <div style="text-align: center; margin-bottom: 20px; height: 45px; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+        <img src="/SOLUNARINF.png"
+             alt="Logo"
+             style="height: 180px; width: auto; margin-top: -25px; margin-bottom: -20px;" />
+    </div>
+    <hr style="margin: 0 0 10px 0; border: 0; border-top: 1px solid #ced4da; width: 100%;" />
+
 
     <RadzenStack Gap="1rem">
         <!-- ✅ EMAIL -->
