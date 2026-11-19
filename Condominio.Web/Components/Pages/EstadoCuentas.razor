@@ -236,9 +236,21 @@
 
     private async Task LoadFacturasChart()
     {
-        revenue = new DataItem[] { };
         var currentFactura = facturas.FirstOrDefault(f => f.Year == selectedYear && f.Mes == selectedMonth);
-        if (currentFactura == null) return;
+
+        if (currentFactura == null)
+        {
+            revenue = new DataItem[]
+            {
+            new DataItem { Category = "Pagado", Value = 0 },
+            new DataItem { Category = "Pendiente", Value = 0 }
+            };
+            var mesNombre = months.FirstOrDefault(m => m.Value == selectedMonth)?.Name ?? "";
+            Title = $"{mesNombre} {selectedYear}";
+            Total = 0;
+            StateHasChanged();
+            return;
+        }
 
         DataItem pendiente = new DataItem
         {
@@ -292,9 +304,20 @@
 
     private async Task LoadCuotasChart()
     {
-        revenue2 = new DataItem[] { };
         var currentCuota = cuotas.FirstOrDefault(c => c.Motivo == selectedCuota);
-        if (currentCuota == null) return;
+
+        if (currentCuota == null)
+        {
+            revenue2 = new DataItem[]
+            {
+            new DataItem { Category = "Pagado", Value = 0 },
+            new DataItem { Category = "Pendiente", Value = 0 }
+            };
+            TitleCuota = string.IsNullOrEmpty(selectedCuota) ? "Sin datos" : selectedCuota;
+            Total2 = 0;
+            StateHasChanged();
+            return;
+        }
 
         DataItem pendiente = new DataItem
         {

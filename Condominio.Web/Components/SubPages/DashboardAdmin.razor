@@ -329,48 +329,70 @@
     }
     private async Task LoadFacturasChart()
     {
-        revenue = new DataItem[] { }; // Reinicia el gráfico antes de cargar nuevos datos
-        var currentFactura = facturas.Where(f => f.Year == selectedYear && f.Mes == selectedMonth).FirstOrDefault();
+        var currentFactura = facturas.FirstOrDefault(f => f.Year == selectedYear && f.Mes == selectedMonth);
+
         if (currentFactura == null)
         {
+            revenue = new DataItem[]
+            {
+            new DataItem { Category = "Pagado", Value = 0 },
+            new DataItem { Category = "Pendiente", Value = 0 }
+            };
+            var mesNombre = months.FirstOrDefault(m => m.Value == selectedMonth)?.Name ?? "";
+            Title = $"{mesNombre} {selectedYear}";
+            Total = 0;
+            StateHasChanged();
             return;
         }
-        DataItem data1 = new DataItem();
-        data1.Category = "Pendiente";
-        var pendiente = (double)(Convert.ToDecimal(currentFactura.MontoTotal)
-            - (currentFactura.MontoRecaudado ?? 0));
-        data1.Value = pendiente;
-        DataItem data2 = new DataItem();
-        data2.Category = "Pagado";
-        var pagado = (double)(currentFactura.MontoRecaudado ?? 0);
-        data2.Value = pagado;
-        revenue = new DataItem[] { data2, data1 };
-        Title = $"{currentFactura.NombreMes} {currentFactura.Year}";
-        Total = currentFactura.MontoTotal;
-        StateHasChanged();
 
+        DataItem pendiente = new DataItem
+        {
+            Category = "Pendiente",
+            Value = currentFactura.MontoTotal - (double)(currentFactura.MontoRecaudado ?? 0)
+        };
+        DataItem pagado = new DataItem
+        {
+            Category = "Pagado",
+            Value = (double)(currentFactura.MontoRecaudado ?? 0)
+        };
+
+        revenue = new DataItem[] { pagado, pendiente };
+        Title = $"{currentFactura.NombreMes} {currentFactura.Year}";
+        Total = (double)currentFactura.MontoTotal;
+        StateHasChanged();
     }
     private async Task LoadCuotasChart()
     {
-        revenue2 = new DataItem[] { }; // Reinicia el gráfico antes de cargar nuevos datos
-        var currentCuota = cuotas.Where(c => c.Motivo == selectedCuota).FirstOrDefault();
+        var currentCuota = cuotas.FirstOrDefault(c => c.Motivo == selectedCuota);
+
         if (currentCuota == null)
         {
+            revenue2 = new DataItem[]
+            {
+            new DataItem { Category = "Pagado", Value = 0 },
+            new DataItem { Category = "Pendiente", Value = 0 }
+            };
+            TitleCuota = string.IsNullOrEmpty(selectedCuota) ? "Sin datos" : selectedCuota;
+            Total2 = 0;
+            StateHasChanged();
             return;
         }
-        DataItem data1 = new DataItem();
-        data1.Category = "Pendiente";
-        var pendiente = currentCuota.MontoTotal - currentCuota.MontoRecaudado;
-        data1.Value = (double)pendiente;
-        DataItem data2 = new DataItem();
-        data2.Category = "Pagado";
-        var pagado = (double)currentCuota.MontoRecaudado;
-        data2.Value = pagado;
-        revenue2 = new DataItem[] { data2, data1 };
-        TitleCuota = $"{currentCuota.Motivo}";
+
+        DataItem pendiente = new DataItem
+        {
+            Category = "Pendiente",
+            Value = (double)(currentCuota.MontoTotal - currentCuota.MontoRecaudado)
+        };
+        DataItem pagado = new DataItem
+        {
+            Category = "Pagado",
+            Value = (double)currentCuota.MontoRecaudado
+        };
+
+        revenue2 = new DataItem[] { pagado, pendiente };
+        TitleCuota = currentCuota.Motivo;
         Total2 = (double)currentCuota.MontoTotal;
         StateHasChanged();
-
     }
     private void OnYearChanged()
     {
