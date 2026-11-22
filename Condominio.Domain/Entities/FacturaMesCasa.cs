@@ -23,11 +23,13 @@ namespace Condominio.Domain.Entities
         public string Estado { get; set; } = "Pendiente"; // 'En Revisión', 'Confirmada'
 
         public string? Comentario { get; set; }
-
+        public bool? CorreoEnviado { get; set; } 
+        public DateTime? FechaEnvioCorreo { get; set; }
 
         public FacturaMes FacturaMes { get; set; }
 
         public Houses House { get; set; }
+
 
 
         [NotMapped]

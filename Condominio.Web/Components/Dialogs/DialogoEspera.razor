@@ -1,0 +1,16 @@
+﻿@using Radzen
+@using Radzen.Blazor
+
+<div style="text-align: center; padding: 20px;">
+    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate"  />
+    <RadzenText TextStyle="TextStyle.H6" Style="margin-top: 15px; color: #333;">
+        @Mensaje
+    </RadzenText>
+    <RadzenText TextStyle="TextStyle.Body2" Style="color: #666;">
+        Por favor, no cierres esta ventana.
+    </RadzenText>
+</div>
+
+@code {
+    [Parameter] public string Mensaje { get; set; } = "Procesando...";
+}

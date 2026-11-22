@@ -10,7 +10,8 @@ using Condominio.Web.Endpoints;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.EntityFrameworkCore;
-using Radzen;  
+using Radzen;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -129,6 +130,7 @@ app.MapAuthEndpoints();           // ← 2) agregar antes de app.Run()
 app.MapHub<NotificationHub>("/notificacionHub");   // ⭐  // ✅ RequireAuthorization
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+QuestPDF.Settings.License = LicenseType.Community;
 
 
 app.Run();

@@ -45,6 +45,8 @@ namespace Condominio.Infrastructure
             services.AddScoped<IFacturaGastoService, FacturaGastoService>();
 
             services.AddScoped<GoogleDriveService>();
+            services.AddScoped<EmailService>();
+            services.AddScoped<PdfGenerator>();
 
 
             // Register application services here

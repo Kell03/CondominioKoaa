@@ -3,6 +3,7 @@
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
+@using Condominio.Infrastructure.Services
 @using Condominio.Web.Components.ComponentsMobile
 @using Microsoft.AspNetCore.Authorization
 @inject FacturaMesRepository FacturaMesRepository
@@ -12,6 +13,11 @@
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject PdfGenerator PdfService
+@inject HouseRepository HouseRepository
+@inject Radzen.DialogService DialogService
+@using Microsoft.AspNetCore.Components.Web
+@using Condominio.Web.Components.Dialogs
 
 
 
@@ -29,6 +35,8 @@
 <RadzenTabs @bind-SelectedIndex=@selectedIndex>
     <Tabs>
 
+
+
         <RadzenTabsItem Text="Lista">
             @if (_cargando)
             {
@@ -44,6 +52,9 @@
                               ButtonStyle="ButtonStyle.Primary"
                               Style="margin-bottom: 0.5rem;"
                               Click="@(() => NavigationManager.NavigateTo("/facturas/crear"))" />
+
+
+
 
                 @if (_esMobile)
                 {
@@ -159,6 +170,7 @@
                                     @facturaMes.NombreMes
                                 </Template>
                             </RadzenDataGridColumn>
+
                             <RadzenDataGridColumn Property="@nameof(FacturaMes.Year)" Title="Año" Width="100px" />
 
                             <RadzenDataGridColumn TItem="FacturaMes" Property="IsActive" Title="Estado" Width="120px">
@@ -176,41 +188,60 @@
                                         </RadzenBadge>
                                     }
                                 </Template>
+
+
+
+
                             </RadzenDataGridColumn>
+
+
 
 
                             <RadzenDataGridColumn TItem="FacturaMes" Property="Enviado" Title="Enviar" Width="120px">
                                 <Template Context="user">
-                                    @if (user.Enviado)
+
+
+                                    @if (!user.Enviado)
                                     {
-                                        <RadzenButton Text="Enviado"
+                                        <!-- Botón para Distribuir/Confirmar -->
+                                        <RadzenButton Text="Distribuir"
                                                       Icon="check_circle"
-                                                      ButtonStyle="ButtonStyle.Success"
+                                                      ButtonStyle="ButtonStyle.Primary"
                                                       Size="ButtonSize.Small"
-                                                      Disabled="true" />
+                                                      Click="@(() => ConfirmSend(user))"
+                                                      @onclick:stopPropagation="true" />
                                     }
                                     else
                                     {
-                                        <RadzenButton Text="Enviar a Todos"
-                                                      Icon="send"
-                                                      ButtonStyle="ButtonStyle.Primary"
+                                        <!-- Botón para Enviar los Correos -->
+                                        <RadzenButton Text="Enviar Correos"
+                                                      Icon="email"
+                                                      ButtonStyle="ButtonStyle.Success"
                                                       Size="ButtonSize.Small"
-                                                      Click="@(() => ConfirmSend(user))" />
+                                                      Click="@(() => EnviarCorreos(user))"
+                                                      @onclick:stopPropagation="true" />
                                     }
+
+
                                 </Template>
                             </RadzenDataGridColumn>
 
                             <RadzenDataGridColumn TItem="FacturaMes" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
-                                <Template Context="user">
+                                <Template Context="factura">
 
                                     <RadzenButton Icon="delete"
                                                   ButtonStyle="ButtonStyle.Danger"
                                                   Size="ButtonSize.Small"
                                                   Tooltip="Eliminar usuario"
-                                                  Click="@(() => ConfirmDelete(user))"
+                                                  Click="@(() => ConfirmDelete(factura))"
                                                   @onclick:stopPropagation="true" />
 
-
+                                    <RadzenButton Icon="picture_as_pdf"
+                                                  ButtonStyle="ButtonStyle.Success"
+                                                  Size="ButtonSize.Small"
+                                                  Tooltip="Descargar Aviso de Cobro"
+                                                  Click="@(() => DescargarPdf(factura))"
+                                                  Style="margin-right: 5px;" />
                                 </Template>
                             </RadzenDataGridColumn>
 
@@ -247,6 +278,34 @@
             facturaExpandidaId = idFactura; // Si no, la abre
     }
 
+
+    private async Task DescargarPdf(FacturaMes factura)
+    {
+        try
+        {
+            if (factura == null)
+                throw new ArgumentNullException(nameof(factura), "La factura no puede ser nula al generar el PDF.");
+
+            var casas = await HouseRepository.GetAllAsync();
+            var totalcasas = casas.Count(); // Contamos el total de casas
+            // 1. Generas el PDF pasándole la factura
+            byte[] pdfBytes = PdfService.GenerarAviso(factura, totalcasas);
+
+            // 2. Convertimos los bytes a un string Base64
+            string base64String = Convert.ToBase64String(pdfBytes);
+
+            // 3. Nombre dinámico del archivo
+            string nombreArchivo = $"Aviso_{factura.NombreMes}_{factura.Year}.pdf";
+
+            // 4. Llamamos a la función de JavaScript
+            await JSRuntime.InvokeVoidAsync("descargarArchivoDesdeBytes", nombreArchivo, base64String);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al generar PDF: {ex.Message}");
+            throw;
+        }
+    }
 }
 
 

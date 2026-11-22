@@ -270,6 +270,42 @@ namespace Condominio.Web.Components.Pages
             StateHasChanged();
         }
 
+
+
+        private async Task EnviarCorreos(FacturaMes factura)
+        {
+            try
+            {
+                // 1. Abrimos el diálogo (sin guardarlo en una variable)
+                _ = DialogService.OpenAsync<DialogoEspera>(
+                    "Enviando Correos",
+                    new Dictionary<string, object> { { "Mensaje", "Enviando avisos de cobro. Esto puede tardar unos minutos..." } },
+                    new DialogOptions() { Width = "400px", CloseDialogOnOverlayClick = false, ShowClose = false }
+                );
+
+                // 2. Damos un pequeño respiro para que el diálogo se pinte en pantalla
+                await Task.Yield();
+
+                // 3. Ejecutamos el envío y ESPERAMOS a que termine
+                await FacturaMesRepository.EnviarCorreosFacturaAsync(factura.Id);
+
+                Console.WriteLine("✅ Envío de correos finalizado.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Error en envío masivo: {ex.Message}");
+                // Opcional: Notificar el error al usuario
+            }
+            finally
+            {
+                // 4. Pase lo que pase (éxito o error), cerramos el diálogo
+                DialogService.Close();
+                StateHasChanged();
+            }
+        }
+
+
+
     }
 
 
