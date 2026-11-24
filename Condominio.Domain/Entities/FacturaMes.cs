@@ -13,6 +13,7 @@ namespace Condominio.Domain.Entities
        public bool IsActive { get; set; } = false;
        public bool Enviado { get; set; } = false;
        public double MontoTotal { get; set; } = 0;
+        public bool? CorreosEnviados { get; set; } = false;
 
         public string? Motivo { get; set; } = "";
 

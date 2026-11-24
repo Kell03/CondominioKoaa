@@ -7,6 +7,7 @@
 @using Condominio.Web.Components.ComponentsMobile
 @using Microsoft.AspNetCore.Authorization
 @inject FacturaMesRepository FacturaMesRepository
+@inject FacturaMesCasaRepository FacturaMesCasaRepository
 @using Radzen.Blazor
 @inject Radzen.DialogService DialogService
 @rendermode InteractiveServer
@@ -199,30 +200,25 @@
 
                             <RadzenDataGridColumn TItem="FacturaMes" Property="Enviado" Title="Enviar" Width="120px">
                                 <Template Context="user">
-
-
                                     @if (!user.Enviado)
                                     {
-                                        <!-- Botón para Distribuir/Confirmar -->
-                                        <RadzenButton Text="Distribuir"
-                                                      Icon="check_circle"
-                                                      ButtonStyle="ButtonStyle.Primary"
-                                                      Size="ButtonSize.Small"
-                                                      Click="@(() => ConfirmSend(user))"
-                                                      @onclick:stopPropagation="true" />
+                                        <RadzenButton Text="Distribuir" Icon="check_circle" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
+                                                      Click="@(() => ConfirmSend(user))" @onclick:stopPropagation="true" />
                                     }
                                     else
                                     {
-                                        <!-- Botón para Enviar los Correos -->
-                                        <RadzenButton Text="Enviar Correos"
-                                                      Icon="email"
-                                                      ButtonStyle="ButtonStyle.Success"
-                                                      Size="ButtonSize.Small"
-                                                      Click="@(() => EnviarCorreos(user))"
-                                                      @onclick:stopPropagation="true" />
+                                        @if (user.CorreosEnviados == true)
+                                        {
+                                            <!-- Si ya se enviaron todos, se deshabilita -->
+                                            <RadzenButton Text="Correos Enviados" Icon="mark_email_read" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" Disabled="true" />
+                                        }
+                                        else
+                                        {
+                                            <!-- Si todavía hay pendientes (o falló), se puede volver a presionar -->
+                                            <RadzenButton Text="Enviar Correos" Icon="email" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small"
+                                                          Click="@(() => EnviarCorreos(user))" @onclick:stopPropagation="true" />
+                                        }
                                     }
-
-
                                 </Template>
                             </RadzenDataGridColumn>
 

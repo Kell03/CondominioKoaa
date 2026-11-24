@@ -457,7 +457,7 @@ namespace Condominio.Infrastructure.Repositories
             // --------------------------------------------------
 
             // Nota: Dejé tu filtro de prueba (733 y 734) para que no te envíe a todos de golpe
-            foreach (var casaFactura in casasPendientes.Where(x => x.HouseId == 733 || x.HouseId == 732))
+            foreach (var casaFactura in casasPendientes)
             {
                 try
                 {
@@ -491,7 +491,22 @@ namespace Condominio.Infrastructure.Repositories
                 }
             }
 
+
+            // ✅ VALIDACIÓN FINAL: Revisamos si ya no quedan pendientes en la BD
+            var quedanPendientes = await db.FacturaMesCasa
+                .AnyAsync(f => f.FacturaMesId == facturaId && (f.CorreoEnviado == false || f.CorreoEnviado == null));
+
+            if (!quedanPendientes)
+            {
+                // Si ya no hay pendientes, actualizamos el campo de la factura principal
+                factura.CorreosEnviados = true;
+                db.FacturaMes.Update(factura);
+                await db.SaveChangesAsync();
+                Console.WriteLine("✅ Todos los correos enviados. Factura actualizada.");
+            }
+
             Console.WriteLine("✅ Proceso de envío de correos finalizado.");
+
         }
     }
 }
