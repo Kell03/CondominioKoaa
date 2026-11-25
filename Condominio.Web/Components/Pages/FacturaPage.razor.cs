@@ -274,6 +274,23 @@ namespace Condominio.Web.Components.Pages
 
         private async Task EnviarCorreos(FacturaMes factura)
         {
+            // 1. Confirmación antes de enviar
+            var confirmar = await DialogService.Confirm(
+                $"¿Está seguro que desea enviar los correos de la factura?",
+                "Confirmar envío",
+                new ConfirmOptions()
+                {
+                    OkButtonText = "Sí, enviar",
+                    CancelButtonText = "Cancelar",
+                    CloseDialogOnOverlayClick = false
+                });
+
+            // Si cancela, no hacemos nada
+            if (confirmar != true)
+                return;
+
+
+
             try
             {
                 // 1. Abrimos el diálogo (sin guardarlo en una variable)
@@ -300,6 +317,7 @@ namespace Condominio.Web.Components.Pages
             {
                 // 4. Pase lo que pase (éxito o error), cerramos el diálogo
                 DialogService.Close();
+                await OnInitializedAsync(); // Recargamos la página para reflejar cambios
                 StateHasChanged();
             }
         }

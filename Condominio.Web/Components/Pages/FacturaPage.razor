@@ -67,11 +67,11 @@
                                        Immediate="true"
                                        Style="width: 100%; border-radius: 20px; padding: 12px 15px; ..." />
                     </div>
-                   <GridFacturaMes Items="Invoices.ToList()" 
-                    FacturaExpandidaId="facturaExpandidaId"
-                    OnEnviar="@((factura) => ConfirmSend(factura))"
-                    OnEliminar="@((factura) => ConfirmDelete(factura))"
-                    OnToggleDetalle="@((id) => ToggleDetalle(id))" />
+                    <GridFacturaMes Items="Invoices.ToList()"
+                                    FacturaExpandidaId="facturaExpandidaId"
+                                    OnEnviar="@((factura) => ConfirmSend(factura))"
+                                    OnEliminar="@((factura) => ConfirmDelete(factura))"
+                                    OnToggleDetalle="@((id) => ToggleDetalle(id))" />
 
 
                     
@@ -97,8 +97,8 @@
                 {
             
 
-                        <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
-                                        Count="@totalFacturas" LoadData="@((Radzen.LoadDataArgs args) => LoadData(args))" Data="@Invoices" TItem="FacturaMes" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
+                    <RadzenDataGrid @ref="grid" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" RowRender="@RowRender" ExpandMode="DataGridExpandMode.Single"
+                                    Count="@totalFacturas" LoadData="@((Radzen.LoadDataArgs args) => LoadData(args))" Data="@Invoices" TItem="FacturaMes" RowExpand="RowExpand" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
 
                         <Template Context="order">
                             <RadzenCard Style="background:#dce3ea; padding: 15px; border-radius: 8px; margin: 5px auto; width: 95%; max-width: 800px; box-sizing: border-box; overflow: hidden;">
@@ -196,51 +196,61 @@
                             </RadzenDataGridColumn>
 
 
+                            <RadzenDataGridColumn TItem="FacturaMes" Title="Opciones" Width="160px" TextAlign="TextAlign.Center">
+                                <Template Context="factura">
 
-
-                            <RadzenDataGridColumn TItem="FacturaMes" Property="Enviado" Title="Enviar" Width="120px">
-                                <Template Context="user">
-                                    @if (!user.Enviado)
+                                    @if (!factura.Enviado)
                                     {
-                                        <RadzenButton Text="Distribuir" Icon="check_circle" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small"
-                                                      Click="@(() => ConfirmSend(user))" @onclick:stopPropagation="true" />
+                                        <RadzenButton Icon="check_circle"
+                                                      ButtonStyle="ButtonStyle.Primary"
+                                                      Size="ButtonSize.Small"
+                                                      Click="@(() => ConfirmSend(factura))"
+                                                      @onclick:stopPropagation="true"
+                                                      title="Confirmar factura"
+                                                      Style="margin: 2px;" />
                                     }
                                     else
                                     {
-                                        @if (user.CorreosEnviados == true)
+                                        @if (factura.CorreosEnviados == true)
                                         {
-                                            <!-- Si ya se enviaron todos, se deshabilita -->
-                                            <RadzenButton Text="Correos Enviados" Icon="mark_email_read" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" Disabled="true" />
+                                            <RadzenButton Icon="mark_email_read"
+                                                          ButtonStyle="ButtonStyle.Success"
+                                                          Size="ButtonSize.Small"
+                                                          Disabled="true"
+                                                          title="Correos enviados"
+                                                          Style="margin: 2px;" />
                                         }
                                         else
                                         {
-                                            <!-- Si todavía hay pendientes (o falló), se puede volver a presionar -->
-                                            <RadzenButton Text="Enviar Correos" Icon="email" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small"
-                                                          Click="@(() => EnviarCorreos(user))" @onclick:stopPropagation="true" />
+                                            <RadzenButton Icon="email"
+                                                          ButtonStyle="ButtonStyle.Success"
+                                                          Size="ButtonSize.Small"
+                                                          Click="@(() => EnviarCorreos(factura))"
+                                                          @onclick:stopPropagation="true"
+                                                          title="Enviar correos pendientes"
+                                                          Style="margin: 2px;" />
                                         }
                                     }
-                                </Template>
-                            </RadzenDataGridColumn>
 
-                            <RadzenDataGridColumn TItem="FacturaMes" Title="Opciones" Width="120px" TextAlign="TextAlign.Center">
-                                <Template Context="factura">
+                                    <RadzenButton Icon="picture_as_pdf"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Variant="Variant.Outlined"
+                                                  Size="ButtonSize.Small"
+                                                  title="Descargar aviso de cobro"
+                                                  Click="@(() => DescargarPdf(factura))"
+                                                  @onclick:stopPropagation="true"
+                                                  Style="margin: 2px; color: #dc3545; border-color: #dc3545;" />
 
                                     <RadzenButton Icon="delete"
                                                   ButtonStyle="ButtonStyle.Danger"
                                                   Size="ButtonSize.Small"
-                                                  Tooltip="Eliminar usuario"
+                                                  title="Eliminar factura"
                                                   Click="@(() => ConfirmDelete(factura))"
-                                                  @onclick:stopPropagation="true" />
+                                                  @onclick:stopPropagation="true"
+                                                  Style="margin: 2px;" />
 
-                                    <RadzenButton Icon="picture_as_pdf"
-                                                  ButtonStyle="ButtonStyle.Success"
-                                                  Size="ButtonSize.Small"
-                                                  Tooltip="Descargar Aviso de Cobro"
-                                                  Click="@(() => DescargarPdf(factura))"
-                                                  Style="margin-right: 5px;" />
                                 </Template>
                             </RadzenDataGridColumn>
-
                         </Columns>
 
 
