@@ -71,7 +71,10 @@
                                     FacturaExpandidaId="facturaExpandidaId"
                                     OnEnviar="@((factura) => ConfirmSend(factura))"
                                     OnEliminar="@((factura) => ConfirmDelete(factura))"
+                                    OnDescargarPdf="@((factura) => DescargarPdf(factura))"
+                                    OnEnviarCorreos="@((factura) => EnviarCorreos(factura))"
                                     OnToggleDetalle="@((id) => ToggleDetalle(id))" />
+
 
 
                     

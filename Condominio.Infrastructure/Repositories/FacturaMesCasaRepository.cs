@@ -1,8 +1,10 @@
 ﻿using Condominio.Domain.DB;
 using Condominio.Domain.Entities;
 using Condominio.Domain.Interfaces;
+using Condominio.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,16 +18,26 @@ namespace Condominio.Infrastructure.Repositories
         private readonly NotificacionRepository _notifRepo;
         private readonly INotificacionRealTimeService _notificacionService;
         private readonly MovimientosRepository _movimientoRepo;
+        private readonly BrevoEmailService _emailService;
+        private readonly IConfiguration _config;
+        private readonly PdfGenerator _pdfGenerator;
 
         public FacturaMesCasaRepository(
             IDbContextFactory<AppDbContext> factory,
             NotificacionRepository notifRepo,
+            PdfGenerator pdfGenerator,
             INotificacionRealTimeService notificacionService,
-            MovimientosRepository movimientoRepo) : base(factory)
+            MovimientosRepository movimientoRepo,
+             IConfiguration config,
+             BrevoEmailService emailService
+             ) : base(factory)
         {
             _notifRepo = notifRepo;
             _notificacionService = notificacionService;
             _movimientoRepo = movimientoRepo;
+            _pdfGenerator = pdfGenerator;
+            _emailService = emailService;
+            _config = config;
         }
 
         public async Task<(List<FacturaMesCasa> Items, int Total)> GetPagedForUserAsync(int skip, int take, int userId, string filtro = null)
@@ -652,6 +664,113 @@ namespace Condominio.Infrastructure.Repositories
             await db.SaveChangesAsync();
 
             return usuario.Id;
+        }
+
+
+
+
+        public async Task EnviarCorreosFacturaAsync(int facturaMesCasaId)
+        {
+            await using var db = await _factory.CreateDbContextAsync();
+
+            FacturaMesCasa facturaMesCasa = await db.FacturaMesCasa.Include(f => f.FacturaMes)
+                .FirstOrDefaultAsync(f => f.Id == facturaMesCasaId);
+
+            int facturaId = facturaMesCasa.FacturaMesId;
+
+            var factura = await db.FacturaMes
+                .Include(f => f.FacturaMesHijos).ThenInclude(fh => fh.CategoriaGasto)
+                .FirstOrDefaultAsync(f => f.Id == facturaId);
+
+            if (factura == null) throw new Exception("Factura no encontrada");
+
+            var casasPendientes = await db.FacturaMesCasa
+     .Where(f => f.Id == facturaMesCasaId &&
+                 (f.CorreoEnviado == false || f.CorreoEnviado == null))
+     .ToListAsync();
+
+            if (!casasPendientes.Any())
+            {
+                Console.WriteLine("⚠️ No hay correos pendientes por enviar en esta factura.");
+                return;
+            }
+
+
+            var usuariosPorCasa = await db.Users
+                .AsNoTracking()
+                .Where(u => u.HouseId != null && u.HouseId == facturaMesCasa.HouseId)
+                .GroupBy(u => u.HouseId!.Value)
+                .ToDictionaryAsync(g => g.Key, g => g.First().Email);
+
+            // Casas sin correo válido: las marcamos de una vez para no trabar pendientes
+            var casasSinCorreo = casasPendientes
+                .Where(c => !usuariosPorCasa.TryGetValue(c.HouseId, out var email) || string.IsNullOrWhiteSpace(email))
+                .ToList();
+
+
+            var casasConCorreo = casasPendientes.Except(casasSinCorreo).ToList();
+
+
+            // Correo principal en "To" (puedes usar también _emailService.ObtenerRemitente() si lo agregaste)
+            string correoPrincipalTo = "notificacionesensenada@solunarinf.com";
+
+            var listaBcc = casasConCorreo
+                .Select(c => usuariosPorCasa[c.HouseId]!.Trim())
+                .Where(email => !email.Equals(correoPrincipalTo, StringComparison.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            decimal montoParaPdf = casasConCorreo.First().MontoTotal;
+            var totalCasas = await db.Houses.CountAsync();
+            byte[] pdfBytes = _pdfGenerator.GenerarAviso(factura, totalCasas, pagado:true);
+
+            string nombreArchivo = $"Recibo_{factura.NombreMes}_{factura.Year}.pdf";
+            string asunto = $"Recibo de Cobro - {factura.NombreMesCompleto}";
+            string mensaje = $@"
+<h3>Estimado propietario,</h3>
+<p>Adjunto encontrará el recibo de cobro correspondiente al mes de <strong>{factura.NombreMesCompleto}</strong>.</p>
+<p>El monto cancelado por su inmueble es de <strong>${montoParaPdf:N2}</strong>.</p>
+<br/>
+<p>Saludos cordiales,<br/>Administración La Ensenada</p>";
+
+            // Brevo permite máximo 99 destinatarios por envío (1 en To + 98 en Bcc)
+            const int maxBccPorEnvio = 98;
+            var lotesBcc = listaBcc.Chunk(maxBccPorEnvio).ToList();
+            var fechaEnvio = DateTime.Now;
+
+            foreach (var lote in lotesBcc)
+            {
+                var bccLoteList = lote.ToList();
+
+                await _emailService.EnviarCorreoConAdjuntoAsync(
+                    destinatarioPrincipal: correoPrincipalTo,
+                    asunto: asunto,
+                    mensajeHtml: mensaje,
+                    pdfBytes: pdfBytes,
+                    nombreArchivo: nombreArchivo,
+                    correosOcultosBcc: bccLoteList
+                );
+
+                // Marcamos como enviadas solo las casas de este lote que ya salió bien
+                var casasDelLote = casasConCorreo
+                    .Where(c => bccLoteList.Contains(usuariosPorCasa[c.HouseId]!.Trim(), StringComparer.OrdinalIgnoreCase))
+                    .ToList();
+
+
+
+                Console.WriteLine($"📧 Lote enviado en copia oculta a {bccLoteList.Count} destinatarios.");
+
+                if (lotesBcc.Count > 1)
+                {
+                    await Task.Delay(1000);
+                }
+            }
+
+           
+
+
+
+            Console.WriteLine("✅ Proceso de envío de correos finalizado.");
         }
     }
 }

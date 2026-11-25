@@ -1,4 +1,7 @@
-﻿using QuestPDF.Fluent;
+﻿using Condominio.Domain.Entities; // <--- Agrega esta línea
+using Microsoft.AspNetCore.Hosting;
+using QuestPDF.Drawing;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System;
@@ -6,15 +9,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using QuestPDF.Drawing;
-using Condominio.Domain.Entities; // <--- Agrega esta línea
 
 namespace Condominio.Infrastructure.Services
 {
     public class PdfGenerator
     {
-        public byte[] GenerarAviso(FacturaMes? factura, int totalCasas)
+        private readonly IWebHostEnvironment _environment;
+
+        public PdfGenerator(IWebHostEnvironment environment)
         {
+            _environment = environment;
+        }
+
+        public byte[] GenerarAviso(FacturaMes? factura, int totalCasas, bool pagado = false)
+        {
+
+
             // Declaración de licencia
             QuestPDF.Settings.License = LicenseType.Community;
 
@@ -51,7 +61,8 @@ namespace Condominio.Infrastructure.Services
 
                             row.ConstantItem(130).Border(1).BorderColor(verdeOscuro).Padding(10).AlignCenter().AlignMiddle().Column(col =>
                             {
-                                col.Item().Text("AVISO DE COBRO").FontSize(13).Bold().FontColor(verdeOscuro);
+                                var tipoFactura = pagado ? "RECIBO DE COBRO" : "AVISO DE COBRO";
+                                col.Item().Text(tipoFactura).FontSize(13).Bold().FontColor(verdeOscuro);
                                 col.Item().LineHorizontal(1).LineColor(verdeOscuro);
                             });
                         });
@@ -172,6 +183,138 @@ namespace Condominio.Infrastructure.Services
             });
 
             // Retorna el archivo en un arreglo de bytes
+            return document.GeneratePdf();
+        }
+
+
+        public byte[] GenerarCertificadoSolvencia(
+    string nombrePropietario,
+    string cedula,
+    string numeroCasa,
+    string calle,
+    string fechaEmision,
+    string mesCorte)
+        {
+            string rutaSello = Path.Combine(
+                _environment.WebRootPath,
+                "Sello La Ensenada.png"
+            );
+
+            byte[] selloPng = File.ReadAllBytes(rutaSello);
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+
+                    page.MarginHorizontal(2, Unit.Centimetre);
+                    page.MarginTop(1.5f, Unit.Centimetre);
+                    page.MarginBottom(1, Unit.Centimetre);
+
+                    page.DefaultTextStyle(x =>
+            x.FontFamily("Lato").FontSize(12));
+
+
+
+                    // CONTENIDO PRINCIPAL
+                    page.Content().Column(column =>
+                    {
+                        // Encabezado
+                        column.Item().AlignCenter().Column(header =>
+                        {
+                            header.Item().AlignCenter().Text("Asociación Civil Asoensenada").Bold();
+                            header.Item().AlignCenter().Text("Urb. La Ensenada").Bold();
+                            header.Item().AlignCenter().Text("Sector La Pradera Municipio San Joaquín").Bold();
+                            header.Item().AlignCenter().Text("J-297479279").Bold();
+                        });
+
+                        // Fecha
+                        column.Item()
+                            .PaddingTop(38)
+                            .AlignRight()
+                            .Text($"San Joaquín, {fechaEmision}")
+                            .Bold();
+
+                        // Línea separadora
+                        column.Item()
+                            .PaddingTop(38)
+                            .BorderBottom(1)
+                            .BorderColor(Colors.Grey.Medium);
+
+                        // Título
+                        column.Item()
+                            .PaddingTop(18)
+                            .AlignCenter()
+                            .Text("Certificación de Solvencia")
+                            .FontSize(14)
+                            .Bold();
+
+                        // Texto principal
+                        column.Item()
+                            .PaddingTop(45)
+                            .Text(text =>
+                            {
+                                text.Justify();
+
+                                text.Span("Por medio de la presente, la ");
+                                text.Span("Junta Administrativa Asoensenada de la Urb. La Ensenada").Bold();
+                                text.Span(" hace constar que la ciudadana ");
+                                text.Span(nombrePropietario).Bold();
+                                text.Span(", titular de la Cédula de Identidad ");
+                                text.Span(cedula).Bold();
+                                text.Span(", propietaria del inmueble identificado como ");
+                                text.Span($"Casa {numeroCasa}").Bold();
+                                text.Span($" en la Calle {calle} de la Urb. La Ensenada, Sector La Pradera Municipio San Joaquín, se encuentra:");
+                            }); 
+
+                        // Estado de solvencia
+                        column.Item()
+                            .PaddingTop(12)
+                            .Text(text =>
+                            {
+                                text.Justify();
+
+                                text.Span("SOLVENTE").Bold();
+                                text.Span(" en el pago de las cuotas ordinarias y extraordinarias correspondientes a los gastos comunes, siendo estos reflejados como gastos causados de la Urb. La Ensenada hasta el mes de ");
+                                text.Span(mesCorte).Bold();
+                                text.Span(".");
+                            });
+
+                        // Constancia
+                        column.Item()
+                            .PaddingTop(18)
+                            .Text("Esta constancia se emite a solicitud de la parte interesada para los fines que estime conveniente.");
+
+
+                        column.Item()
+    .PaddingTop(75)
+    .BorderTop(1)
+    .BorderColor(Colors.Grey.Medium);
+
+                        // Despedida
+                        column.Item()
+                            .PaddingTop(30)
+                            .Text("Atentamente,");
+
+                        // Firma administrativa
+                        column.Item()
+                            .PaddingTop(16)
+                            .Text("p/Junta Administrativa Asoensenada");
+
+                        // Sello
+                        column.Item()
+                            .PaddingTop(8)
+                            .AlignCenter()
+                            .Height(105)
+                            .Image(selloPng)
+                            .FitArea();
+                    });
+
+
+                });
+            });
+
             return document.GeneratePdf();
         }
     }

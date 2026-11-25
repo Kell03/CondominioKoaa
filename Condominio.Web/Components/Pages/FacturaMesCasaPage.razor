@@ -4,6 +4,7 @@
 @using Condominio.Domain.Entities
 @using Condominio.Domain.Interfaces.Repositories
 @using Condominio.Infrastructure.Repositories
+@using Condominio.Infrastructure.Services
 @using Condominio.Web.Components.ComponentsMobile
 @using Condominio.Web.Components.Dialogs
 @using Microsoft.AspNetCore.Authorization
@@ -21,6 +22,8 @@
 @inject NavigationManager NavigationManager
 @inject Radzen.DialogService DialogService
 @inject ConfiguracionCondominioRepository ConfiguracionCondominioRepository
+@inject PdfGenerator PdfService
+@inject HouseRepository HouseRepository
 @inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
 
@@ -196,28 +199,26 @@
                                                             TValue="bool?"
                                                             Value="@headerState"
                                                             Change="@(args =>
-                                                                                                        {
-                                                                                                            if (invoices == null) invoices = new List<FacturaMesCasa>();
-                                                                                                            var itemsVisibles = grid.View.Cast<FacturaMesCasa>().ToList();
-
-                                                                                                            // ✅ SI EL CHECKBOX DEL HEADER ESTABA LLENO O A MEDIAS, LO VACIAMOS
-                                                                                                            if (headerState == true || headerState == null)
-                                                                                                            {
-                                                                                                                foreach (var item in itemsVisibles)
-                                                                                                                {
-                                                                                                                    invoices.Remove(item);
-                                                                                                                }
-                                                                                                            }
-                                                                                                            // ✅ SI ESTABA VACÍO, LO LLENAMOS
-                                                                                                            else
-                                                                                                            {
-                                                                                                                foreach (var item in itemsVisibles)
-                                                                                                                {
-                                                                                                                    if (!invoices.Contains(item)) invoices.Add(item);
-                                                                                                                }
-                                                                                                            }
-                                                                                                            StateHasChanged();
-                                                                                                        })" />
+                                                                                                     {
+                                                                                                         if (invoices == null) invoices = new List<FacturaMesCasa>();
+                                                                                                         var itemsVisibles = grid.View.Cast<FacturaMesCasa>().ToList();                                                                                                        // ✅ SI EL CHECKBOX DEL HEADER ESTABA LLENO O A MEDIAS, LO VACIAMOS
+                                                                                                         if (headerState == true || headerState == null)
+                                                                                                         {
+                                                                                                             foreach (var item in itemsVisibles)
+                                                                                                             {
+                                                                                                                 invoices.Remove(item);
+                                                                                                             }
+                                                                                                         }
+                                                                                                         // ✅ SI ESTABA VACÍO, LO LLENAMOS
+                                                                                                         else
+                                                                                                         {
+                                                                                                             foreach (var item in itemsVisibles)
+                                                                                                             {
+                                                                                                                 if (!invoices.Contains(item)) invoices.Add(item);
+                                                                                                             }
+                                                                                                         }
+                                                                                                         StateHasChanged();
+                                                                                                     })" />
                                         </HeaderTemplate>
                                         <Template Context="data">
                                             @if (data.SaldoPendiente > 0)
@@ -263,6 +264,17 @@
                                                               Click="@(() => EditUser(factura))"
                                                               @onclick:stopPropagation="true"
                                                               Visible="@(!isAdmin)" />
+
+                                                              
+                                    <RadzenButton Icon="picture_as_pdf"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Variant="Variant.Outlined"
+                                                  Size="ButtonSize.Small"
+                                                  title="Descargar aviso de cobro"
+                                                  Click="@(() => DescargarPdf(factura))"
+                                                  @onclick:stopPropagation="true"
+                                                  Style="margin: 2px; color: #dc3545; border-color: #dc3545;" />
+
                                             }
                                             else
                                             {
@@ -418,7 +430,8 @@
                                                 FacturaExpandidaId="facturaExpandidaId"
                                                 OnPagar="@((cuota) => EditUser(cuota))"
                                                 OnVerPagos="@((cuota) => AddPagosList(cuota))"
-                                                OnToggleDetalle="@((id) => ToggleDetalle(id))" />
+                                                OnToggleDetalle="@((id) => ToggleDetalle(id))"
+                                                OnDescargarPdf="@((id) => DescargarPdf(id))"/>
 
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 10px;">
                                 <RadzenButton Text="Anterior"
@@ -853,6 +866,37 @@
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Error al confirmar masivamente: {ex.Message}");
+        }
+    }
+
+
+    private async Task DescargarPdf(FacturaMesCasa facturaCasa)
+    {
+        try
+        {
+            if (facturaCasa == null)
+                throw new ArgumentNullException(nameof(facturaCasa), "La factura de casa no puede ser nula al generar el PDF.");
+
+
+            var factura = await FacturaMesRepository.GetMesByIdAsync(facturaCasa.FacturaMesId);
+            var casas = await HouseRepository.GetAllAsync();
+            var totalcasas = casas.Count(); // Contamos el total de casas
+            // 1. Generas el PDF pasándole la factura
+            byte[] pdfBytes = PdfService.GenerarAviso(factura, totalcasas, pagado:true);
+
+            // 2. Convertimos los bytes a un string Base64
+            string base64String = Convert.ToBase64String(pdfBytes);
+
+            // 3. Nombre dinámico del archivo
+            string nombreArchivo = $"Recibo_{factura.NombreMes}_{factura.Year}.pdf";
+
+            // 4. Llamamos a la función de JavaScript
+            await JSRuntime.InvokeVoidAsync("descargarArchivoDesdeBytes", nombreArchivo, base64String);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al generar PDF: {ex.Message}");
+            throw;
         }
     }
 }

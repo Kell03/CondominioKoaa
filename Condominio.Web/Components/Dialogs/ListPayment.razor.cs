@@ -1,5 +1,6 @@
 using Condominio.Application.Services;
 using Condominio.Domain.Entities;
+using Condominio.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Components;
 using Radzen;
 
@@ -16,6 +17,7 @@ namespace Condominio.Web.Components.Dialogs
         private IEnumerable<Payments> PagosList = Enumerable.Empty<Payments>();
         private FacturaMesCasa FacturaCasa;
 
+        private bool procesandoPago = false;
         protected override async Task OnInitializedAsync()
         {
             await LoadPagos();
@@ -94,25 +96,36 @@ namespace Condominio.Web.Components.Dialogs
 
         private async Task ConfirmPayment(Payments payment)
         {
+            if (procesandoPago) return;
 
             try
             {
+                procesandoPago = true;
+
                 if (Cuotas)
                 {
                     await CuotaEspecialCasaRepository.ConfirmPayment(payment);
                 }
                 else
                 {
-                    await FacturaMesCasaRepository.ConfirmPayment(payment);
+                   var result = await FacturaMesCasaRepository.ConfirmPayment(payment);
+                    if (result)
+                    {
+                        await FacturaMesCasaRepository.EnviarCorreosFacturaAsync((int)payment.FacturaMesCasaId);
+                    }
                 }
 
                 await LoadPagos();
-                StateHasChanged();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
                 // Aquí podrías mostrar un mensaje al usuario
+            }
+            finally
+            {
+                procesandoPago = false;
+                StateHasChanged();
             }
         }
 

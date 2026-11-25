@@ -46,6 +46,7 @@ namespace Condominio.Infrastructure
 
             services.AddScoped<GoogleDriveService>();
             services.AddScoped<EmailService>();
+            services.AddScoped<BrevoEmailService>();
             services.AddScoped<PdfGenerator>();
 
 

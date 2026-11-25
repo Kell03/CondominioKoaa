@@ -74,9 +74,22 @@
                     }
                     else
                     {
-                        <RadzenButton Text="Ver Comprobante" Icon="receipt" ButtonStyle="ButtonStyle.Light"
-                                      Style="flex: 1; border-radius: 8px;" Size="ButtonSize.Small"
-                                      Click="@(() => OnPagar.InvokeAsync(item))" />
+                        <div style="display: flex; gap: 8px; flex: 1;">
+
+                            <RadzenButton Text="Ver Comprobante"
+                                          Icon="receipt"
+                                          ButtonStyle="ButtonStyle.Light"
+                                          Style="flex: 1; border-radius: 8px;"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => OnPagar.InvokeAsync(item))" />
+
+                            <RadzenButton Icon="download"
+                                          ButtonStyle="ButtonStyle.Success"
+                                          Style="border-radius: 8px; min-width: 42px;"
+                                          Size="ButtonSize.Small"
+                                          Click="@(() => OnDescargarPdf.InvokeAsync(item))" />
+
+                        </div>
                     }
                 }
             </div>
@@ -125,6 +138,7 @@
     [Parameter] public bool IsAdmin { get; set; }
     [Parameter] public EventCallback<FacturaMesCasa> OnPagar { get; set; }
     [Parameter] public EventCallback<FacturaMesCasa> OnVerPagos { get; set; }
+    [Parameter] public EventCallback<FacturaMesCasa> OnDescargarPdf { get; set; }
     [Parameter] public EventCallback<int> OnToggleDetalle { get; set; }
     [Parameter] public int FacturaExpandidaId { get; set; }
 
