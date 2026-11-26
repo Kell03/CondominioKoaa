@@ -180,6 +180,28 @@
                                 </RadzenRow>
                             </RadzenCard>
 
+
+                            <!-- ✅ NUEVA TARJETA: CONFIGURACIÓN DE CORREO -->
+                            <RadzenCard Style="padding: 20px; border-radius: 8px;">
+                                <RadzenText TextStyle="TextStyle.H6" Style="color: #1a2a3a; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                                    <RadzenIcon Icon="email" Style="margin-right: 5px; color: #007bff;" /> Notificaciones por Correo
+                                </RadzenText>
+
+                                <RadzenRow AlignItems="AlignItems.Center">
+                                    <RadzenColumn Size="12" SizeSM="8">
+                                        <RadzenText TextStyle="TextStyle.Body1" Style="font-weight: 500; color: #333; margin: 0;">
+                                            Habilitar envío de correos
+                                        </RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: #6c757d; margin: 0;">
+                                            Si está activo, el sistema podrá enviar los avisos de cobro a los propietarios.
+                                        </RadzenText>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeSM="4" Style="display: flex; justify-content: flex-end; align-items: center;">
+                                        <RadzenSwitch @bind-Value="model.EnvioCorreo" Style="transform: scale(1.2);" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenCard>
+
                             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 2rem;">
                                 <RadzenButton Text="Cancelar" Icon="cancel" ButtonStyle="ButtonStyle.Light"
                                               Click="@(() => selectedIndex = 0)" />

@@ -508,6 +508,14 @@ namespace Condominio.Infrastructure.Repositories
         {
             await using var db = await _factory.CreateDbContextAsync();
 
+            ConfiguracionCondominio configuracion = await db.ConfiguracionCondominio.FirstOrDefaultAsync();
+
+            if (configuracion == null || !configuracion.EnvioCorreo)
+            {
+                Console.WriteLine("⚠️ El envío de correos está desactivado.");
+                return;
+            }
+
             var factura = await db.FacturaMes
                 .Include(f => f.FacturaMesHijos).ThenInclude(fh => fh.CategoriaGasto)
                 .FirstOrDefaultAsync(f => f.Id == facturaId);

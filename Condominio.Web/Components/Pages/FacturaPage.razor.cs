@@ -29,6 +29,7 @@ namespace Condominio.Web.Components.Pages
         private int currentPage = 1;
         private int TotalPages => (int)Math.Ceiling((double)totalFacturas / 10);
         private string _filtroGlobal = "";
+        ConfiguracionCondominio condominio = new ConfiguracionCondominio();
 
 
 
@@ -123,6 +124,11 @@ namespace Condominio.Web.Components.Pages
                 await base.OnInitializedAsync();
 
                 Invoices = await FacturaMesRepository.GetAllForGastosAsync();
+                var condominios = await ConfigRepo.GetAllAsync();
+                if (condominios.Any())
+                {
+                    condominio = condominios.First();
+                }
             }
             catch (Exception ex)
             {
@@ -274,6 +280,17 @@ namespace Condominio.Web.Components.Pages
 
         private async Task EnviarCorreos(FacturaMes factura)
         {
+            if (!condominio.EnvioCorreo)
+            {
+                await DialogService.Alert(
+            "El envío de correos no está configurado o habilitado en el sistema. Por favor, active esta opción en la configuración del condominio.",
+            "Aviso",
+            new AlertOptions() { OkButtonText = "Entendido" }
+        );
+
+                return; 
+            }
+            
             // 1. Confirmación antes de enviar
             var confirmar = await DialogService.Confirm(
                 $"¿Está seguro que desea enviar los correos de la factura?",

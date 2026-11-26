@@ -25,6 +25,9 @@ namespace Condominio.Domain.Entities
         public string? PagoMovilTelefono { get; set; }
         public string? PagoMovilCedula { get; set; }
 
+        public bool EnvioCorreo { get; set; } = false;
+
+
         // Base64 de la imagen
         public string? LogoBase64 { get; set; }
     }
