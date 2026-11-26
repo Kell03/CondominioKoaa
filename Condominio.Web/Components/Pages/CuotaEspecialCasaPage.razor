@@ -232,7 +232,11 @@
                                     </RadzenDataGridColumn>
 
 
-                                    <RadzenDataGridColumn TItem="CuotaEspecialCasa" Title="Motivo" Width="150px">
+                                    <RadzenDataGridColumn TItem="CuotaEspecialCasa"
+                                                          Title="Motivo"
+                                                          Width="150px"
+                                                          Property="CuotaEspecial.Motivo"
+                                                          FilterProperty="CuotaEspecial.Motivo">
                                         <Template Context="cuota">
                                             @cuota.CuotaEspecial?.Motivo
                                         </Template>

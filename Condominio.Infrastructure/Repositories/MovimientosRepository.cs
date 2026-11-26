@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 
 namespace Condominio.Infrastructure.Repositories
@@ -36,30 +37,35 @@ namespace Condominio.Infrastructure.Repositories
                 .AsQueryable();
 
             // ✅ FILTRO GLOBAL
+            // if (!string.IsNullOrWhiteSpace(filtro))
+            // {
+            //     string valorBusqueda = filtro;
+            //     if (filtro.Contains("Contains(\""))
+            //     {
+            //         var inicio = filtro.IndexOf("Contains(\"") + 10;
+            //         var fin = filtro.IndexOf("\")", inicio);
+            //         if (fin > inicio)
+            //         {
+            //             valorBusqueda = filtro.Substring(inicio, fin - inicio);
+            //         }
+            //     }
+            //
+            //     var f = valorBusqueda.ToLower();
+            //
+            //     // Buscamos en la descripción, tipo, monto o casa
+            //     query = query.Where(x =>
+            //         x.Descripcion != null && x.Descripcion.ToLower().Contains(f) ||
+            //         x.Tipo.ToString().ToLower().Contains(f) ||
+            //         x.Monto.ToString().Contains(f) ||
+            //         (x.House != null && x.House.Number.Contains(f))
+            //     );
+            // }
+
+
             if (!string.IsNullOrWhiteSpace(filtro))
             {
-                string valorBusqueda = filtro;
-                if (filtro.Contains("Contains(\""))
-                {
-                    var inicio = filtro.IndexOf("Contains(\"") + 10;
-                    var fin = filtro.IndexOf("\")", inicio);
-                    if (fin > inicio)
-                    {
-                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
-                    }
-                }
-
-                var f = valorBusqueda.ToLower();
-
-                // Buscamos en la descripción, tipo, monto o casa
-                query = query.Where(x =>
-                    x.Descripcion != null && x.Descripcion.ToLower().Contains(f) ||
-                    x.Tipo.ToString().ToLower().Contains(f) ||
-                    x.Monto.ToString().Contains(f) ||
-                    (x.House != null && x.House.Number.Contains(f))
-                );
+                query = query.Where(filtro);  // Necesita hacer referencia a System.Linq.Dynamic.Core
             }
-
             // Contamos el total (después de aplicar el filtro)
             var total = await query.CountAsync();
 

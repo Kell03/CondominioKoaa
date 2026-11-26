@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using static Amazon.S3.Util.S3EventNotification;
 using static Org.BouncyCastle.Math.EC.ECCurve;
@@ -67,33 +68,77 @@ namespace Condominio.Infrastructure.Repositories
 
             query = query.Where(x => x.Motivo == null || x.Motivo == "");
 
+            //if (!string.IsNullOrWhiteSpace(filtro))
+            //{
+            //    // Extraemos el valor limpio
+            //    string valorBusqueda = filtro;
+            //    if (filtro.Contains("Contains(\""))
+            //    {
+            //        var inicio = filtro.IndexOf("Contains(\"") + 10;
+            //        var fin = filtro.IndexOf("\")", inicio);
+            //        if (fin > inicio)
+            //        {
+            //            valorBusqueda = filtro.Substring(inicio, fin - inicio);
+            //        }
+            //    }
+            //
+            //    var f = valorBusqueda.ToLower();
+            //
+            //    // ✅ BUSCAMOS LOS MESES QUE COINCIDEN
+            //    var mesesCoincidentes = ObtenerMesesCoincidentes(f);
+            //
+            //    query = query.Where(x =>
+            //        x.Year.ToString().Contains(f) ||
+            //        (x.Motivo != null && x.Motivo.ToLower().Contains(f)) ||
+            //        x.Mes.ToString().Contains(f) ||
+            //        (mesesCoincidentes.Any() && mesesCoincidentes.Contains(x.Mes)) // 👈 La magia aquí
+            //    );
+            //}
+
+            // ✅ Usar directamente la cadena de filtro generada por Radzen
             if (!string.IsNullOrWhiteSpace(filtro))
             {
-                // Extraemos el valor limpio
-                string valorBusqueda = filtro;
-                if (filtro.Contains("Contains(\""))
+                // ✅ INTERCEPTAR EL FILTRO DE MES
+                if (filtro.Contains("NombreMes"))
                 {
-                    var inicio = filtro.IndexOf("Contains(\"") + 10;
-                    var fin = filtro.IndexOf("\")", inicio);
-                    if (fin > inicio)
+                    string textoBusqueda = "";
+
+                    // 1. Extraer de forma segura el texto que escribió el usuario (ignorando el "" vacío)
+                    var partes = filtro.Split('"');
+                    foreach (var parte in partes)
                     {
-                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                        // Buscamos la parte que no esté vacía, no tenga la flecha "=>" y no sea parte de la sintaxis
+                        if (!string.IsNullOrWhiteSpace(parte) &&
+                            !parte.Contains("=>") &&
+                            !parte.Contains("NombreMes") &&
+                            !parte.Contains(".Contains") &&
+                            !parte.Contains("??"))
+                        {
+                            textoBusqueda = parte.Trim().ToLower();
+                            break; // Ya encontramos el mes (ej: "marzo")
+                        }
+                    }
+
+                    // 2. Traducir el texto a número de mes
+                    int? numeroMes = ObtenerNumeroMes(textoBusqueda);
+
+                    if (numeroMes.HasValue)
+                    {
+                        // 3. Construir el filtro limpio para EF Core
+                        // En lugar de hacer Replace (que falla por mayúsculas/minúsculas), 
+                        // simplemente forzamos un filtro directo a la columna "Mes" con el número.
+                        filtro = $"Mes == {numeroMes.Value}";
+                    }
+                    else
+                    {
+                        // Si el usuario escribió algo que no es un mes, forzamos un filtro falso
+                        filtro = "1 == 2";
                     }
                 }
 
-                var f = valorBusqueda.ToLower();
-
-                // ✅ BUSCAMOS LOS MESES QUE COINCIDEN
-                var mesesCoincidentes = ObtenerMesesCoincidentes(f);
-
-                query = query.Where(x =>
-                    x.Year.ToString().Contains(f) ||
-                    (x.Motivo != null && x.Motivo.ToLower().Contains(f)) ||
-                    x.Mes.ToString().Contains(f) ||
-                    (mesesCoincidentes.Any() && mesesCoincidentes.Contains(x.Mes)) // 👈 La magia aquí
-                );
+                // ✅ Pasar el filtro (ya traducido o el original) a EF Core
+                query = query.Where(filtro);
             }
-
             var total = await query.CountAsync();
 
             // ... (el resto del código de orden y paginación se queda igual)
@@ -107,6 +152,25 @@ namespace Condominio.Infrastructure.Repositories
             return (items, total);
         }
 
+
+        private int? ObtenerNumeroMes(string texto)
+        {
+            var meses = new Dictionary<string, int>
+    {
+        { "enero", 1 }, { "febrero", 2 }, { "marzo", 3 }, { "abril", 4 },
+        { "mayo", 5 }, { "junio", 6 }, { "julio", 7 }, { "agosto", 8 },
+        { "septiembre", 9 }, { "setiembre", 9 }, { "octubre", 10 }, { "noviembre", 11 }, { "diciembre", 12 }
+    };
+
+            // Buscar si el texto contiene alguna parte del nombre del mes
+            foreach (var mes in meses)
+            {
+                if (mes.Key.Contains(texto) || texto.Contains(mes.Key))
+                    return mes.Value;
+            }
+
+            return null;
+        }
         private List<int> ObtenerMesesCoincidentes(string texto)
         {
             if (string.IsNullOrWhiteSpace(texto)) return new List<int>();

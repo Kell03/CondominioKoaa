@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 
 namespace Condominio.Infrastructure.Repositories
@@ -33,53 +34,32 @@ namespace Condominio.Infrastructure.Repositories
         {
             await using var db = await _factory.CreateDbContextAsync();
 
-            var query = from item in db.Set<CuotaEspecialCasa>()
-                        join user in db.Users on item.HouseId equals user.HouseId into ownerGroup
-                        from owner in ownerGroup.DefaultIfEmpty()
-                        join payments in db.Payments on item.Id equals payments.CuotaEspecialCasaId into paymentGroup
-                        select new { item, owner, paymentGroup };
+            // 1. Empezamos con la entidad principal y sus navegaciones necesarias para el filtro
+            var query = db.Set<CuotaEspecialCasa>()
+                .Include(x => x.House)
+                .Include(x => x.CuotaEspecial)
+                .AsNoTracking()
+                .AsQueryable();
 
-            // ✅ FILTRO GLOBAL (Buscador o embudo)
+            // 2. Aplicamos el filtro dinámico sobre la entidad real (¡Aquí funciona House!)
             if (!string.IsNullOrWhiteSpace(filtro))
             {
-                string valorBusqueda = filtro;
-                // ✅ 1. Manejar el filtro del buscador general (Contains)
-                if (filtro.Contains("Contains(\""))
-                {
-                    var inicio = filtro.IndexOf("Contains(\"") + 10;
-                    var fin = filtro.IndexOf("\")", inicio);
-                    if (fin > inicio)
-                    {
-                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
-                    }
-                }
-                // ✅ 2. Manejar el filtro del embudo de Radzen (Igualdad ==)
-                else if (filtro.Contains("== \""))
-                {
-                    var inicio = filtro.IndexOf("== \"") + 4;
-                    var fin = filtro.IndexOf("\"", inicio);
-                    if (fin > inicio)
-                    {
-                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
-                    }
-                }
-
-                var f = valorBusqueda.ToLower();
-
-                // ✅ 3. Aplicar el filtro
-                query = query.Where(x =>
-                    x.item.Estado.ToString().ToLower().Contains(f) ||
-                    x.item.House.Number.ToLower().Contains(f) || // Asegúrate de que Number sea string
-                    (x.owner != null && x.owner.Name != null && x.owner.Name.ToLower().Contains(f)) ||
-                    (x.owner != null && x.owner.Cedula != null && x.owner.Cedula.ToLower().Contains(f)) ||
-                    (x.item.Referencia != null && x.item.Referencia.ToLower().Contains(f)) ||
-                    x.item.MontoTotal.ToString().Contains(f)
-                );
+                query = query.Where(filtro);
             }
 
+            // 3. Contamos los registros filtrados
             var total = await query.CountAsync();
 
-            var result = await query
+            // 4. Traemos los datos paginados y luego hacemos los joins (o podemos hacer el join antes)
+            // Para mantener tu lógica de "owner" y "paymentGroup", hacemos el join DESPUÉS de filtrar
+            var joinedQuery = from item in query
+                              join user in db.Users on item.HouseId equals user.HouseId into ownerGroup
+                              from owner in ownerGroup.DefaultIfEmpty()
+                              join payments in db.Payments on item.Id equals payments.CuotaEspecialCasaId into paymentGroup
+                              select new { item, owner, paymentGroup };
+
+            // 5. Proyectamos a la entidad final y paginamos
+            var result = await joinedQuery
                 .Select(x => new CuotaEspecialCasa
                 {
                     Id = x.item.Id,
@@ -101,20 +81,17 @@ namespace Condominio.Infrastructure.Repositories
                     Payments = x.paymentGroup.ToList(),
                     User = x.owner
                 })
-// ✅ 1er Orden: Las que tienen pagos pendientes primero
-.OrderByDescending(x => x.Payments.Any(p => p.Estado == "Pendiente"))
-// ✅ 2do Orden: Luego por fecha de creación (más recientes primero)
-.ThenByDescending(x => x.CreatedAt)
-.Skip(skip)
-.Take(take)
-.ToListAsync();
+                .OrderByDescending(x => x.Payments.Any(p => p.Estado == "Pendiente"))
+                .ThenByDescending(x => x.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync();
 
             return (result, total);
         }
 
-
         public async Task<(List<CuotaEspecialCasa> Items, int Total)> GetPagedForUserAsync(
-    int skip, int take, int userId, string filtro = null)
+     int skip, int take, int userId, string filtro = null)
         {
             await using var db = await _factory.CreateDbContextAsync();
 
@@ -139,24 +116,43 @@ namespace Condominio.Infrastructure.Repositories
             // 3. Filtro global
             if (!string.IsNullOrWhiteSpace(filtro))
             {
-                string valorBusqueda = filtro;
-                if (filtro.Contains("Contains(\""))
+                // ✅ INTERCEPTAR EL FILTRO DE MES (Por si el usuario filtra por nombre del mes)
+                if (filtro.Contains("NombreMes"))
                 {
-                    var inicio = filtro.IndexOf("Contains(\"") + 10;
-                    var fin = filtro.IndexOf("\")", inicio);
-                    if (fin > inicio)
+                    string textoBusqueda = "";
+
+                    // Extraer de forma segura el texto que escribió el usuario
+                    var partes = filtro.Split('"');
+                    foreach (var parte in partes)
                     {
-                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
+                        if (!string.IsNullOrWhiteSpace(parte) &&
+                            !parte.Contains("=>") &&
+                            !parte.Contains("NombreMes") &&
+                            !parte.Contains(".Contains") &&
+                            !parte.Contains("??"))
+                        {
+                            textoBusqueda = parte.Trim().ToLower();
+                            break;
+                        }
+                    }
+
+                    int? numeroMes = ObtenerNumeroMes(textoBusqueda);
+
+                    if (numeroMes.HasValue)
+                    {
+                        // Construimos el filtro limpio para EF Core
+                        filtro = $"CuotaEspecial.Mes == {numeroMes.Value}";
+                        // Nota: Asumo que el mes está en CuotaEspecial, si está en otra propiedad cámbialo.
+                        // Si CuotaEspecialCasa tuviera un campo directo "Mes", sería: filtro = $"Mes == {numeroMes.Value}";
+                    }
+                    else
+                    {
+                        filtro = "1 == 2"; // No devolver nada si no es un mes válido
                     }
                 }
 
-                var f = valorBusqueda.ToLower();
-
-                query = query.Where(x =>
-                    x.Estado.ToString().ToLower().Contains(f) ||
-                    (x.Referencia != null && x.Referencia.ToLower().Contains(f)) ||
-                    x.MontoTotal.ToString().Contains(f)
-                );
+                // ✅ Pasar el filtro (ya traducido o el original) a EF Core
+                query = query.Where(filtro);
             }
 
             var total = await query.CountAsync();
@@ -171,6 +167,25 @@ namespace Condominio.Infrastructure.Repositories
             return (result, total);
         }
 
+
+        private int? ObtenerNumeroMes(string texto)
+        {
+            var meses = new Dictionary<string, int>
+    {
+        { "enero", 1 }, { "febrero", 2 }, { "marzo", 3 }, { "abril", 4 },
+        { "mayo", 5 }, { "junio", 6 }, { "julio", 7 }, { "agosto", 8 },
+        { "septiembre", 9 }, { "setiembre", 9 }, { "octubre", 10 }, { "noviembre", 11 }, { "diciembre", 12 }
+    };
+
+            // Buscar si el texto contiene alguna parte del nombre del mes
+            foreach (var mes in meses)
+            {
+                if (mes.Key.Contains(texto) || texto.Contains(mes.Key))
+                    return mes.Value;
+            }
+
+            return null;
+        }
         public override async Task<IEnumerable<CuotaEspecialCasa>> GetAllAsync()
         {
             await using var db = await _factory.CreateDbContextAsync();
