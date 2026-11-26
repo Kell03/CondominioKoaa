@@ -259,7 +259,7 @@ namespace Condominio.Infrastructure.Services
 
                                 text.Span("Por medio de la presente, la ");
                                 text.Span("Junta Administrativa Asoensenada de la Urb. La Ensenada").Bold();
-                                text.Span(" hace constar que la ciudadana ");
+                                text.Span(" hace constar que el/la ciudadano/a ");
                                 text.Span(nombrePropietario).Bold();
                                 text.Span(", titular de la Cédula de Identidad ");
                                 text.Span(cedula).Bold();

@@ -328,13 +328,15 @@
 
 
 
-                                    <RadzenDataGridColumn TItem="FacturaMesCasa" Property="House.Number" Title="Casa" Width="90px">
+                                    <RadzenDataGridColumn TItem="FacturaMesCasa"
+                                                          Property="House.Number"
+                                                          FilterProperty="House.Number"
+                                                          Title="Casa"
+                                                          Width="90px">
                                         <Template Context="FacturaMesCasa">
                                             @FacturaMesCasa.House.Number
                                         </Template>
                                     </RadzenDataGridColumn>
-
-
                                     <RadzenDataGridColumn TItem="FacturaMesCasa"
                                                           Property="@nameof(FacturaMesCasa.MontoTotal)"
                                                           Title="Monto"

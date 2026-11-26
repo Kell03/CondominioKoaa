@@ -1,4 +1,5 @@
-﻿using Condominio.Domain.DB;
+﻿using Amazon.S3.Model;
+using Condominio.Domain.DB;
 using Condominio.Domain.Entities;
 using Condominio.Domain.Interfaces;
 using Condominio.Infrastructure.Services;
@@ -8,8 +9,10 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace Condominio.Infrastructure.Repositories
 {
@@ -64,40 +67,46 @@ namespace Condominio.Infrastructure.Repositories
                 .AsNoTracking();
 
             // ✅ FILTRO GLOBAL (Estado, Año, Mes)
+            //   if (!string.IsNullOrWhiteSpace(filtro))
+            //   {
+            //       // ✅ TRUCO: Si el filtro viene de Radzen, extraemos solo el valor de búsqueda.
+            //       // Radzen envía algo como: x.house.number.Contains("1")
+            //       string valorBusqueda = filtro;
+            //
+            //       // Si contiene la palabra "Contains", extraemos lo que está entre comillas
+            //       if (filtro.Contains("Contains(\""))
+            //       {
+            //           var inicio = filtro.IndexOf("Contains(\"") + 10;
+            //           var fin = filtro.IndexOf("\")", inicio);
+            //           if (fin > inicio)
+            //           {
+            //               valorBusqueda = filtro.Substring(inicio, fin - inicio);
+            //           }
+            //       }
+            //
+            //       var f = valorBusqueda.ToLower();
+            //
+            //       // Ahora sí, buscamos el valor limpio
+            //       query = query.Where(x =>
+            //           x.Estado.ToLower().Contains(f) ||
+            //           x.FacturaMes.Year.ToString().Contains(f) ||
+            //           x.FacturaMes.Mes.ToString().Contains(f) ||
+            //           x.MontoTotal.ToString().Contains(f)
+            //       );
+            //
+            //
+            //
+            //
+            //
+            //
+            //   }
+
+
+            // ✅ Usar directamente la cadena de filtro generada por Radzen
             if (!string.IsNullOrWhiteSpace(filtro))
             {
-                // ✅ TRUCO: Si el filtro viene de Radzen, extraemos solo el valor de búsqueda.
-                // Radzen envía algo como: x.house.number.Contains("1")
-                string valorBusqueda = filtro;
-
-                // Si contiene la palabra "Contains", extraemos lo que está entre comillas
-                if (filtro.Contains("Contains(\""))
-                {
-                    var inicio = filtro.IndexOf("Contains(\"") + 10;
-                    var fin = filtro.IndexOf("\")", inicio);
-                    if (fin > inicio)
-                    {
-                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
-                    }
-                }
-
-                var f = valorBusqueda.ToLower();
-
-                // Ahora sí, buscamos el valor limpio
-                query = query.Where(x =>
-                    x.Estado.ToLower().Contains(f) ||
-                    x.FacturaMes.Year.ToString().Contains(f) ||
-                    x.FacturaMes.Mes.ToString().Contains(f) ||
-                    x.MontoTotal.ToString().Contains(f)
-                );
-
-
-
-
-
-
+                query = query.Where(filtro);  // Necesita hacer referencia a System.Linq.Dynamic.Core
             }
-
             var total = await query.CountAsync();
 
             var result = await query
@@ -122,43 +131,50 @@ namespace Condominio.Infrastructure.Repositories
                         select new { factura, house, owner, paymentGroup, facturaMes };
 
             // ✅ FILTRO GLOBAL
+            // if (!string.IsNullOrWhiteSpace(filtro))
+            // {
+            //     // ✅ TRUCO: Si el filtro viene de Radzen, extraemos solo el valor de búsqueda.
+            //     // Radzen envía algo como: x.house.number.Contains("1")
+            //     string valorBusqueda = filtro;
+            //
+            //     // Si contiene la palabra "Contains", extraemos lo que está entre comillas
+            //     if (filtro.Contains("Contains(\""))
+            //     {
+            //         var inicio = filtro.IndexOf("Contains(\"") + 10;
+            //         var fin = filtro.IndexOf("\")", inicio);
+            //         if (fin > inicio)
+            //         {
+            //             valorBusqueda = filtro.Substring(inicio, fin - inicio);
+            //         }
+            //     }
+            //     // ✅ 2. Manejar el filtro del embudo de Radzen (Igualdad ==)
+            //     else if (filtro.Contains("== \""))
+            //     {
+            //         var inicio = filtro.IndexOf("== \"") + 4;
+            //         var fin = filtro.IndexOf("\"", inicio);
+            //         if (fin > inicio)
+            //         {
+            //             valorBusqueda = filtro.Substring(inicio, fin - inicio);
+            //         }
+            //     }
+            //
+            //     var f = valorBusqueda.ToLower();
+            //
+            //     // Ahora sí, buscamos el valor limpio
+            //     query = query.Where(x =>
+            //         x.house.Number.ToLower().Contains(f) ||
+            //         x.factura.Estado.ToLower().Contains(f) ||
+            //         x.facturaMes.Year.ToString().Contains(f) ||
+            //         x.facturaMes.Mes.ToString().Contains(f) ||
+            //         x.factura.MontoTotal.ToString().Contains(f)
+            //     );
+            // }
+
+
+            // ✅ Usar directamente la cadena de filtro generada por Radzen
             if (!string.IsNullOrWhiteSpace(filtro))
             {
-                // ✅ TRUCO: Si el filtro viene de Radzen, extraemos solo el valor de búsqueda.
-                // Radzen envía algo como: x.house.number.Contains("1")
-                string valorBusqueda = filtro;
-
-                // Si contiene la palabra "Contains", extraemos lo que está entre comillas
-                if (filtro.Contains("Contains(\""))
-                {
-                    var inicio = filtro.IndexOf("Contains(\"") + 10;
-                    var fin = filtro.IndexOf("\")", inicio);
-                    if (fin > inicio)
-                    {
-                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
-                    }
-                }
-                // ✅ 2. Manejar el filtro del embudo de Radzen (Igualdad ==)
-                else if (filtro.Contains("== \""))
-                {
-                    var inicio = filtro.IndexOf("== \"") + 4;
-                    var fin = filtro.IndexOf("\"", inicio);
-                    if (fin > inicio)
-                    {
-                        valorBusqueda = filtro.Substring(inicio, fin - inicio);
-                    }
-                }
-
-                var f = valorBusqueda.ToLower();
-
-                // Ahora sí, buscamos el valor limpio
-                query = query.Where(x =>
-                    x.house.Number.ToLower().Contains(f) ||
-                    x.factura.Estado.ToLower().Contains(f) ||
-                    x.facturaMes.Year.ToString().Contains(f) ||
-                    x.facturaMes.Mes.ToString().Contains(f) ||
-                    x.factura.MontoTotal.ToString().Contains(f)
-                );
+                query = query.Where(filtro);  // Necesita hacer referencia a System.Linq.Dynamic.Core
             }
 
             var total = await query.CountAsync();
