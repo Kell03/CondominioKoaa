@@ -60,11 +60,34 @@ namespace Condominio.Infrastructure.Repositories
             //         (x.House != null && x.House.Number.Contains(f))
             //     );
             // }
-
-
             if (!string.IsNullOrWhiteSpace(filtro))
             {
-                query = query.Where(filtro);  // Necesita hacer referencia a System.Linq.Dynamic.Core
+                // ✅ 1. Interceptar filtro de Fecha (si contiene DateTime.Parse)
+                if (filtro.Contains("DateTime.Parse"))
+                {
+                    // Buscamos específicamente el texto entre comillas que sigue a DateTime.Parse(
+                    var match = System.Text.RegularExpressions.Regex.Match(filtro, @"DateTime\.Parse\(""([^""]+)""");
+
+                    if (match.Success)
+                    {
+                        // Extraemos la fecha (ej. "2026-11-22")
+                        string fechaStr = match.Groups[1].Value;
+
+                        if (DateTime.TryParse(fechaStr, out DateTime fecha))
+                        {
+                            // Creamos el rango: desde las 00:00:00 hasta el día siguiente a las 00:00:00
+                            string fechaInicio = fecha.ToString("yyyy-MM-dd 00:00:00");
+                            string fechaFin = fecha.AddDays(1).ToString("yyyy-MM-dd 00:00:00");
+
+                            // Reemplazamos TODA la expresión compleja por un rango válido para MySQL
+                            // Nota: Asegúrate de que el nombre de la propiedad sea "Fecha"
+                            filtro = $"Fecha >= DateTime(\"{fechaInicio}\") && Fecha < DateTime(\"{fechaFin}\")";
+                        }
+                    }
+                }
+
+                // ✅ Pasar el filtro a EF Core
+                query = query.Where(filtro);
             }
             // Contamos el total (después de aplicar el filtro)
             var total = await query.CountAsync();
