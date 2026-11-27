@@ -245,14 +245,16 @@
                                                   Click="@(() => DescargarPdf(factura))"
                                                   @onclick:stopPropagation="true"
                                                   />
-
-                                    <RadzenButton Icon="delete"
-                                                  ButtonStyle="ButtonStyle.Danger"
-                                                  Size="ButtonSize.Small"
-                                                  title="Eliminar factura"
-                                                  Click="@(() => ConfirmDelete(factura))"
-                                                  @onclick:stopPropagation="true"
-                                                  Style="margin: 2px;" />
+                                    @if (!factura.Enviado)
+                                    {
+                                        <RadzenButton Icon="delete"
+                                        ButtonStyle="ButtonStyle.Danger"
+                                        Size="ButtonSize.Small"
+                                        title="Eliminar factura"
+                                        Click="@(() => ConfirmDelete(factura))"
+                                        @onclick:stopPropagation="true"
+                                        Style="margin: 2px;" />
+                                    }
 
                                 </Template>
                             </RadzenDataGridColumn>
