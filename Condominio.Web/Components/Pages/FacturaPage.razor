@@ -238,11 +238,13 @@
 
                                     <RadzenButton Icon="download"
                                                   ButtonStyle="ButtonStyle.Success"
+                                                  Variant="Variant.Outlined"
                                                   Size="ButtonSize.Small"
+                                                  Style="margin: 2px; "
                                                   title="Descargar aviso de cobro"
                                                   Click="@(() => DescargarPdf(factura))"
                                                   @onclick:stopPropagation="true"
-                                                  Style="margin: 2px; color: #dc3545; border-color: #dc3545;" />
+                                                  />
 
                                     <RadzenButton Icon="delete"
                                                   ButtonStyle="ButtonStyle.Danger"
