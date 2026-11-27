@@ -81,13 +81,17 @@
                               title="Descargar aviso de cobro"
                               Click="@(() => OnDescargarPdf.InvokeAsync(item))" />
 
-                <!-- Eliminar -->
+
+                @if (!item.Enviado)
+                {
+                             <!-- Eliminar -->
                 <RadzenButton Icon="delete"
                               ButtonStyle="ButtonStyle.Danger"
                               Size="ButtonSize.Medium"
                               Style="border-radius: 8px;"
                               title="Eliminar factura"
                               Click="@(() => OnEliminar.InvokeAsync(item))" />
+                }
 
             </div>
 
